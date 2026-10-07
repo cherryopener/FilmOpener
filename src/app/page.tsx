@@ -39,6 +39,9 @@ import DeveloperView from '@/components/DeveloperView';
 import ScanVaultView from '@/components/ScanVaultView';
 import DashboardOverview from '@/components/DashboardOverview';
 import SettingsModal from '@/components/SettingsModal';
+import AuthView from '@/components/AuthView';
+import { isSupabaseConfigured, getSupabaseClient, signOutUser } from '@/lib/supabase';
+import { User } from '@supabase/supabase-js';
 
 import {
   Film,
@@ -52,6 +55,8 @@ import {
   Sun,
   Moon,
   Monitor,
+  LogOut,
+  User as UserIcon,
 } from 'lucide-react';
 
 type TabType = 'dashboard' | 'films' | 'gear' | 'shooting' | 'development' | 'developers' | 'scans';
@@ -62,6 +67,11 @@ export default function Home() {
   const [selectedDevRollId, setSelectedDevRollId] = useState<string | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Supabase Auth State
+  const [user, setUser] = useState<User | null>(null);
+  const [isAuthChecking, setIsAuthChecking] = useState<boolean>(true);
+  const [isGuestMode, setIsGuestMode] = useState<boolean>(false);
 
   // Theme Management (Light / Dark / System Auto)
   const [theme, setTheme] = useState<ThemeMode>('system');
@@ -152,6 +162,32 @@ export default function Home() {
     loadData();
   }, [loadData]);
 
+  // Supabase Auth Session listener
+  useEffect(() => {
+    if (isSupabaseConfigured()) {
+      const client = getSupabaseClient();
+      if (client) {
+        client.auth.getSession().then(({ data: { session } }) => {
+          setUser(session?.user || null);
+          setIsAuthChecking(false);
+        });
+
+        const { data: { subscription } } = client.auth.onAuthStateChange((event, session) => {
+          setUser(session?.user || null);
+          setIsAuthChecking(false);
+          if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+            loadData();
+          }
+        });
+
+        return () => subscription.unsubscribe();
+      }
+    } else {
+      setIsAuthChecking(false);
+      setIsGuestMode(true);
+    }
+  }, [loadData]);
+
   // Handlers for Films
   const handleSaveFilm = async (film: FilmItem) => {
     const updated = await saveFilm(film);
@@ -226,6 +262,33 @@ export default function Home() {
     developers: '현상액 라이브러리 (Developer Chemistry)',
     scans: '필름 스캔 관리 (Scan Archive)',
   };
+
+  // 1. Supabase Auth Session Checking
+  if (isSupabaseConfigured() && isAuthChecking) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-main)' }}>
+        <div className="empty-state">
+          <div className="empty-icon"><Film size={28} /></div>
+          <h3>보안 세션 확인 중...</h3>
+        </div>
+      </div>
+    );
+  }
+
+  // 2. Auth Required Guard (Only authenticated user can access)
+  if (isSupabaseConfigured() && !user && !isGuestMode) {
+    return (
+      <AuthView
+        onAuthSuccess={(authenticatedUser) => {
+          setUser(authenticatedUser);
+          loadData();
+        }}
+        onContinueOffline={() => {
+          setIsGuestMode(true);
+        }}
+      />
+    );
+  }
 
   return (
     <div className="app-container">
@@ -309,7 +372,7 @@ export default function Home() {
           </button>
         </nav>
 
-        <div className="sidebar-footer">
+        <div className="sidebar-footer" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
           <button
             className="btn btn-secondary btn-sm"
             style={{ width: '100%', justifyContent: 'flex-start' }}
@@ -317,6 +380,21 @@ export default function Home() {
           >
             <Settings size={15} /> 환경설정
           </button>
+
+          {user && (
+            <button
+              className="btn btn-subtle btn-sm"
+              style={{ width: '100%', justifyContent: 'flex-start', color: 'var(--text-dim)', fontSize: '0.78rem' }}
+              onClick={async () => {
+                await signOutUser();
+                setUser(null);
+                await loadData();
+              }}
+              title="로그아웃"
+            >
+              <LogOut size={13} /> 로그아웃 ({user.email?.split('@')[0]})
+            </button>
+          )}
         </div>
       </aside>
 
@@ -329,6 +407,29 @@ export default function Home() {
           </div>
 
           <div className="header-right">
+            {user && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span
+                  className="notion-tag"
+                  style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}
+                  title={user.email}
+                >
+                  <UserIcon size={12} /> {user.email?.split('@')[0]}
+                </span>
+                <button
+                  className="btn btn-secondary btn-sm"
+                  onClick={async () => {
+                    await signOutUser();
+                    setUser(null);
+                    await loadData();
+                  }}
+                  title="로그아웃"
+                >
+                  <LogOut size={13} />
+                </button>
+              </div>
+            )}
+
             {/* Quick Theme Switcher Button */}
             <button
               className="theme-toggle-btn"

@@ -59,8 +59,11 @@ export const getFilms = async (): Promise<FilmItem[]> => {
     const supabase = getSupabaseClient();
     if (supabase) {
       try {
-        const { data, error } = await supabase.from('films').select('*').order('created_at', { ascending: false });
-        if (!error && data && data.length > 0) return data as FilmItem[];
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          const { data, error } = await supabase.from('films').select('*').order('created_at', { ascending: false });
+          if (!error && data) return data as FilmItem[];
+        }
       } catch (err) {
         console.warn('Supabase fetch films failed, falling back to local storage', err);
       }
@@ -90,7 +93,10 @@ export const saveFilm = async (film: FilmItem): Promise<FilmItem[]> => {
     const supabase = getSupabaseClient();
     if (supabase) {
       try {
-        await supabase.from('films').upsert(film);
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await supabase.from('films').upsert({ ...film, user_id: user.id });
+        }
       } catch (e) {
         console.error('Supabase save film error:', e);
       }
@@ -129,8 +135,11 @@ export const getCameras = async (): Promise<CameraItem[]> => {
     const supabase = getSupabaseClient();
     if (supabase) {
       try {
-        const { data, error } = await supabase.from('cameras').select('*').order('brand', { ascending: true });
-        if (!error && data && data.length > 0) return data as CameraItem[];
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          const { data, error } = await supabase.from('cameras').select('*').order('brand', { ascending: true });
+          if (!error && data) return data as CameraItem[];
+        }
       } catch (err) {
         console.warn('Supabase fetch cameras failed, falling back to local storage', err);
       }
@@ -160,7 +169,10 @@ export const saveCamera = async (camera: CameraItem): Promise<CameraItem[]> => {
     const supabase = getSupabaseClient();
     if (supabase) {
       try {
-        await supabase.from('cameras').upsert(camera);
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await supabase.from('cameras').upsert({ ...camera, user_id: user.id });
+        }
       } catch (e) {
         console.error('Supabase save camera error:', e);
       }
@@ -199,8 +211,11 @@ export const getLenses = async (): Promise<LensItem[]> => {
     const supabase = getSupabaseClient();
     if (supabase) {
       try {
-        const { data, error } = await supabase.from('lenses').select('*').order('focal_length_min', { ascending: true });
-        if (!error && data && data.length > 0) return data as LensItem[];
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          const { data, error } = await supabase.from('lenses').select('*').order('focal_length_min', { ascending: true });
+          if (!error && data) return data as LensItem[];
+        }
       } catch (err) {
         console.warn('Supabase fetch lenses failed, falling back to local storage', err);
       }
@@ -230,7 +245,10 @@ export const saveLens = async (lens: LensItem): Promise<LensItem[]> => {
     const supabase = getSupabaseClient();
     if (supabase) {
       try {
-        await supabase.from('lenses').upsert(lens);
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await supabase.from('lenses').upsert({ ...lens, user_id: user.id });
+        }
       } catch (e) {
         console.error('Supabase save lens error:', e);
       }
@@ -269,8 +287,11 @@ export const getDevelopers = async (): Promise<DeveloperChemical[]> => {
     const supabase = getSupabaseClient();
     if (supabase) {
       try {
-        const { data, error } = await supabase.from('developer_chemicals').select('*').order('created_at', { ascending: false });
-        if (!error && data && data.length > 0) return data as DeveloperChemical[];
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          const { data, error } = await supabase.from('developer_chemicals').select('*').order('created_at', { ascending: false });
+          if (!error && data) return data as DeveloperChemical[];
+        }
       } catch (err) {
         console.warn('Supabase fetch developers failed, falling back to local storage', err);
       }
@@ -300,7 +321,10 @@ export const saveDeveloper = async (dev: DeveloperChemical): Promise<DeveloperCh
     const supabase = getSupabaseClient();
     if (supabase) {
       try {
-        await supabase.from('developer_chemicals').upsert(dev);
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await supabase.from('developer_chemicals').upsert({ ...dev, user_id: user.id });
+        }
       } catch (e) {
         console.error('Supabase save developer error:', e);
       }
@@ -339,8 +363,11 @@ export const getShootingRolls = async (): Promise<ShootingRoll[]> => {
     const supabase = getSupabaseClient();
     if (supabase) {
       try {
-        const { data, error } = await supabase.from('shooting_rolls').select('*').order('created_at', { ascending: false });
-        if (!error && data && data.length > 0) return data as ShootingRoll[];
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          const { data, error } = await supabase.from('shooting_rolls').select('*').order('created_at', { ascending: false });
+          if (!error && data) return data as ShootingRoll[];
+        }
       } catch (err) {
         console.warn('Supabase fetch rolls failed, falling back to local storage', err);
       }
@@ -360,7 +387,6 @@ export const saveShootingRoll = async (
   const raw = localStorage.getItem(STORAGE_KEYS.SHOOTING_ROLLS);
   let list: ShootingRoll[] = raw ? JSON.parse(raw) : [...INITIAL_SHOOTING_ROLLS];
 
-  const isNew = !list.some((r) => r.id === roll.id);
   const index = list.findIndex((r) => r.id === roll.id);
   if (index >= 0) {
     list[index] = { ...roll, updated_at: new Date().toISOString() };
@@ -373,6 +399,8 @@ export const saveShootingRoll = async (
   // 3-6 & 4-3: 자가현상 시 현상액 사용 횟수, 롤 수, 희석비율 누적 연동 처리
   const devRaw = localStorage.getItem(STORAGE_KEYS.DEVELOPERS);
   let devList: DeveloperChemical[] = devRaw ? JSON.parse(devRaw) : [...INITIAL_DEVELOPERS];
+
+  let updatedDevForSupabase: DeveloperChemical | null = null;
 
   // If this roll has self dev with a developer selected:
   const shouldAccumulate =
@@ -402,18 +430,8 @@ export const saveShootingRoll = async (
         last_used_date: roll.developed_date || new Date().toISOString().split('T')[0],
       };
 
+      updatedDevForSupabase = devList[devIndex];
       localStorage.setItem(STORAGE_KEYS.DEVELOPERS, JSON.stringify(devList));
-
-      if (isSupabaseConfigured()) {
-        const supabase = getSupabaseClient();
-        if (supabase) {
-          try {
-            await supabase.from('developer_chemicals').upsert(devList[devIndex]);
-          } catch (e) {
-            console.error('Supabase update developer usage error:', e);
-          }
-        }
-      }
     }
   }
 
@@ -421,7 +439,13 @@ export const saveShootingRoll = async (
     const supabase = getSupabaseClient();
     if (supabase) {
       try {
-        await supabase.from('shooting_rolls').upsert(roll);
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await supabase.from('shooting_rolls').upsert({ ...roll, user_id: user.id });
+          if (updatedDevForSupabase) {
+            await supabase.from('developer_chemicals').upsert({ ...updatedDevForSupabase, user_id: user.id });
+          }
+        }
       } catch (e) {
         console.error('Supabase save shooting roll error:', e);
       }
@@ -460,8 +484,11 @@ export const getScans = async (): Promise<ScanLog[]> => {
     const supabase = getSupabaseClient();
     if (supabase) {
       try {
-        const { data, error } = await supabase.from('scan_logs').select('*').order('scan_date', { ascending: false });
-        if (!error && data && data.length > 0) return data as ScanLog[];
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          const { data, error } = await supabase.from('scan_logs').select('*').order('scan_date', { ascending: false });
+          if (!error && data) return data as ScanLog[];
+        }
       } catch (err) {
         console.warn('Supabase fetch scans failed, falling back to local storage', err);
       }
@@ -504,7 +531,10 @@ export const saveScan = async (scan: ScanLog): Promise<ScanLog[]> => {
     const supabase = getSupabaseClient();
     if (supabase) {
       try {
-        await supabase.from('scan_logs').upsert(scan);
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await supabase.from('scan_logs').upsert({ ...scan, user_id: user.id });
+        }
       } catch (e) {
         console.error('Supabase save scan error:', e);
       }
@@ -533,6 +563,62 @@ export const deleteScan = async (id: string): Promise<ScanLog[]> => {
   }
 
   return list;
+};
+
+// ==========================================
+// SYNC LOCAL TO CLOUD SUPABASE
+// ==========================================
+export const syncLocalDataToSupabase = async (): Promise<{ success: boolean; count: number; error?: string }> => {
+  if (!isSupabaseConfigured()) {
+    return { success: false, count: 0, error: 'Supabase가 설정되지 않았습니다.' };
+  }
+  const supabase = getSupabaseClient();
+  if (!supabase) return { success: false, count: 0, error: '클라이언트 초기화 실패' };
+
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, count: 0, error: '로그인된 사용자가 없습니다.' };
+
+    const uid = user.id;
+    let totalSynced = 0;
+
+    const films: FilmItem[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.FILMS) || '[]');
+    const cameras: CameraItem[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.CAMERAS) || '[]');
+    const lenses: LensItem[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.LENSES) || '[]');
+    const devs: DeveloperChemical[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.DEVELOPERS) || '[]');
+    const rolls: ShootingRoll[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.SHOOTING_ROLLS) || '[]');
+    const scans: ScanLog[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.SCANS) || '[]');
+
+    if (films.length > 0) {
+      await supabase.from('films').upsert(films.map((f) => ({ ...f, user_id: uid })));
+      totalSynced += films.length;
+    }
+    if (cameras.length > 0) {
+      await supabase.from('cameras').upsert(cameras.map((c) => ({ ...c, user_id: uid })));
+      totalSynced += cameras.length;
+    }
+    if (lenses.length > 0) {
+      await supabase.from('lenses').upsert(lenses.map((l) => ({ ...l, user_id: uid })));
+      totalSynced += lenses.length;
+    }
+    if (devs.length > 0) {
+      await supabase.from('developer_chemicals').upsert(devs.map((d) => ({ ...d, user_id: uid })));
+      totalSynced += devs.length;
+    }
+    if (rolls.length > 0) {
+      await supabase.from('shooting_rolls').upsert(rolls.map((r) => ({ ...r, user_id: uid })));
+      totalSynced += rolls.length;
+    }
+    if (scans.length > 0) {
+      await supabase.from('scan_logs').upsert(scans.map((s) => ({ ...s, user_id: uid })));
+      totalSynced += scans.length;
+    }
+
+    return { success: true, count: totalSynced };
+  } catch (err: any) {
+    console.error('Sync to supabase error:', err);
+    return { success: false, count: 0, error: err?.message || '동기화 중 오류 발생' };
+  }
 };
 
 // ==========================================

@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { exportFullBackup, importFullBackup, resetToInitialData } from '@/lib/storageService';
-import { Sun, Moon, Monitor, Download, Upload, RotateCcw, CheckCircle2, ShieldCheck, GitBranch } from 'lucide-react';
+import { exportFullBackup, importFullBackup, resetToInitialData, syncLocalDataToSupabase } from '@/lib/storageService';
+import { isSupabaseConfigured } from '@/lib/supabase';
+import { Sun, Moon, Monitor, Download, Upload, RotateCcw, CheckCircle2, ShieldCheck, GitBranch, Cloud, CloudUpload } from 'lucide-react';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -20,6 +21,26 @@ export default function SettingsModal({
   onThemeChange,
 }: SettingsModalProps) {
   const [statusMsg, setStatusMsg] = useState('');
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState('');
+
+  const handleSyncCloud = async () => {
+    setIsSyncing(true);
+    setSyncResult('');
+    try {
+      const res = await syncLocalDataToSupabase();
+      if (res.success) {
+        setSyncResult(`✅ 총 ${res.count}개의 데이터가 Supabase 클라우드에 성공적으로 동기화되었습니다.`);
+        await onRefreshData();
+      } else {
+        setSyncResult(`❌ 동기화 실패: ${res.error}`);
+      }
+    } catch (e: any) {
+      setSyncResult(`❌ 오류: ${e?.message}`);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -112,15 +133,47 @@ export default function SettingsModal({
             </div>
           </div>
 
-          {/* GitHub / Vercel 배포 안내 */}
-          <div style={{ padding: '14px', borderRadius: '10px', background: 'var(--bg-card-subtle)', border: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '700', fontSize: '0.88rem', color: 'var(--text-main)' }}>
-              <GitBranch size={16} /> GitHub & Vercel 배포 연결
+          {/* GitHub / Vercel 배포 & Supabase 연결 상태 */}
+          <div style={{ padding: '16px', borderRadius: '10px', background: 'var(--bg-card-subtle)', border: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '700', fontSize: '0.88rem', color: 'var(--text-main)' }}>
+                <Cloud size={16} color="var(--accent-blue)" /> Supabase 클라우드 & 보안
+              </div>
+              <span
+                className="notion-tag"
+                style={{
+                  background: isSupabaseConfigured() ? 'rgba(16, 185, 129, 0.12)' : 'rgba(120, 119, 116, 0.12)',
+                  color: isSupabaseConfigured() ? '#10b981' : 'var(--text-dim)',
+                }}
+              >
+                {isSupabaseConfigured() ? '● 클라우드 연결됨 (RLS 보안)' : '○ 로컬 브라우저 모드'}
+              </span>
             </div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: '1.5' }}>
-              이 프로젝트는 GitHub 레포지토리(<code>cherryopener/FilmOpener</code>)에 push 후 Vercel에서 Git 저장소를 연결하여 배포할 수 있습니다.
-              Supabase 클라우드 데이터베이스 연동은 Vercel 환경 변수(<code>NEXT_PUBLIC_SUPABASE_URL</code>, <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code>)에 등록하면 안전하게 자동 연결됩니다.
-            </div>
+
+            <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: '1.5', margin: 0 }}>
+              {isSupabaseConfigured()
+                ? '현재 계정에 RLS(Row Level Security)가 적용되어, 오직 본인만 데이터를 조회/수정할 수 있습니다. 로컬에 저장된 기존 데이터를 클라우드로 즉시 업로드하려면 아래 동기화 버튼을 누르세요.'
+                : 'Vercel 환경 변수에 NEXT_PUBLIC_SUPABASE_URL과 NEXT_PUBLIC_SUPABASE_ANON_KEY를 등록하면 클라우드 동기화와 계정 로그인이 활성화됩니다.'}
+            </p>
+
+            {isSupabaseConfigured() && (
+              <div>
+                <button
+                  type="button"
+                  className="btn btn-primary btn-sm"
+                  onClick={handleSyncCloud}
+                  disabled={isSyncing}
+                  style={{ background: 'var(--accent-blue)', borderColor: 'var(--accent-blue)' }}
+                >
+                  <CloudUpload size={14} /> {isSyncing ? '동기화 진행 중...' : '로컬 데이터를 Supabase 클라우드로 올리기'}
+                </button>
+                {syncResult && (
+                  <div style={{ fontSize: '0.76rem', color: 'var(--accent-emerald)', marginTop: '6px' }}>
+                    {syncResult}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* 데이터 백업 & 복원 */}
