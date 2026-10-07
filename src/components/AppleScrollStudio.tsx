@@ -354,7 +354,7 @@ export default function AppleScrollStudio({
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Scroll Reveal Intersection Observer (Apple-style fade-in & slide-up on scroll)
+  // Continuous Bidirectional Scroll Reveal Observer (Apple-style enter & exit re-trigger)
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
@@ -370,27 +370,28 @@ export default function AppleScrollStudio({
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             entry.target.classList.add('revealed');
-            observer.unobserve(entry.target);
+          } else {
+            // When an element leaves the viewport, remove 'revealed'
+            // so scrolling back into view smoothly animates again every time!
+            entry.target.classList.remove('revealed');
           }
         });
       },
       {
         root: null,
-        rootMargin: '0px 0px -40px 0px',
-        threshold: 0.08,
+        rootMargin: '0px 0px -30px 0px',
+        threshold: 0.06,
       }
     );
 
+    const observedElements = new WeakSet<Element>();
+
     const checkAndObserve = () => {
-      const targets = document.querySelectorAll('.reveal-on-scroll:not(.revealed)');
-      const vh = window.innerHeight;
+      const targets = document.querySelectorAll('.reveal-on-scroll');
       targets.forEach((target) => {
-        const rect = target.getBoundingClientRect();
-        // If element is already visible within the viewport upon initial load, reveal immediately
-        if (rect.top < vh - 20 && rect.bottom > 0) {
-          target.classList.add('revealed');
-        } else {
+        if (!observedElements.has(target)) {
           observer.observe(target);
+          observedElements.add(target);
         }
       });
     };

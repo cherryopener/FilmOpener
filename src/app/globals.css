@@ -3647,9 +3647,14 @@ html, body {
 .reveal-on-scroll {
   opacity: 0;
   transform: translateY(34px);
-  transition: opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1),
-              transform 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.75s cubic-bezier(0.16, 1, 0.3, 1);
   will-change: opacity, transform;
+}
+
+/* On exit (when scrolling back up or out of view), cancel delay immediately for smooth reverse */
+.reveal-on-scroll:not(.revealed) {
+  transition-delay: 0s !important;
 }
 
 /* When in view / revealed */
@@ -3661,9 +3666,9 @@ html, body {
 /* Apple Title blur-to-sharp focus effect */
 .reveal-title {
   filter: blur(7px);
-  transition: opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1),
-              transform 0.85s cubic-bezier(0.16, 1, 0.3, 1),
-              filter 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.75s cubic-bezier(0.16, 1, 0.3, 1),
+              filter 0.75s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .reveal-title.revealed {
@@ -3673,36 +3678,36 @@ html, body {
 /* Scale reveal for major rack & cards */
 .reveal-scale {
   transform: translateY(38px) scale(0.97);
-  transition: opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1),
-              transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .reveal-scale.revealed {
   transform: translateY(0) scale(1);
 }
 
-/* Staggered delay timing curves */
-.reveal-delay-1 {
+/* Staggered delay timing curves only when revealed */
+.reveal-on-scroll.revealed.reveal-delay-1 {
   transition-delay: 0.08s;
 }
 
-.reveal-delay-2 {
+.reveal-on-scroll.revealed.reveal-delay-2 {
   transition-delay: 0.16s;
 }
 
-.reveal-delay-3 {
+.reveal-on-scroll.revealed.reveal-delay-3 {
   transition-delay: 0.24s;
 }
 
-.reveal-delay-4 {
+.reveal-on-scroll.revealed.reveal-delay-4 {
   transition-delay: 0.32s;
 }
 
-.reveal-delay-5 {
+.reveal-on-scroll.revealed.reveal-delay-5 {
   transition-delay: 0.40s;
 }
 
-.reveal-delay-6 {
+.reveal-on-scroll.revealed.reveal-delay-6 {
   transition-delay: 0.48s;
 }
 
