@@ -154,6 +154,42 @@ export default function DeveloperView({
         </div>
       </div>
 
+      {/* Apple-style Segmented Type Navigation */}
+      <div style={{ display: 'flex', overflowX: 'auto', paddingBottom: '2px' }}>
+        <div className="segmented-control">
+          <button
+            className={`segmented-item ${typeFilter === 'all' ? 'active' : ''}`}
+            onClick={() => setTypeFilter('all')}
+          >
+            전체 약품 <span className="segmented-badge">{developers.length}</span>
+          </button>
+          <button
+            className={`segmented-item ${typeFilter === 'bw' ? 'active' : ''}`}
+            onClick={() => setTypeFilter('bw')}
+          >
+            흑백용 (B&W) <span className="segmented-badge">{developers.filter((d) => d.type === 'bw').length}</span>
+          </button>
+          <button
+            className={`segmented-item ${typeFilter === 'color' ? 'active' : ''}`}
+            onClick={() => setTypeFilter('color')}
+          >
+            컬러용 (C-41) <span className="segmented-badge">{developers.filter((d) => d.type === 'color').length}</span>
+          </button>
+          <button
+            className={`segmented-item ${typeFilter === 'cinema' ? 'active' : ''}`}
+            onClick={() => setTypeFilter('cinema')}
+          >
+            영화용 (ECN-2) <span className="segmented-badge">{developers.filter((d) => d.type === 'cinema').length}</span>
+          </button>
+          <button
+            className={`segmented-item ${typeFilter === 'slide' ? 'active' : ''}`}
+            onClick={() => setTypeFilter('slide')}
+          >
+            슬라이드용 (E-6) <span className="segmented-badge">{developers.filter((d) => d.type === 'slide').length}</span>
+          </button>
+        </div>
+      </div>
+
       {/* Filter & Action Toolbar */}
       <div className="filter-toolbar">
         <div className="search-box">
@@ -167,20 +203,6 @@ export default function DeveloperView({
         </div>
 
         <div className="filter-group">
-          {/* 4-1. 용도 선택 필터 */}
-          <select
-            className="select-custom"
-            value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value)}
-          >
-            <option value="all">모든 용도</option>
-            <option value="bw">흑백용 (B&W)</option>
-            <option value="color">컬러용 (C-41)</option>
-            <option value="cinema">영화용 (ECN-2)</option>
-            <option value="slide">슬라이드용 (E-6)</option>
-            <option value="other">기타</option>
-          </select>
-
           <button className="btn btn-primary" onClick={openAddModal}>
             <Plus size={16} /> 새 현상액 등록
           </button>
@@ -210,19 +232,19 @@ export default function DeveloperView({
                   <div className="card-title-group">
                     <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
                       <span
-                        className="badge-tag"
-                        style={{ background: typeCfg.bg, color: typeCfg.color, borderColor: typeCfg.color }}
+                        className="notion-tag"
+                        style={{ background: typeCfg.bg, color: typeCfg.color }}
                       >
                         {typeCfg.label}
                       </span>
                       {dev.volume_ml && (
                         <span className="spec-pill">
-                          용량: <strong>{dev.volume_ml}ml</strong>
+                          <strong>{dev.volume_ml}ml</strong>
                         </span>
                       )}
                     </div>
 
-                    <h3 className="card-title" style={{ marginTop: '6px' }}>
+                    <h3 className="card-title" style={{ marginTop: '4px' }}>
                       {dev.name}
                     </h3>
 
@@ -231,7 +253,7 @@ export default function DeveloperView({
                     </div>
                   </div>
 
-                  {/* 4-3. 누적 현상 롤 수 뱃지 */}
+                  {/* 누적 현상 롤 수 뱃지 */}
                   <div style={{ textAlign: 'right' }}>
                     <div
                       style={{
@@ -239,32 +261,66 @@ export default function DeveloperView({
                         fontSize: '1.4rem',
                         fontWeight: '700',
                         color: 'var(--accent-amber-light)',
+                        lineHeight: 1,
                       }}
                     >
                       {dev.total_rolls_processed || 0}
                       <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}> 롤</span>
                     </div>
-                    <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)' }}>
-                      총 {dev.total_batches || 0}회 작업
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)', marginTop: '2px' }}>
+                      {dev.total_batches || 0}회 세션
                     </div>
+                  </div>
+                </div>
+
+                {/* Notion Systematic Database Property Rows */}
+                <div className="notion-prop-table">
+                  <div className="notion-prop-row">
+                    <span className="notion-prop-key">🧪 약품 분류</span>
+                    <span className="notion-prop-val">
+                      <span className="notion-tag" style={{ background: typeCfg.bg, color: typeCfg.color }}>
+                        {typeCfg.label}
+                      </span>
+                    </span>
+                  </div>
+
+                  <div className="notion-prop-row">
+                    <span className="notion-prop-key">🛒 구매일자</span>
+                    <span className="notion-prop-val" style={{ fontFamily: 'var(--font-mono)' }}>
+                      {dev.purchase_date}
+                    </span>
+                  </div>
+
+                  <div className="notion-prop-row">
+                    <span className="notion-prop-key">⚗️ 개봉 / 조제일</span>
+                    <span className="notion-prop-val" style={{ fontFamily: 'var(--font-mono)' }}>
+                      {dev.mixed_or_opened_date}
+                    </span>
+                  </div>
+
+                  <div className="notion-prop-row">
+                    <span className="notion-prop-key">🕒 최근 사용일</span>
+                    <span className="notion-prop-val" style={{ fontFamily: 'var(--font-mono)' }}>
+                      {dev.last_used_date || '사용 기록 없음'}
+                    </span>
                   </div>
                 </div>
 
                 {/* 수명 프로그레스 바 (권장 처리 롤 수 대비) */}
                 {dev.capacity_rolls_limit && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', padding: '4px 0' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem' }}>
-                      <span style={{ color: 'var(--text-muted)' }}>권장 처리 한도 대비:</span>
-                      <span style={{ fontFamily: 'var(--font-mono)', color: progressPct > 80 ? '#f87171' : 'var(--text-main)' }}>
+                      <span style={{ color: 'var(--text-muted)' }}>권장 처리 한도 대비</span>
+                      <span style={{ fontFamily: 'var(--font-mono)', color: progressPct > 80 ? 'var(--accent-red)' : 'var(--text-main)', fontWeight: '600' }}>
                         {dev.total_rolls_processed} / {dev.capacity_rolls_limit} 롤 ({progressPct}%)
                       </span>
                     </div>
-                    <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.08)', borderRadius: '999px', overflow: 'hidden' }}>
+                    <div style={{ width: '100%', height: '6px', background: 'var(--bg-subtle)', borderRadius: '999px', overflow: 'hidden', border: '1px solid var(--border-subtle)' }}>
                       <div
                         style={{
                           width: `${progressPct}%`,
                           height: '100%',
-                          background: progressPct > 90 ? '#ef4444' : progressPct > 70 ? '#f59e0b' : '#10b981',
+                          background: progressPct > 90 ? 'var(--accent-red)' : progressPct > 70 ? 'var(--accent-amber)' : 'var(--accent-emerald)',
                           transition: 'width 0.3s ease',
                         }}
                       />
@@ -272,14 +328,14 @@ export default function DeveloperView({
                   </div>
                 )}
 
-                {/* 4-3 & 3-6 요구사항: 희석비율별 사용 횟수 구분 태그 */}
-                <div style={{ background: 'rgba(255,255,255,0.02)', padding: '10px', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: '600', marginBottom: '6px' }}>
-                    🧪 희석 비율별 누적 사용 내역:
+                {/* 희석비율별 사용 내역 Notion Callout */}
+                <div className="notion-callout" style={{ flexDirection: 'column', gap: '6px' }}>
+                  <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: '600' }}>
+                    🧪 희석 비율별 누적 사용 내역
                   </div>
 
                   {dev.dilution_usage && Object.keys(dev.dilution_usage).length > 0 ? (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
                       {Object.entries(dev.dilution_usage).map(([ratio, count]) => (
                         <span
                           key={ratio}
@@ -287,7 +343,7 @@ export default function DeveloperView({
                           style={{
                             background: 'rgba(245, 158, 11, 0.1)',
                             borderColor: 'rgba(245, 158, 11, 0.25)',
-                            color: '#fef3c7',
+                            color: 'var(--accent-amber-light)',
                           }}
                         >
                           {ratio}: <strong>{count}회</strong>
@@ -295,29 +351,14 @@ export default function DeveloperView({
                       ))}
                     </div>
                   ) : (
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>
-                      아직 등록된 희석비율 사용 이력이 없습니다. (촬영 관리에서 현상 시 자동 기록)
+                    <div style={{ fontSize: '0.74rem', color: 'var(--text-dim)' }}>
+                      등록된 희석비율 사용 이력이 없습니다.
                     </div>
                   )}
                 </div>
 
-                {/* 4-2. 구매일 & 조제일 날짜 정보 */}
-                <div className="specs-pills">
-                  <span className="spec-pill">
-                    🛒 구매일: <strong>{dev.purchase_date}</strong>
-                  </span>
-                  <span className="spec-pill">
-                    ⚗️ 조제/개봉일: <strong>{dev.mixed_or_opened_date}</strong>
-                  </span>
-                  {dev.last_used_date && (
-                    <span className="spec-pill" style={{ color: 'var(--accent-amber-light)' }}>
-                      최근 사용: <strong>{dev.last_used_date}</strong>
-                    </span>
-                  )}
-                </div>
-
                 {/* 롤 수동 빠른 가감 버튼 */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.015)', padding: '6px 10px', borderRadius: '6px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-subtle)', padding: '6px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
                   <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>빠른 롤 수 조절:</span>
                   <div style={{ display: 'flex', gap: '4px' }}>
                     <button

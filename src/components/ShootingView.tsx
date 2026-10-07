@@ -323,6 +323,42 @@ export default function ShootingView({
         </div>
       </div>
 
+      {/* Apple-style Segmented Status Control */}
+      <div style={{ display: 'flex', overflowX: 'auto', paddingBottom: '2px' }}>
+        <div className="segmented-control">
+          <button
+            className={`segmented-item ${statusFilter === 'all' ? 'active' : ''}`}
+            onClick={() => setStatusFilter('all')}
+          >
+            전체 롤 <span className="segmented-badge">{rolls.length}</span>
+          </button>
+          <button
+            className={`segmented-item ${statusFilter === 'loaded' ? 'active' : ''}`}
+            onClick={() => setStatusFilter('loaded')}
+          >
+            촬영 중 <span className="segmented-badge">{rolls.filter((r) => r.status === 'loaded').length}</span>
+          </button>
+          <button
+            className={`segmented-item ${statusFilter === 'unloaded' ? 'active' : ''}`}
+            onClick={() => setStatusFilter('unloaded')}
+          >
+            촬영 완료 <span className="segmented-badge">{rolls.filter((r) => r.status === 'unloaded').length}</span>
+          </button>
+          <button
+            className={`segmented-item ${statusFilter === 'developed' ? 'active' : ''}`}
+            onClick={() => setStatusFilter('developed')}
+          >
+            현상 완료 <span className="segmented-badge">{rolls.filter((r) => r.status === 'developed').length}</span>
+          </button>
+          <button
+            className={`segmented-item ${statusFilter === 'scanned' ? 'active' : ''}`}
+            onClick={() => setStatusFilter('scanned')}
+          >
+            스캔 완료 <span className="segmented-badge">{rolls.filter((r) => r.status === 'scanned').length}</span>
+          </button>
+        </div>
+      </div>
+
       {/* Filter & Action Toolbar */}
       <div className="filter-toolbar">
         <div className="search-box">
@@ -336,18 +372,6 @@ export default function ShootingView({
         </div>
 
         <div className="filter-group">
-          <select
-            className="select-custom"
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-          >
-            <option value="all">모든 진행 상태</option>
-            <option value="loaded">촬영 중 (Loaded)</option>
-            <option value="unloaded">촬영 완료 (Unloaded)</option>
-            <option value="developed">현상 완료 (Developed)</option>
-            <option value="scanned">스캔 완료 (Scanned)</option>
-          </select>
-
           <button className="btn btn-primary" onClick={openAddModal}>
             <Plus size={16} /> 새 롤 장전 / 촬영 기록
           </button>
@@ -370,12 +394,12 @@ export default function ShootingView({
             const statusClass = `status-pill ${roll.status}`;
             const statusLabel =
               roll.status === 'loaded'
-                ? '촬영 중'
+                ? '촬영 중 (Loaded)'
                 : roll.status === 'unloaded'
                 ? '촬영 완료 (현상 대기)'
                 : roll.status === 'developed'
-                ? '현상 완료'
-                : '스캔 완료';
+                ? '현상 완료 (스캔 대기)'
+                : '스캔 완료 (Archive)';
 
             return (
               <div key={roll.id} className="item-card">
@@ -390,62 +414,83 @@ export default function ShootingView({
                           촬영 ISO <strong>{roll.iso_rated}</strong>
                         </span>
                       )}
-                    </div>
-
-                    <h3 className="card-title" style={{ marginTop: '6px' }}>
-                      {roll.title}
-                    </h3>
-
-                    <div className="card-subtitle">
-                      <span>📷 {roll.camera_name_snapshot}</span>
-                      {roll.lens_name_snapshot && (
-                        <>
-                          <span>•</span>
-                          <span>🔭 {roll.lens_name_snapshot}</span>
-                        </>
+                      {roll.total_shots && (
+                        <span className="spec-pill">
+                          <strong>{roll.total_shots}컷</strong>
+                        </span>
                       )}
                     </div>
+
+                    <h3 className="card-title" style={{ marginTop: '4px' }}>
+                      {roll.title}
+                    </h3>
                   </div>
                 </div>
 
-                {/* Film Snapshot Pill */}
-                <div style={{ background: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.2)', padding: '8px 12px', borderRadius: '8px', fontSize: '0.85rem' }}>
-                  <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginBottom: '2px' }}>장전된 필름:</div>
-                  <div style={{ fontWeight: '600', color: 'var(--accent-amber-light)' }}>
-                    🎞️ {roll.film_name_snapshot}
-                  </div>
-                </div>
-
-                {/* Date Milestones (3-2, 3-5) */}
-                <div className="specs-pills">
-                  <span className="spec-pill">
-                    장전일: <strong>{roll.loaded_date}</strong>
-                  </span>
-                  {roll.unloaded_date && (
-                    <span className="spec-pill">
-                      뺀 날: <strong>{roll.unloaded_date}</strong>
+                {/* Notion Systematic Database Property Rows */}
+                <div className="notion-prop-table">
+                  <div className="notion-prop-row">
+                    <span className="notion-prop-key">🎞️ 장전 필름</span>
+                    <span className="notion-prop-val">
+                      <strong style={{ color: 'var(--accent-amber-light)' }}>{roll.film_name_snapshot}</strong>
                     </span>
+                  </div>
+
+                  <div className="notion-prop-row">
+                    <span className="notion-prop-key">📷 카메라 바디</span>
+                    <span className="notion-prop-val">
+                      {roll.camera_name_snapshot}
+                    </span>
+                  </div>
+
+                  {roll.lens_name_snapshot && (
+                    <div className="notion-prop-row">
+                      <span className="notion-prop-key">🔭 마운트 렌즈</span>
+                      <span className="notion-prop-val">
+                        {roll.lens_name_snapshot}
+                      </span>
+                    </div>
                   )}
+
+                  <div className="notion-prop-row">
+                    <span className="notion-prop-key">📅 필름 장전일</span>
+                    <span className="notion-prop-val" style={{ fontFamily: 'var(--font-mono)' }}>
+                      {roll.loaded_date}
+                    </span>
+                  </div>
+
+                  <div className="notion-prop-row">
+                    <span className="notion-prop-key">🏁 필름 뺀 날</span>
+                    <span className="notion-prop-val" style={{ fontFamily: 'var(--font-mono)' }}>
+                      {roll.unloaded_date || (
+                        <span style={{ color: 'var(--accent-blue)', fontSize: '0.74rem' }}>촬영 진행 중</span>
+                      )}
+                    </span>
+                  </div>
+
                   {roll.developed_date && (
-                    <span className="spec-pill">
-                      현상일: <strong>{roll.developed_date}</strong>
-                    </span>
+                    <div className="notion-prop-row">
+                      <span className="notion-prop-key">🧪 현상 완료일</span>
+                      <span className="notion-prop-val" style={{ fontFamily: 'var(--font-mono)' }}>
+                        {roll.developed_date}
+                      </span>
+                    </div>
                   )}
                 </div>
 
-                {/* 3-3 & 3-4. 출사 세션 목록 */}
+                {/* 3-3 & 3-4. 출사 세션 목록 Notion Callout */}
                 {roll.shooting_sessions && roll.shooting_sessions.length > 0 && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: 'rgba(255, 255, 255, 0.02)', padding: '10px', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <MapPin size={12} /> 출사 기록 ({roll.shooting_sessions.length}회)
+                  <div className="notion-callout" style={{ flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                      <MapPin size={13} /> 출사 일정 기록 ({roll.shooting_sessions.length}회)
                     </div>
                     {roll.shooting_sessions.map((s, idx) => {
                       const weatherCfg = WEATHER_CONFIG[s.weather] || WEATHER_CONFIG.sunny;
                       return (
-                        <div key={s.id || idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.8rem', padding: '4px 0', borderBottom: idx < roll.shooting_sessions.length - 1 ? '1px dashed rgba(255,255,255,0.06)' : 'none' }}>
+                        <div key={s.id || idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.78rem', width: '100%', paddingTop: '2px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                             <span title={weatherCfg.label}>{weatherCfg.icon}</span>
-                            <span style={{ color: 'var(--text-main)', fontWeight: '500' }}>{s.location || '장소 미지정'}</span>
+                            <span style={{ color: 'var(--text-main)', fontWeight: '500' }}>{s.location || '출사 장소 미기재'}</span>
                             <span style={{ color: 'var(--text-dim)', fontSize: '0.72rem' }}>({s.date})</span>
                           </div>
                           {s.shots_taken && (
@@ -459,16 +504,16 @@ export default function ShootingView({
                   </div>
                 )}
 
-                {/* 3-6. 현상 방법 요약 */}
+                {/* 3-6. 현상 방법 요약 Notion Callout */}
                 {roll.dev_type !== 'none' && (
-                  <div style={{ background: 'rgba(168, 85, 247, 0.08)', border: '1px solid rgba(168, 85, 247, 0.2)', padding: '10px', borderRadius: '8px', fontSize: '0.8rem', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <div className="notion-callout" style={{ background: 'rgba(168, 85, 247, 0.08)', borderColor: 'rgba(168, 85, 247, 0.25)', flexDirection: 'column', gap: '4px' }}>
                     <div style={{ color: '#c084fc', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '5px' }}>
                       <FlaskConical size={13} />
                       {roll.dev_type === 'self' ? '자가 현상 (Home Development)' : `현상소 위탁 (${roll.lab_name || '현상소'})`}
                     </div>
 
                     {roll.dev_type === 'self' && (
-                      <div style={{ color: 'var(--text-main)', lineHeight: '1.4' }}>
+                      <div style={{ color: 'var(--text-main)', lineHeight: '1.45', fontSize: '0.78rem' }}>
                         <div>약품: <strong>{roll.developer_name_snapshot}</strong> (희석 <strong>{roll.dilution_ratio}</strong>, 동시 <strong>{roll.dev_quantity_rolls}롤</strong>)</div>
                         {roll.dev_method && (
                           <div style={{ color: 'var(--text-muted)' }}>
@@ -476,7 +521,7 @@ export default function ShootingView({
                           </div>
                         )}
                         {roll.agitation_details && (
-                          <div style={{ color: 'var(--text-dim)', fontSize: '0.75rem', marginTop: '2px' }}>
+                          <div style={{ color: 'var(--text-dim)', fontSize: '0.73rem', marginTop: '2px' }}>
                             교반: {roll.agitation_details}
                           </div>
                         )}

@@ -289,20 +289,22 @@ export default function GearView({
         </div>
       </div>
 
-      {/* Tabs */}
-      <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '12px' }}>
-        <button
-          className={`btn ${activeTab === 'camera' ? 'btn-primary' : 'btn-secondary'}`}
-          onClick={() => setActiveTab('camera')}
-        >
-          <Camera size={16} /> 카메라 보관함 ({cameras.length})
-        </button>
-        <button
-          className={`btn ${activeTab === 'lens' ? 'btn-primary' : 'btn-secondary'}`}
-          onClick={() => setActiveTab('lens')}
-        >
-          <Aperture size={16} /> 렌즈 보관함 ({lenses.length})
-        </button>
+      {/* Apple-style Segmented Navigation for Gear Types */}
+      <div style={{ display: 'flex', overflowX: 'auto', paddingBottom: '2px' }}>
+        <div className="segmented-control">
+          <button
+            className={`segmented-item ${activeTab === 'camera' ? 'active' : ''}`}
+            onClick={() => setActiveTab('camera')}
+          >
+            <Camera size={15} /> 카메라 보관함 <span className="segmented-badge">{cameras.length}</span>
+          </button>
+          <button
+            className={`segmented-item ${activeTab === 'lens' ? 'active' : ''}`}
+            onClick={() => setActiveTab('lens')}
+          >
+            <Aperture size={15} /> 렌즈 보관함 <span className="segmented-badge">{lenses.length}</span>
+          </button>
+        </div>
       </div>
 
       {/* Search & Filter Toolbar */}
@@ -425,16 +427,16 @@ export default function GearView({
             <div className="cards-grid">
               {sortedCameras.map((cam) => {
                 const statusCfg = EQUIPMENT_STATUS_CONFIG[cam.status] || EQUIPMENT_STATUS_CONFIG.active;
-                const isUnavailable = !statusCfg.usable; // 2-2 요구사항: 수리필요/수리중
+                const isUnavailable = !statusCfg.usable;
 
                 return (
-                  <div key={cam.id} className="item-card" style={isUnavailable ? { borderLeft: '4px solid #ef4444' } : {}}>
+                  <div key={cam.id} className="item-card" style={isUnavailable ? { borderLeft: '3px solid var(--accent-red)' } : {}}>
                     <div className="card-top">
                       <div className="card-title-group">
                         <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
                           <span
-                            className="badge-tag"
-                            style={{ background: statusCfg.bg, color: statusCfg.color, borderColor: statusCfg.color }}
+                            className="notion-tag"
+                            style={{ background: statusCfg.bg, color: statusCfg.color }}
                           >
                             {statusCfg.label}
                           </span>
@@ -442,43 +444,68 @@ export default function GearView({
                             <strong>{CAMERA_FORMAT_CONFIG[cam.format] || cam.format}</strong>
                           </span>
                           <span className="spec-pill">
-                            {cam.lens_type === 'fixed' ? '렌즈 일체형' : '렌즈 교환식'}
+                            {cam.lens_type === 'fixed' ? '일체형' : '교환식'}
                           </span>
                         </div>
 
-                        <h3 className="card-title" style={{ marginTop: '6px' }}>
+                        <h3 className="card-title" style={{ marginTop: '4px' }}>
                           {cam.brand} {cam.model}
                         </h3>
 
                         {cam.serial_number && (
                           <div className="card-subtitle">
-                            S/N: <code>{cam.serial_number}</code>
+                            S/N: <code style={{ fontFamily: 'var(--font-mono)' }}>{cam.serial_number}</code>
                           </div>
                         )}
                       </div>
                     </div>
 
-                    {/* 일체형 렌즈 스펙 */}
-                    {cam.lens_type === 'fixed' && (
-                      <div style={{ background: 'rgba(255, 255, 255, 0.03)', padding: '8px 12px', borderRadius: '8px', fontSize: '0.82rem' }}>
-                        <div style={{ color: 'var(--text-muted)', marginBottom: '2px' }}>내장 렌즈:</div>
-                        <div style={{ fontWeight: '600', color: 'var(--accent-amber-light)' }}>
-                          {cam.fixed_lens_name || `${cam.fixed_focal_length}mm f/${cam.fixed_max_aperture}`}
-                        </div>
+                    {/* Notion Database Property Rows */}
+                    <div className="notion-prop-table">
+                      <div className="notion-prop-row">
+                        <span className="notion-prop-key">📐 판형 규격</span>
+                        <span className="notion-prop-val">
+                          <strong>{CAMERA_FORMAT_CONFIG[cam.format] || cam.format}</strong>
+                        </span>
                       </div>
-                    )}
+
+                      <div className="notion-prop-row">
+                        <span className="notion-prop-key">🔍 렌즈 체계</span>
+                        <span className="notion-prop-val">
+                          {cam.lens_type === 'fixed' ? '렌즈 일체형 바디' : '교환식 렌즈 마운트'}
+                        </span>
+                      </div>
+
+                      {cam.lens_type === 'fixed' && (
+                        <div className="notion-prop-row">
+                          <span className="notion-prop-key">📸 내장 렌즈</span>
+                          <span className="notion-prop-val" style={{ color: 'var(--accent-amber-light)' }}>
+                            {cam.fixed_lens_name || `${cam.fixed_focal_length}mm f/${cam.fixed_max_aperture}`}
+                          </span>
+                        </div>
+                      )}
+
+                      <div className="notion-prop-row">
+                        <span className="notion-prop-key">🔧 기기 상태</span>
+                        <span className="notion-prop-val">
+                          <span className="notion-tag" style={{ background: statusCfg.bg, color: statusCfg.color }}>
+                            {statusCfg.label}
+                          </span>
+                        </span>
+                      </div>
+                    </div>
 
                     {/* 2-2. 수리 필요/수리중 경고 배너 */}
                     {isUnavailable && (
-                      <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '6px', padding: '8px 10px', fontSize: '0.78rem', color: '#fca5a5', display: 'flex', gap: '6px', alignItems: 'center' }}>
-                        <AlertCircle size={15} style={{ flexShrink: 0 }} />
-                        <span><strong>사용 불가:</strong> 현재 수리/고장 상태이므로 촬영 등록 시 카메라 목록에 노출되지 않습니다.</span>
+                      <div className="notion-callout danger">
+                        <AlertCircle size={15} style={{ flexShrink: 0, marginTop: '2px' }} />
+                        <span><strong>촬영 불가:</strong> 현재 수리/고장 상태이므로 촬영 등록 시 카메라 선택 목록에서 제외됩니다.</span>
                       </div>
                     )}
 
                     {cam.notes && (
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.02)', padding: '6px 10px', borderRadius: '6px' }}>
-                        {cam.notes}
+                      <div className="notion-callout">
+                        <span>📝 {cam.notes}</span>
                       </div>
                     )}
 
@@ -534,11 +561,10 @@ export default function GearView({
                       <div className="card-title-group">
                         <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
                           <span
-                            className="badge-tag"
+                            className="notion-tag"
                             style={{
-                              background: isPrime ? 'rgba(56, 189, 248, 0.15)' : 'rgba(245, 158, 11, 0.15)',
-                              color: isPrime ? '#38bdf8' : '#fbbf24',
-                              borderColor: isPrime ? '#0284c7' : '#d97706',
+                              background: isPrime ? 'rgba(56, 189, 248, 0.12)' : 'rgba(245, 158, 11, 0.12)',
+                              color: isPrime ? '#0284c7' : '#d97706',
                             }}
                           >
                             {isPrime ? '단렌즈 (Prime)' : '줌렌즈 (Zoom)'}
@@ -549,14 +575,14 @@ export default function GearView({
                           </span>
 
                           <span
-                            className="badge-tag"
-                            style={{ background: statusCfg.bg, color: statusCfg.color, borderColor: statusCfg.color }}
+                            className="notion-tag"
+                            style={{ background: statusCfg.bg, color: statusCfg.color }}
                           >
                             {statusCfg.label}
                           </span>
                         </div>
 
-                        <h3 className="card-title" style={{ marginTop: '6px' }}>
+                        <h3 className="card-title" style={{ marginTop: '4px' }}>
                           {lens.name}
                         </h3>
 
@@ -572,31 +598,55 @@ export default function GearView({
                       </div>
                     </div>
 
-                    {/* Lens Specs Pill Highlights (2-1. 판형별, 초점거리별, 줌/단렌즈별, f값) */}
-                    <div className="specs-pills">
-                      <span className="spec-pill">
-                        초점거리:{' '}
-                        <strong>
-                          {isPrime
-                            ? `${lens.focal_length_min}mm`
-                            : `${lens.focal_length_min}-${lens.focal_length_max}mm`}
-                        </strong>
-                      </span>
+                    {/* Notion Database Property Rows */}
+                    <div className="notion-prop-table">
+                      <div className="notion-prop-row">
+                        <span className="notion-prop-key">📏 초점거리</span>
+                        <span className="notion-prop-val">
+                          <strong style={{ fontFamily: 'var(--font-mono)' }}>
+                            {isPrime
+                              ? `${lens.focal_length_min}mm`
+                              : `${lens.focal_length_min}–${lens.focal_length_max}mm`}
+                          </strong>
+                        </span>
+                      </div>
 
-                      <span className="spec-pill" style={{ color: 'var(--accent-amber-light)' }}>
-                        최대 개방: <strong>f/{lens.max_aperture}</strong>
-                      </span>
+                      <div className="notion-prop-row">
+                        <span className="notion-prop-key">✨ 최대 조리개</span>
+                        <span className="notion-prop-val">
+                          <strong style={{ color: 'var(--accent-amber-light)', fontFamily: 'var(--font-mono)' }}>
+                            f/{lens.max_aperture}
+                          </strong>
+                        </span>
+                      </div>
+
+                      <div className="notion-prop-row">
+                        <span className="notion-prop-key">🔩 체결 마운트</span>
+                        <span className="notion-prop-val">
+                          {lens.mount || '범용 / 기타'}
+                        </span>
+                      </div>
+
+                      <div className="notion-prop-row">
+                        <span className="notion-prop-key">📐 지원 판형</span>
+                        <span className="notion-prop-val">
+                          {lens.format_compatibility}
+                        </span>
+                      </div>
 
                       {lens.serial_number && (
-                        <span className="spec-pill">
-                          S/N: <code>{lens.serial_number}</code>
-                        </span>
+                        <div className="notion-prop-row">
+                          <span className="notion-prop-key">🔢 시리얼 번호</span>
+                          <span className="notion-prop-val" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.76rem' }}>
+                            {lens.serial_number}
+                          </span>
+                        </div>
                       )}
                     </div>
 
                     {lens.notes && (
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.02)', padding: '6px 10px', borderRadius: '6px' }}>
-                        {lens.notes}
+                      <div className="notion-callout">
+                        <span>📝 {lens.notes}</span>
                       </div>
                     )}
 
@@ -611,7 +661,7 @@ export default function GearView({
                         <button
                           className="btn btn-danger btn-sm"
                           onClick={() => {
-                            if (confirm(`'${lens.name}' 렌즈를 삭제하시겠습니까?`)) {
+                            if (confirm(`'${lens.brand} ${lens.name}' 렌즈를 삭제하시겠습니까?`)) {
                               onDeleteLens(lens.id);
                             }
                           }}

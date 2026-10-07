@@ -1,136 +1,165 @@
-/* FilmOpener - Premium Analog Photography Workflow System */
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Outfit:wght@400;500;600;700;800&family=Pretendard:wght@400;500;600;700&display=swap');
+/* FilmOpener - Notion Systematic Tagging + Apple Refined Whitespace & Minimal UI Hybrid */
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@400;500;600;700&family=Pretendard:wght@400;500;600;700&display=swap');
 
 /* ==========================================================================
-   THEME DESIGN TOKENS (LIGHT & DARK MODES)
+   DESIGN TOKENS - APPLE MINIMAL PALETTE & NOTION TAG PALETTES
    ========================================================================== */
 :root {
-  --font-sans: 'Pretendard', 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", 'Pretendard', 'Outfit', sans-serif;
+  --font-mono: 'JetBrains Mono', SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
-  /* Default Dark Mode Theme */
-  --bg-darker: #0a0c0f;
-  --bg-main: #0f1217;
-  --bg-card: #151921;
-  --bg-card-hover: #1b202a;
-  --bg-card-subtle: #11151c;
-  --bg-input: #181d26;
+  /* Default Dark Mode (Apple Pro Space / OLED aesthetic) */
+  --bg-main: #090a0d;
+  --bg-card: #14161b;
+  --bg-card-hover: #1a1d24;
+  --bg-card-subtle: #0f1115;
+  --bg-subtle: #191c23;
+  --bg-input: #111317;
+  --bg-header: rgba(9, 10, 13, 0.82);
+  --bg-segmented: rgba(255, 255, 255, 0.07);
+  --bg-segmented-active: #20242e;
 
-  --border-subtle: rgba(255, 255, 255, 0.08);
-  --border-normal: rgba(255, 255, 255, 0.15);
-  --border-active: rgba(245, 158, 11, 0.6);
+  --border-subtle: rgba(255, 255, 255, 0.07);
+  --border-normal: rgba(255, 255, 255, 0.13);
+  --border-active: rgba(245, 158, 11, 0.7);
 
   --accent-amber: #f59e0b;
   --accent-amber-light: #fbbf24;
   --accent-amber-glow: rgba(245, 158, 11, 0.15);
-  
-  --accent-red: #ef4444;
-  --accent-cyan: #06b6d4;
-  --accent-emerald: #10b981;
-  --accent-purple: #a855f7;
+  --accent-blue: #0a84ff;
+  --accent-emerald: #30d158;
+  --accent-red: #ff453a;
+  --accent-purple: #bf5af2;
 
-  --text-main: #f8fafc;
-  --text-muted: #94a3b8;
-  --text-dim: #64748b;
+  --text-main: #f5f5f7;
+  --text-muted: #86868b;
+  --text-dim: #636366;
   --text-highlight: #fbbf24;
 
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.25);
   --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.35);
   --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.5);
-  --modal-backdrop: rgba(0, 0, 0, 0.75);
+  --shadow-segmented: 0 2px 6px rgba(0, 0, 0, 0.3);
+  --modal-backdrop: rgba(0, 0, 0, 0.72);
 
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 16px;
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 22px;
   --radius-full: 9999px;
 
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-/* Automatic System Light Mode (When user's OS is Light Mode, unless manually overridden) */
+/* Automatic System Light Mode (Apple Clean Minimalist Studio aesthetic) */
 @media (prefers-color-scheme: light) {
   :root:not([data-theme="dark"]) {
-    --bg-darker: #e5e8ec;
-    --bg-main: #f1f4f8;
+    --bg-main: #f5f5f7;
     --bg-card: #ffffff;
-    --bg-card-hover: #f8fafc;
-    --bg-card-subtle: #eaedf2;
+    --bg-card-hover: #fafafa;
+    --bg-card-subtle: #ececf0;
+    --bg-subtle: #f2f2f6;
     --bg-input: #ffffff;
+    --bg-header: rgba(245, 245, 247, 0.85);
+    --bg-segmented: rgba(0, 0, 0, 0.06);
+    --bg-segmented-active: #ffffff;
 
-    --border-subtle: rgba(0, 0, 0, 0.08);
-    --border-normal: rgba(0, 0, 0, 0.16);
+    --border-subtle: rgba(0, 0, 0, 0.06);
+    --border-normal: rgba(0, 0, 0, 0.12);
     --border-active: rgba(217, 119, 6, 0.7);
 
     --accent-amber: #d97706;
     --accent-amber-light: #b45309;
-    --accent-amber-glow: rgba(245, 158, 11, 0.15);
+    --accent-amber-glow: rgba(245, 158, 11, 0.12);
+    --accent-blue: #0071e3;
+    --accent-emerald: #34c759;
+    --accent-red: #ff3b30;
+    --accent-purple: #af52de;
 
-    --text-main: #0f172a;
-    --text-muted: #475569;
-    --text-dim: #64748b;
+    --text-main: #1d1d1f;
+    --text-muted: #6e6e73;
+    --text-dim: #86868b;
     --text-highlight: #b45309;
 
-    --shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.06);
-    --shadow-md: 0 6px 18px rgba(0, 0, 0, 0.08);
-    --shadow-lg: 0 14px 34px rgba(0, 0, 0, 0.12);
-    --modal-backdrop: rgba(15, 23, 42, 0.55);
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04), 0 2px 8px rgba(0, 0, 0, 0.02);
+    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.03);
+    --shadow-lg: 0 14px 34px rgba(0, 0, 0, 0.1);
+    --shadow-segmented: 0 2px 6px rgba(0, 0, 0, 0.08);
+    --modal-backdrop: rgba(0, 0, 0, 0.45);
   }
 }
 
-/* Explicit Light Mode Override via data-theme="light" */
+/* Explicit Light Mode Override */
 [data-theme="light"] {
-  --bg-darker: #e5e8ec;
-  --bg-main: #f1f4f8;
+  --bg-main: #f5f5f7;
   --bg-card: #ffffff;
-  --bg-card-hover: #f8fafc;
-  --bg-card-subtle: #eaedf2;
+  --bg-card-hover: #fafafa;
+  --bg-card-subtle: #ececf0;
+  --bg-subtle: #f2f2f6;
   --bg-input: #ffffff;
+  --bg-header: rgba(245, 245, 247, 0.85);
+  --bg-segmented: rgba(0, 0, 0, 0.06);
+  --bg-segmented-active: #ffffff;
 
-  --border-subtle: rgba(0, 0, 0, 0.08);
-  --border-normal: rgba(0, 0, 0, 0.16);
+  --border-subtle: rgba(0, 0, 0, 0.06);
+  --border-normal: rgba(0, 0, 0, 0.12);
   --border-active: rgba(217, 119, 6, 0.7);
 
   --accent-amber: #d97706;
   --accent-amber-light: #b45309;
-  --accent-amber-glow: rgba(245, 158, 11, 0.15);
+  --accent-amber-glow: rgba(245, 158, 11, 0.12);
+  --accent-blue: #0071e3;
+  --accent-emerald: #34c759;
+  --accent-red: #ff3b30;
+  --accent-purple: #af52de;
 
-  --text-main: #0f172a;
-  --text-muted: #475569;
-  --text-dim: #64748b;
+  --text-main: #1d1d1f;
+  --text-muted: #6e6e73;
+  --text-dim: #86868b;
   --text-highlight: #b45309;
 
-  --shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.06);
-  --shadow-md: 0 6px 18px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 14px 34px rgba(0, 0, 0, 0.12);
-  --modal-backdrop: rgba(15, 23, 42, 0.55);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04), 0 2px 8px rgba(0, 0, 0, 0.02);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.03);
+  --shadow-lg: 0 14px 34px rgba(0, 0, 0, 0.1);
+  --shadow-segmented: 0 2px 6px rgba(0, 0, 0, 0.08);
+  --modal-backdrop: rgba(0, 0, 0, 0.45);
 }
 
-/* Explicit Dark Mode Override via data-theme="dark" */
+/* Explicit Dark Mode Override */
 [data-theme="dark"] {
-  --bg-darker: #0a0c0f;
-  --bg-main: #0f1217;
-  --bg-card: #151921;
-  --bg-card-hover: #1b202a;
-  --bg-card-subtle: #11151c;
-  --bg-input: #181d26;
+  --bg-main: #090a0d;
+  --bg-card: #14161b;
+  --bg-card-hover: #1a1d24;
+  --bg-card-subtle: #0f1115;
+  --bg-subtle: #191c23;
+  --bg-input: #111317;
+  --bg-header: rgba(9, 10, 13, 0.82);
+  --bg-segmented: rgba(255, 255, 255, 0.07);
+  --bg-segmented-active: #20242e;
 
-  --border-subtle: rgba(255, 255, 255, 0.08);
-  --border-normal: rgba(255, 255, 255, 0.15);
-  --border-active: rgba(245, 158, 11, 0.6);
+  --border-subtle: rgba(255, 255, 255, 0.07);
+  --border-normal: rgba(255, 255, 255, 0.13);
+  --border-active: rgba(245, 158, 11, 0.7);
 
   --accent-amber: #f59e0b;
   --accent-amber-light: #fbbf24;
   --accent-amber-glow: rgba(245, 158, 11, 0.15);
+  --accent-blue: #0a84ff;
+  --accent-emerald: #30d158;
+  --accent-red: #ff453a;
+  --accent-purple: #bf5af2;
 
-  --text-main: #f8fafc;
-  --text-muted: #94a3b8;
-  --text-dim: #64748b;
+  --text-main: #f5f5f7;
+  --text-muted: #86868b;
+  --text-dim: #636366;
   --text-highlight: #fbbf24;
 
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.25);
   --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.35);
   --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.5);
-  --modal-backdrop: rgba(0, 0, 0, 0.75);
+  --shadow-segmented: 0 2px 6px rgba(0, 0, 0, 0.3);
+  --modal-backdrop: rgba(0, 0, 0, 0.72);
 }
 
 /* Hide Next.js dev overlay indicator button */
@@ -156,23 +185,27 @@ html, body {
   font-family: var(--font-sans);
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.012em;
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
-/* Scrollbar */
+/* Smooth Apple-style Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--bg-main);
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
   background: var(--border-normal);
   border-radius: var(--radius-full);
 }
 
-/* Layout Architecture */
+/* ==========================================================================
+   LAYOUT ARCHITECTURE (APPLE MAC APP INSPIRATION)
+   ========================================================================== */
 .app-container {
   display: flex;
   min-height: 100vh;
@@ -181,9 +214,9 @@ html, body {
   position: relative;
 }
 
-/* Sidebar Desktop */
+/* Apple Sidebar */
 .sidebar {
-  width: 260px;
+  width: 250px;
   background: var(--bg-card-subtle);
   border-right: 1px solid var(--border-subtle);
   display: flex;
@@ -192,10 +225,11 @@ html, body {
   top: 0;
   height: 100vh;
   z-index: 40;
+  user-select: none;
 }
 
 .sidebar-header {
-  padding: 22px 20px 16px;
+  padding: 24px 20px 18px;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -206,35 +240,35 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 42px;
-  height: 42px;
+  width: 38px;
+  height: 38px;
   background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
   border-radius: var(--radius-md);
   color: #000;
   font-weight: 800;
-  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);
 }
 
 .brand-text h1 {
-  font-size: 1.15rem;
+  font-size: 1.05rem;
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--text-main);
 }
 
 .brand-text p {
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   color: var(--text-muted);
   font-family: var(--font-mono);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
 }
 
 .sidebar-nav {
-  padding: 16px 12px;
+  padding: 16px 10px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
   flex: 1;
   overflow-y: auto;
 }
@@ -242,16 +276,16 @@ html, body {
 .nav-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 14px;
-  border-radius: var(--radius-md);
+  gap: 11px;
+  padding: 9px 12px;
+  border-radius: var(--radius-sm);
   color: var(--text-muted);
-  font-size: 0.92rem;
+  font-size: 0.88rem;
   font-weight: 500;
   background: transparent;
   border: none;
   cursor: pointer;
-  transition: all 0.18s ease;
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
   width: 100%;
   text-align: left;
 }
@@ -263,62 +297,65 @@ html, body {
 
 .nav-item.active {
   color: var(--text-main);
-  background: rgba(245, 158, 11, 0.12);
-  border: 1px solid rgba(245, 158, 11, 0.25);
+  background: var(--bg-card);
+  box-shadow: var(--shadow-sm);
   font-weight: 600;
 }
 
 .nav-item .badge {
   margin-left: auto;
-  font-size: 0.75rem;
-  padding: 2px 7px;
+  font-size: 0.72rem;
+  padding: 1px 7px;
   border-radius: var(--radius-full);
-  background: var(--border-subtle);
+  background: var(--bg-subtle);
   color: var(--text-muted);
   font-family: var(--font-mono);
+  font-weight: 600;
 }
 
 .nav-item.active .badge {
-  background: rgba(245, 158, 11, 0.25);
+  background: rgba(245, 158, 11, 0.18);
   color: var(--accent-amber);
 }
 
 .sidebar-footer {
-  padding: 16px;
+  padding: 14px 16px;
   border-top: 1px solid var(--border-subtle);
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-/* Main Content Area */
+/* Main Content Wrapper */
 .main-wrapper {
   flex: 1;
   display: flex;
   flex-direction: column;
   min-width: 0;
-  padding-bottom: calc(72px + var(--safe-bottom)); /* Mobile nav space */
+  padding-bottom: calc(72px + var(--safe-bottom));
 }
 
 @media (min-width: 1024px) {
   .main-wrapper {
-    padding-bottom: 32px;
+    padding-bottom: 48px;
   }
 }
 
-/* Header Bar */
+/* Translucent Apple Top Header */
 .top-header {
   position: sticky;
   top: 0;
   z-index: 30;
-  background: var(--bg-main);
+  background: var(--bg-header);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
   border-bottom: 1px solid var(--border-subtle);
-  padding: 14px 20px;
+  padding: 14px 28px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  transition: background-color 0.2s ease;
+  transition: background-color 0.25s ease;
 }
 
 .header-left {
@@ -328,16 +365,16 @@ html, body {
 }
 
 .page-title {
-  font-size: 1.25rem;
+  font-size: 1.15rem;
   font-weight: 700;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
   color: var(--text-main);
 }
 
 .header-right {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
 /* Theme Toggle Control */
@@ -347,50 +384,157 @@ html, body {
   gap: 6px;
   padding: 6px 12px;
   background: var(--bg-card);
-  border: 1px solid var(--border-normal);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-full);
   color: var(--text-muted);
-  font-size: 0.8rem;
-  font-weight: 600;
+  font-size: 0.78rem;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.15s ease;
+  box-shadow: var(--shadow-sm);
 }
 
 .theme-toggle-btn:hover {
   color: var(--text-main);
-  border-color: var(--accent-amber);
+  border-color: var(--border-normal);
 }
 
-/* Content Container */
+/* Content Container with Apple Generous Whitespace */
 .content-body {
-  padding: 20px;
-  max-width: 1400px;
+  padding: 24px 20px;
+  max-width: 1440px;
   width: 100%;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 24px;
 }
 
 @media (min-width: 768px) {
   .content-body {
-    padding: 28px;
+    padding: 32px 36px;
+    gap: 28px;
   }
 }
 
-/* Buttons */
+/* ==========================================================================
+   APPLE SEGMENTED CONTROLS & NOTION CATEGORY STRIPS
+   ========================================================================== */
+.segmented-control {
+  display: inline-flex;
+  align-items: center;
+  background: var(--bg-segmented);
+  padding: 3px;
+  border-radius: var(--radius-md);
+  gap: 2px;
+  border: 1px solid var(--border-subtle);
+  overflow-x: auto;
+  max-width: 100%;
+  scrollbar-width: none;
+}
+
+.segmented-control::-webkit-scrollbar {
+  display: none;
+}
+
+.segmented-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.segmented-item:hover {
+  color: var(--text-main);
+}
+
+.segmented-item.active {
+  background: var(--bg-segmented-active);
+  color: var(--text-main);
+  font-weight: 600;
+  box-shadow: var(--shadow-segmented);
+}
+
+.segmented-badge {
+  font-size: 0.72rem;
+  padding: 1px 6px;
+  border-radius: var(--radius-full);
+  background: rgba(125, 125, 125, 0.12);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+.segmented-item.active .segmented-badge {
+  background: rgba(245, 158, 11, 0.18);
+  color: var(--accent-amber);
+}
+
+/* Notion Filter Bar Strip */
+.notion-filter-strip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+}
+
+.notion-filter-strip::-webkit-scrollbar {
+  display: none;
+}
+
+.notion-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  font-weight: 500;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.notion-filter-chip:hover {
+  color: var(--text-main);
+  border-color: var(--border-normal);
+}
+
+.notion-filter-chip.active {
+  background: var(--bg-subtle);
+  border-color: var(--border-normal);
+  color: var(--text-main);
+  font-weight: 600;
+}
+
+/* ==========================================================================
+   BUTTONS (APPLE MINIMAL & PURPOSEFUL)
+   ========================================================================== */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 9px 16px;
-  font-size: 0.88rem;
+  gap: 7px;
+  padding: 8px 16px;
+  font-size: 0.85rem;
   font-weight: 600;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   border: 1px solid transparent;
   cursor: pointer;
-  transition: all 0.18s ease;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
   font-family: inherit;
   white-space: nowrap;
 }
@@ -398,24 +542,25 @@ html, body {
 .btn-primary {
   background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
   color: #000000;
-  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.25);
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.2);
 }
 
 .btn-primary:hover {
   background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-  box-shadow: 0 6px 18px rgba(245, 158, 11, 0.35);
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.3);
   transform: translateY(-1px);
 }
 
 .btn-secondary {
   background: var(--bg-card);
   color: var(--text-main);
-  border-color: var(--border-normal);
+  border-color: var(--border-subtle);
+  box-shadow: var(--shadow-sm);
 }
 
 .btn-secondary:hover {
   background: var(--bg-card-hover);
-  border-color: var(--accent-amber);
+  border-color: var(--border-normal);
 }
 
 .btn-subtle {
@@ -429,34 +574,36 @@ html, body {
 }
 
 .btn-danger {
-  background: rgba(239, 68, 68, 0.12);
+  background: rgba(239, 68, 68, 0.1);
   color: #ef4444;
-  border-color: rgba(239, 68, 68, 0.3);
+  border-color: rgba(239, 68, 68, 0.2);
 }
 
 .btn-danger:hover {
-  background: rgba(239, 68, 68, 0.2);
+  background: rgba(239, 68, 68, 0.18);
   color: #dc2626;
 }
 
 .btn-sm {
-  padding: 6px 11px;
-  font-size: 0.8rem;
-  border-radius: var(--radius-sm);
+  padding: 5px 11px;
+  font-size: 0.78rem;
+  border-radius: var(--radius-xs);
 }
 
 .btn-icon {
-  width: 36px;
-  height: 36px;
+  width: 34px;
+  height: 34px;
   padding: 0;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
 }
 
-/* Stats Row */
+/* ==========================================================================
+   STAT CARDS (APPLE CLEAN CARDS)
+   ========================================================================== */
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
+  gap: 14px;
 }
 
 @media (min-width: 640px) {
@@ -468,39 +615,36 @@ html, body {
 .stat-card {
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  padding: 16px;
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
   display: flex;
   flex-direction: column;
   gap: 6px;
   position: relative;
-  overflow: hidden;
   box-shadow: var(--shadow-sm);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.stat-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: var(--stat-accent, var(--border-subtle));
+.stat-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
 }
 
 .stat-label {
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   color: var(--text-muted);
   display: flex;
   align-items: center;
   gap: 6px;
+  font-weight: 500;
 }
 
 .stat-value {
-  font-size: 1.5rem;
+  font-size: 1.55rem;
   font-weight: 700;
   color: var(--text-main);
   font-family: var(--font-mono);
+  letter-spacing: -0.02em;
 }
 
 .stat-desc {
@@ -508,12 +652,14 @@ html, body {
   color: var(--text-dim);
 }
 
-/* Filter & Controls Bar */
+/* ==========================================================================
+   TOOLBAR & FILTER BAR (APPLE AIRY CONTAINER)
+   ========================================================================== */
 .filter-toolbar {
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  padding: 14px 16px;
+  border-radius: var(--radius-lg);
+  padding: 12px 18px;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -527,11 +673,16 @@ html, body {
   align-items: center;
   gap: 8px;
   background: var(--bg-input);
-  border: 1px solid var(--border-normal);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
   padding: 7px 12px;
   flex: 1;
   min-width: 220px;
+  transition: border-color 0.15s ease;
+}
+
+.search-box:focus-within {
+  border-color: var(--accent-amber);
 }
 
 .search-box input {
@@ -539,7 +690,7 @@ html, body {
   border: none;
   outline: none;
   color: var(--text-main);
-  font-size: 0.88rem;
+  font-size: 0.85rem;
   width: 100%;
 }
 
@@ -556,51 +707,54 @@ html, body {
 
 .select-custom {
   background: var(--bg-input);
-  border: 1px solid var(--border-normal);
+  border: 1px solid var(--border-subtle);
   color: var(--text-main);
   padding: 7px 12px;
   border-radius: var(--radius-sm);
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   cursor: pointer;
   outline: none;
+  transition: border-color 0.15s ease;
 }
 
 .select-custom:focus {
   border-color: var(--accent-amber);
 }
 
-/* Card Grid */
+/* ==========================================================================
+   CARDS GRID & APPLE SQUIRCLE ITEM CARDS
+   ========================================================================== */
 .cards-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 14px;
+  gap: 18px;
 }
 
 @media (min-width: 640px) {
   .cards-grid {
     grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
   }
 }
 
 @media (min-width: 1100px) {
   .cards-grid {
     grid-template-columns: repeat(3, 1fr);
+    gap: 22px;
   }
 }
 
-/* Item Card */
 .item-card {
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
-  padding: 18px;
+  padding: 20px;
   display: flex;
   flex-direction: column;
   gap: 14px;
-  transition: all 0.2s ease;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
   position: relative;
   box-shadow: var(--shadow-sm);
-  overflow: hidden;
 }
 
 .item-card:hover {
@@ -608,16 +762,6 @@ html, body {
   border-color: var(--border-normal);
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
-}
-
-/* Brand Card Top Stripe */
-.brand-stripe {
-  height: 4px;
-  width: 100%;
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
 }
 
 .card-top {
@@ -634,30 +778,29 @@ html, body {
 }
 
 .card-title {
-  font-size: 1.05rem;
+  font-size: 1.08rem;
   font-weight: 700;
   color: var(--text-main);
   line-height: 1.3;
+  letter-spacing: -0.015em;
 }
 
 .card-subtitle {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   color: var(--text-muted);
   display: flex;
   align-items: center;
   gap: 6px;
 }
 
-/* Brand Logo Badge */
-.brand-logo-pill {
-  display: inline-flex;
+/* Brand Top Header Pill in Film Card */
+.brand-top-pill {
+  display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 3px 8px;
-  border-radius: var(--radius-full);
-  font-size: 0.74rem;
-  font-weight: 700;
-  border: 1px solid transparent;
+  justify-content: space-between;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  margin-bottom: 2px;
 }
 
 .brand-logo-img {
@@ -667,63 +810,108 @@ html, body {
   border-radius: 2px;
 }
 
-/* Rebranded Badge Banner */
-.rebranded-banner {
-  background: rgba(245, 158, 11, 0.12);
-  border: 1px solid rgba(245, 158, 11, 0.3);
-  border-radius: var(--radius-sm);
-  padding: 8px 10px;
-  font-size: 0.78rem;
-  color: var(--text-main);
+/* ==========================================================================
+   NOTION DATABASE PROPERTIES LIST (.notion-prop-table)
+   ========================================================================== */
+.notion-prop-table {
   display: flex;
-  align-items: flex-start;
+  flex-direction: column;
   gap: 6px;
-  line-height: 1.4;
+  padding: 12px 14px;
+  background: var(--bg-subtle);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
 }
 
-/* Badges */
+.notion-prop-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 0.79rem;
+  min-height: 22px;
+}
+
+.notion-prop-key {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-muted);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.notion-prop-val {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text-main);
+  font-weight: 500;
+  text-align: right;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+/* Notion Pastel Tag Pills */
+.notion-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: var(--radius-xs);
+  font-size: 0.74rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+  line-height: 1.3;
+}
+
+/* Notion Callout Box (For Rebranding/OEM, repair warnings, stand notes) */
+.notion-callout {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--text-main);
+}
+
+.notion-callout.warning {
+  background: rgba(245, 158, 11, 0.08);
+  border-color: rgba(245, 158, 11, 0.25);
+}
+
+.notion-callout.danger {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.25);
+}
+
+.notion-callout.info {
+  background: rgba(59, 130, 246, 0.08);
+  border-color: rgba(59, 130, 246, 0.25);
+}
+
+/* Legacy badges backward compatibility */
 .badge-tag {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 3px 8px;
-  border-radius: var(--radius-full);
-  font-size: 0.75rem;
+  padding: 2px 7px;
+  border-radius: var(--radius-xs);
+  font-size: 0.74rem;
   font-weight: 600;
   border: 1px solid transparent;
   white-space: nowrap;
 }
 
-.badge-tag.expired {
-  background: rgba(239, 68, 68, 0.14);
-  color: #ef4444;
-  border-color: rgba(239, 68, 68, 0.35);
-}
-
-.badge-tag.bulk {
-  background: rgba(16, 185, 129, 0.14);
-  color: #10b981;
-  border-color: rgba(16, 185, 129, 0.35);
-}
-
-.badge-tag.rebranded {
-  background: rgba(245, 158, 11, 0.14);
-  color: #f59e0b;
-  border-color: rgba(245, 158, 11, 0.4);
-}
-
-/* Spec Pill List */
-.specs-pills {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
 .spec-pill {
-  font-size: 0.75rem;
-  padding: 3px 8px;
-  border-radius: var(--radius-sm);
-  background: var(--bg-card-subtle);
+  font-size: 0.74rem;
+  padding: 2px 7px;
+  border-radius: var(--radius-xs);
+  background: var(--bg-card);
   color: var(--text-muted);
   border: 1px solid var(--border-subtle);
   display: inline-flex;
@@ -736,46 +924,46 @@ html, body {
   font-family: var(--font-mono);
 }
 
-/* Card Actions */
+/* Card Bottom Actions */
 .card-bottom {
   margin-top: auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
   border-top: 1px solid var(--border-subtle);
-  padding-top: 12px;
+  padding-top: 14px;
   gap: 8px;
 }
 
 /* ==========================================================================
-   MODAL DIALOG - PROTECTED BACKDROP (DOES NOT CLOSE ON OUTSIDE CLICK)
+   MODAL DIALOG (APPLE CLEAN SHEET / SQUIRCLE DIALOG)
    ========================================================================== */
 .modal-overlay {
   position: fixed;
   inset: 0;
   background: var(--modal-backdrop);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 100;
   padding: 16px;
   animation: fadeIn 0.18s ease;
-  cursor: default; /* Not a close trigger */
+  cursor: default;
 }
 
 .modal-dialog {
   background: var(--bg-card);
   border: 1px solid var(--border-normal);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
   width: 100%;
   max-width: 640px;
   max-height: 90vh;
   display: flex;
   flex-direction: column;
   box-shadow: var(--shadow-lg);
-  animation: slideUp 0.2s ease;
+  animation: slideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1);
   overflow: hidden;
   position: relative;
 }
@@ -792,6 +980,7 @@ html, body {
 .modal-header h2 {
   font-size: 1.15rem;
   font-weight: 700;
+  letter-spacing: -0.015em;
   color: var(--text-main);
 }
 
@@ -821,7 +1010,7 @@ html, body {
 }
 
 .form-label {
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   font-weight: 600;
   color: var(--text-muted);
 }
@@ -829,19 +1018,19 @@ html, body {
 .form-input, .form-select, .form-textarea {
   background: var(--bg-input);
   border: 1px solid var(--border-normal);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   padding: 9px 13px;
   color: var(--text-main);
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   font-family: inherit;
   outline: none;
-  transition: border-color 0.15s ease;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
   width: 100%;
 }
 
 .form-input:focus, .form-select:focus, .form-textarea:focus {
   border-color: var(--accent-amber);
-  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+  box-shadow: 0 0 0 3px var(--accent-amber-glow);
 }
 
 .form-row {
@@ -872,20 +1061,22 @@ html, body {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 0.88rem;
+  font-size: 0.85rem;
   cursor: pointer;
   user-select: none;
   color: var(--text-main);
 }
 
 .form-checkbox {
-  width: 18px;
-  height: 18px;
+  width: 17px;
+  height: 17px;
   accent-color: var(--accent-amber);
   cursor: pointer;
 }
 
-/* Mobile Bottom Navigation */
+/* ==========================================================================
+   MOBILE BOTTOM NAVIGATION (APPLE TAB BAR)
+   ========================================================================== */
 .mobile-nav {
   display: flex;
   position: fixed;
@@ -894,7 +1085,9 @@ html, body {
   right: 0;
   height: calc(64px + var(--safe-bottom));
   padding-bottom: var(--safe-bottom);
-  background: var(--bg-main);
+  background: var(--bg-header);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
   border-top: 1px solid var(--border-subtle);
   z-index: 50;
   justify-content: space-around;
@@ -921,7 +1114,7 @@ html, body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 3px;
   background: transparent;
   border: none;
   color: var(--text-dim);
@@ -936,7 +1129,7 @@ html, body {
 
 .mobile-nav-btn.active {
   color: var(--accent-amber);
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .mobile-nav-btn.active svg {
@@ -950,7 +1143,7 @@ html, body {
 }
 
 @keyframes slideUp {
-  from { transform: translateY(10px); opacity: 0; }
+  from { transform: translateY(12px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
 }
 
@@ -960,19 +1153,19 @@ html, body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 60px 20px;
+  padding: 64px 24px;
   text-align: center;
   border: 1px dashed var(--border-normal);
-  border-radius: var(--radius-lg);
-  background: var(--bg-card-subtle);
+  border-radius: var(--radius-xl);
+  background: var(--bg-card);
   gap: 12px;
 }
 
 .empty-icon {
-  width: 56px;
-  height: 56px;
+  width: 52px;
+  height: 52px;
   border-radius: 50%;
-  background: var(--border-subtle);
+  background: var(--bg-subtle);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -981,15 +1174,15 @@ html, body {
 }
 
 .empty-state h3 {
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   font-weight: 600;
   color: var(--text-main);
 }
 
 .empty-state p {
-  font-size: 0.88rem;
+  font-size: 0.85rem;
   color: var(--text-muted);
-  max-width: 380px;
+  max-width: 360px;
 }
 
 /* Roll Status Pills */
@@ -997,32 +1190,32 @@ html, body {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 3px 8px;
-  border-radius: var(--radius-full);
-  font-size: 0.75rem;
+  padding: 2px 7px;
+  border-radius: var(--radius-xs);
+  font-size: 0.74rem;
   font-weight: 600;
 }
 
 .status-pill.loaded {
-  background: rgba(59, 130, 246, 0.15);
+  background: rgba(59, 130, 246, 0.12);
   color: #3b82f6;
-  border: 1px solid rgba(59, 130, 246, 0.3);
+  border: 1px solid rgba(59, 130, 246, 0.25);
 }
 
 .status-pill.unloaded {
-  background: rgba(245, 158, 11, 0.15);
+  background: rgba(245, 158, 11, 0.12);
   color: #d97706;
-  border: 1px solid rgba(245, 158, 11, 0.3);
+  border: 1px solid rgba(245, 158, 11, 0.25);
 }
 
 .status-pill.developed {
-  background: rgba(168, 85, 247, 0.15);
+  background: rgba(168, 85, 247, 0.12);
   color: #a855f7;
-  border: 1px solid rgba(168, 85, 247, 0.3);
+  border: 1px solid rgba(168, 85, 247, 0.25);
 }
 
 .status-pill.scanned {
-  background: rgba(16, 185, 129, 0.15);
+  background: rgba(16, 185, 129, 0.12);
   color: #10b981;
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  border: 1px solid rgba(16, 185, 129, 0.25);
 }

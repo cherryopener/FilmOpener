@@ -191,6 +191,42 @@ export default function ScanVaultView({
         </span>
       </div>
 
+      {/* Apple-style Segmented Scan Method Navigation */}
+      <div style={{ display: 'flex', overflowX: 'auto', paddingBottom: '2px' }}>
+        <div className="segmented-control">
+          <button
+            className={`segmented-item ${methodFilter === 'all' ? 'active' : ''}`}
+            onClick={() => setMethodFilter('all')}
+          >
+            전체 아카이브 <span className="segmented-badge">{scans.length}</span>
+          </button>
+          <button
+            className={`segmented-item ${methodFilter === 'dslr' ? 'active' : ''}`}
+            onClick={() => setMethodFilter('dslr')}
+          >
+            DSLR 캡처 <span className="segmented-badge">{scans.filter((s) => s.scan_method === 'dslr').length}</span>
+          </button>
+          <button
+            className={`segmented-item ${methodFilter === 'flatbed' ? 'active' : ''}`}
+            onClick={() => setMethodFilter('flatbed')}
+          >
+            평판 스캐너 <span className="segmented-badge">{scans.filter((s) => s.scan_method === 'flatbed').length}</span>
+          </button>
+          <button
+            className={`segmented-item ${methodFilter === 'dedicated' ? 'active' : ''}`}
+            onClick={() => setMethodFilter('dedicated')}
+          >
+            전용 필름 스캐너 <span className="segmented-badge">{scans.filter((s) => s.scan_method === 'dedicated').length}</span>
+          </button>
+          <button
+            className={`segmented-item ${methodFilter === 'lab' ? 'active' : ''}`}
+            onClick={() => setMethodFilter('lab')}
+          >
+            현상소 스캔 <span className="segmented-badge">{scans.filter((s) => s.scan_method === 'lab').length}</span>
+          </button>
+        </div>
+      </div>
+
       {/* Filter & Action Toolbar */}
       <div className="filter-toolbar">
         <div className="search-box">
@@ -204,20 +240,6 @@ export default function ScanVaultView({
         </div>
 
         <div className="filter-group">
-          {/* 스캔 방식 필터 */}
-          <select
-            className="select-custom"
-            value={methodFilter}
-            onChange={(e) => setMethodFilter(e.target.value)}
-          >
-            <option value="all">모든 스캔 방식</option>
-            <option value="dslr">DSLR / 미러리스 디지타이징</option>
-            <option value="flatbed">평판 스캐너 (Epson 등)</option>
-            <option value="dedicated">전용 필름 스캐너</option>
-            <option value="lab">현상소 스캔</option>
-            <option value="other">기타</option>
-          </select>
-
           <button className="btn btn-primary" onClick={openAddModal}>
             <Plus size={16} /> 스캔 기록 추가
           </button>
@@ -244,24 +266,24 @@ export default function ScanVaultView({
                 <div className="card-top">
                   <div className="card-title-group">
                     <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
-                      <span className="badge-tag" style={{ background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', borderColor: '#0284c7' }}>
+                      <span className="notion-tag" style={{ background: 'rgba(56, 189, 248, 0.12)', color: '#0284c7' }}>
                         {methodCfg.icon} {methodCfg.label}
                       </span>
 
                       {scan.is_legacy_archive && (
-                        <span className="badge-tag" style={{ background: 'rgba(168, 85, 247, 0.15)', color: '#c084fc', borderColor: '#9333ea' }}>
-                          <Archive size={12} /> 과거 필름 아카이브
+                        <span className="notion-tag" style={{ background: 'rgba(168, 85, 247, 0.12)', color: '#a855f7' }}>
+                          <Archive size={12} /> 과거 아카이브
                         </span>
                       )}
                     </div>
 
-                    <h3 className="card-title" style={{ marginTop: '6px' }}>
+                    <h3 className="card-title" style={{ marginTop: '4px' }}>
                       {scan.film_title}
                     </h3>
 
                     {scan.camera_lens_info && (
                       <div className="card-subtitle">
-                        📷 {scan.camera_lens_info}
+                        <span>📷 {scan.camera_lens_info}</span>
                       </div>
                     )}
                   </div>
@@ -271,9 +293,10 @@ export default function ScanVaultView({
                     <div
                       style={{
                         fontFamily: 'var(--font-mono)',
-                        fontSize: '1.3rem',
+                        fontSize: '1.4rem',
                         fontWeight: '700',
                         color: 'var(--accent-amber-light)',
+                        lineHeight: 1,
                       }}
                     >
                       {scan.total_frames}
@@ -282,41 +305,52 @@ export default function ScanVaultView({
                   </div>
                 </div>
 
-                {/* 저장 폴더명 강조 배너 */}
-                <div style={{ background: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.25)', borderRadius: '8px', padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                {/* 저장 폴더명 강조 Notion Callout */}
+                <div className="notion-callout" style={{ background: 'rgba(245, 158, 11, 0.08)', borderColor: 'rgba(245, 158, 11, 0.25)', flexDirection: 'column', gap: '3px' }}>
                   <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <Folder size={12} color="#fbbf24" /> 저장 폴더명:
+                    <Folder size={13} color="var(--accent-amber)" /> 아카이브 폴더명:
                   </div>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontWeight: '600', color: 'var(--text-main)', fontSize: '0.9rem', wordBreak: 'break-all' }}>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontWeight: '600', color: 'var(--text-main)', fontSize: '0.88rem', wordBreak: 'break-all' }}>
                     📁 {scan.folder_name}
                   </div>
                   {scan.storage_path && (
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginTop: '2px' }}>
+                    <div style={{ fontSize: '0.74rem', color: 'var(--text-dim)', marginTop: '2px', wordBreak: 'break-all' }}>
                       경로: {scan.storage_path}
                     </div>
                   )}
                 </div>
 
-                {/* Specs */}
-                <div className="specs-pills">
+                {/* Notion Systematic Database Property Rows */}
+                <div className="notion-prop-table">
+                  <div className="notion-prop-row">
+                    <span className="notion-prop-key">📅 스캔 일시</span>
+                    <span className="notion-prop-val" style={{ fontFamily: 'var(--font-mono)' }}>
+                      {scan.scan_date}
+                    </span>
+                  </div>
+
                   {scan.scanner_model && (
-                    <span className="spec-pill">
-                      기기: <strong>{scan.scanner_model}</strong>
-                    </span>
+                    <div className="notion-prop-row">
+                      <span className="notion-prop-key">⚙️ 스캐너 기종</span>
+                      <span className="notion-prop-val">
+                        {scan.scanner_model}
+                      </span>
+                    </div>
                   )}
+
                   {scan.software_used && (
-                    <span className="spec-pill">
-                      소프트웨어: <strong>{scan.software_used}</strong>
-                    </span>
+                    <div className="notion-prop-row">
+                      <span className="notion-prop-key">💻 프로그램</span>
+                      <span className="notion-prop-val">
+                        {scan.software_used}
+                      </span>
+                    </div>
                   )}
-                  <span className="spec-pill">
-                    스캔일: <strong>{scan.scan_date}</strong>
-                  </span>
                 </div>
 
                 {scan.notes && (
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.02)', padding: '6px 10px', borderRadius: '6px' }}>
-                    {scan.notes}
+                  <div className="notion-callout">
+                    <span>📝 {scan.notes}</span>
                   </div>
                 )}
 

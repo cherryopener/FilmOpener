@@ -33,32 +33,32 @@ export default function DashboardOverview({
 
   return (
     <div className="content-body">
-      {/* Hero Welcome Card */}
+      {/* Hero Welcome Card - Apple Minimal Studio Aesthetic */}
       <div
         style={{
-          background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(15, 18, 23, 0.9) 100%)',
-          border: '1px solid rgba(245, 158, 11, 0.3)',
-          borderRadius: 'var(--radius-lg)',
-          padding: '24px 28px',
+          background: 'var(--bg-card)',
+          border: '1px solid var(--border-subtle)',
+          borderRadius: 'var(--radius-xl)',
+          padding: '28px 32px',
           display: 'flex',
           flexDirection: 'column',
-          gap: '12px',
+          gap: '14px',
           position: 'relative',
-          overflow: 'hidden',
+          boxShadow: 'var(--shadow-sm)',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-amber-light)', fontSize: '0.85rem', fontWeight: '600' }}>
-          <Sparkles size={16} /> 필름 워크플로우 통합 매니저
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-amber)', fontSize: '0.82rem', fontWeight: '600' }}>
+          <Sparkles size={15} /> 필름 워크플로우 통합 매니저
         </div>
-        <h2 style={{ fontSize: '1.6rem', fontWeight: '800', letterSpacing: '-0.02em', color: 'var(--text-main)' }}>
+        <h2 style={{ fontSize: '1.65rem', fontWeight: '800', letterSpacing: '-0.025em', color: 'var(--text-main)' }}>
           FilmOpener Studio
         </h2>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', maxWidth: '640px', lineHeight: '1.5' }}>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', maxWidth: '680px', lineHeight: '1.55' }}>
           보유 필름 및 껍데기 바뀐 필름 관리부터, 정상 작동 카메라 선별, 다중 출사일 날씨 기록, 로터리/수교반 세부 자가현상 약품 누적, 그리고 스캔 폴더 아카이브까지 모든 아날로그 여정을 한곳에서 관리합니다.
         </p>
 
         {/* Quick action buttons */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '6px' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '4px' }}>
           <button className="btn btn-primary btn-sm" onClick={() => onNavigate('shooting')}>
             <Plus size={14} /> 새 촬영 롤 장전
           </button>
@@ -105,21 +105,21 @@ export default function DashboardOverview({
       </div>
 
       {/* Main Two-Column Layout */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '22px' }}>
         {/* Left: Currently Loaded Rolls (카메라에 장전된 필름) */}
-        <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-lg)', padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+        <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-xl)', padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', boxShadow: 'var(--shadow-sm)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Film size={17} color="#3b82f6" />
+              <Film size={17} color="var(--accent-blue)" />
               <h3 style={{ fontSize: '1.05rem', fontWeight: '700' }}>현재 카메라에 장전된 롤</h3>
             </div>
-            <span className="badge-tag" style={{ background: 'rgba(59, 130, 246, 0.15)', color: '#60a5fa' }}>
+            <span className="notion-tag" style={{ background: 'rgba(59, 130, 246, 0.12)', color: 'var(--accent-blue)' }}>
               {loadedRolls.length}롤 장전 중
             </span>
           </div>
 
           {loadedRolls.length === 0 ? (
-            <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+            <div style={{ padding: '32px 20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
               현재 장전된 필름이 없습니다. 출사를 위해 새 필름을 장전해보세요!
             </div>
           ) : (
@@ -128,13 +128,13 @@ export default function DashboardOverview({
                 <div
                   key={roll.id}
                   style={{
-                    background: 'var(--bg-input)',
+                    background: 'var(--bg-subtle)',
                     border: '1px solid var(--border-subtle)',
-                    borderRadius: '8px',
-                    padding: '12px',
+                    borderRadius: 'var(--radius-md)',
+                    padding: '14px',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '6px',
+                    gap: '7px',
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -150,12 +150,12 @@ export default function DashboardOverview({
                     🎞️ {roll.film_name_snapshot}
                   </div>
 
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
                     📷 {roll.camera_name_snapshot} {roll.lens_name_snapshot ? `(${roll.lens_name_snapshot})` : ''}
                   </div>
 
                   {roll.shooting_sessions && roll.shooting_sessions.length > 0 && (
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginTop: '2px' }}>
+                    <div style={{ fontSize: '0.74rem', color: 'var(--text-dim)', marginTop: '2px' }}>
                       최근 출사: {roll.shooting_sessions[roll.shooting_sessions.length - 1].location} ({roll.shooting_sessions[roll.shooting_sessions.length - 1].date})
                     </div>
                   )}
@@ -174,13 +174,13 @@ export default function DashboardOverview({
         </div>
 
         {/* Right: Active Developer Chemistry (현상액 상태) */}
-        <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-lg)', padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+        <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-xl)', padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', boxShadow: 'var(--shadow-sm)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <FlaskConical size={17} color="#a855f7" />
+              <FlaskConical size={17} color="var(--accent-purple)" />
               <h3 style={{ fontSize: '1.05rem', fontWeight: '700' }}>현상액 수명 및 사용 현황</h3>
             </div>
-            <span className="badge-tag" style={{ background: 'rgba(168, 85, 247, 0.15)', color: '#c084fc' }}>
+            <span className="notion-tag" style={{ background: 'rgba(168, 85, 247, 0.12)', color: 'var(--accent-purple)' }}>
               {developers.length}종 보유
             </span>
           </div>
@@ -194,13 +194,13 @@ export default function DashboardOverview({
                 <div
                   key={dev.id}
                   style={{
-                    background: 'var(--bg-input)',
+                    background: 'var(--bg-subtle)',
                     border: '1px solid var(--border-subtle)',
-                    borderRadius: '8px',
-                    padding: '12px',
+                    borderRadius: 'var(--radius-md)',
+                    padding: '14px',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '6px',
+                    gap: '7px',
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -212,12 +212,12 @@ export default function DashboardOverview({
                     </span>
                   </div>
 
-                  <div style={{ width: '100%', height: '5px', background: 'rgba(255,255,255,0.08)', borderRadius: '999px', overflow: 'hidden' }}>
+                  <div style={{ width: '100%', height: '5px', background: 'var(--bg-card)', borderRadius: '999px', overflow: 'hidden', border: '1px solid var(--border-subtle)' }}>
                     <div
                       style={{
                         width: `${pct}%`,
                         height: '100%',
-                        background: pct > 80 ? '#f87171' : '#34d399',
+                        background: pct > 80 ? 'var(--accent-red)' : 'var(--accent-emerald)',
                       }}
                     />
                   </div>

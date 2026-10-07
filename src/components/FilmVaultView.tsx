@@ -201,6 +201,54 @@ export default function FilmVaultView({ films, onSaveFilm, onDeleteFilm }: FilmV
         </div>
       </div>
 
+      {/* Apple-style Segmented Category Control (Notion Categories) */}
+      <div style={{ display: 'flex', overflowX: 'auto', paddingBottom: '4px' }}>
+        <div className="segmented-control">
+          <button
+            className={`segmented-item ${filterType === 'all' ? 'active' : ''}`}
+            onClick={() => setFilterType('all')}
+          >
+            전체 필름 <span className="segmented-badge">{films.reduce((acc, f) => acc + (f.quantity || 0), 0)}</span>
+          </button>
+          <button
+            className={`segmented-item ${filterType === 'color_negative' ? 'active' : ''}`}
+            onClick={() => setFilterType('color_negative')}
+          >
+            컬러 네가 <span className="segmented-badge">{films.filter((f) => f.type === 'color_negative').reduce((acc, f) => acc + (f.quantity || 0), 0)}</span>
+          </button>
+          <button
+            className={`segmented-item ${filterType === 'bw_negative' ? 'active' : ''}`}
+            onClick={() => setFilterType('bw_negative')}
+          >
+            흑백 네가 <span className="segmented-badge">{films.filter((f) => f.type === 'bw_negative').reduce((acc, f) => acc + (f.quantity || 0), 0)}</span>
+          </button>
+          <button
+            className={`segmented-item ${filterType === 'cinema' ? 'active' : ''}`}
+            onClick={() => setFilterType('cinema')}
+          >
+            영화용 (ECN-2) <span className="segmented-badge">{films.filter((f) => f.type === 'cinema').reduce((acc, f) => acc + (f.quantity || 0), 0)}</span>
+          </button>
+          <button
+            className={`segmented-item ${filterType === 'cinema_ahu' ? 'active' : ''}`}
+            onClick={() => setFilterType('cinema_ahu')}
+          >
+            영화용 AHU <span className="segmented-badge">{films.filter((f) => f.type === 'cinema_ahu').reduce((acc, f) => acc + (f.quantity || 0), 0)}</span>
+          </button>
+          <button
+            className={`segmented-item ${filterType === 'color_slide' ? 'active' : ''}`}
+            onClick={() => setFilterType('color_slide')}
+          >
+            컬러 슬라이드 <span className="segmented-badge">{films.filter((f) => f.type === 'color_slide').reduce((acc, f) => acc + (f.quantity || 0), 0)}</span>
+          </button>
+          <button
+            className={`segmented-item ${filterType === 'bw_slide' ? 'active' : ''}`}
+            onClick={() => setFilterType('bw_slide')}
+          >
+            흑백 슬라이드 <span className="segmented-badge">{films.filter((f) => f.type === 'bw_slide').reduce((acc, f) => acc + (f.quantity || 0), 0)}</span>
+          </button>
+        </div>
+      </div>
+
       {/* Filter & Action Bar */}
       <div className="filter-toolbar">
         <div className="search-box">
@@ -230,21 +278,6 @@ export default function FilmVaultView({ films, onSaveFilm, onDeleteFilm }: FilmV
 
           <select
             className="select-custom"
-            value={filterType}
-            onChange={(e) => setFilterType(e.target.value)}
-          >
-            <option value="all">모든 종류</option>
-            <option value="bw_negative">흑백 네가</option>
-            <option value="color_negative">컬러 네가</option>
-            <option value="cinema">영화용 (ECN-2)</option>
-            <option value="cinema_ahu">영화용 AHU</option>
-            <option value="color_slide">컬러 슬라이드</option>
-            <option value="bw_slide">흑백 슬라이드</option>
-            <option value="other">기타</option>
-          </select>
-
-          <select
-            className="select-custom"
             value={filterFormat}
             onChange={(e) => setFilterFormat(e.target.value)}
           >
@@ -254,6 +287,17 @@ export default function FilmVaultView({ films, onSaveFilm, onDeleteFilm }: FilmV
             <option value="220">220 (중형)</option>
             <option value="large_sheet">대형 시트</option>
             <option value="110">110</option>
+          </select>
+
+          <select
+            className="select-custom"
+            value={filterStorage}
+            onChange={(e) => setFilterStorage(e.target.value)}
+          >
+            <option value="all">모든 보관방법</option>
+            <option value="room_temp">🌡️ 실온 / 상온</option>
+            <option value="refrigerated">❄️ 냉장 보관</option>
+            <option value="frozen">🧊 냉동 보관</option>
           </select>
 
           <select
@@ -300,23 +344,18 @@ export default function FilmVaultView({ films, onSaveFilm, onDeleteFilm }: FilmV
                 key={film.id}
                 className="item-card"
                 style={{
-                  borderTop: `4px solid ${brandTheme.primaryColor}`,
+                  borderTop: `3px solid ${brandTheme.primaryColor}`,
                 }}
               >
                 {/* Brand Top Header with Logo & Brand Colors */}
                 <div
+                  className="brand-top-pill"
                   style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '4px 8px',
-                    borderRadius: '6px',
                     background: brandTheme.accentBg,
                     border: `1px solid ${brandTheme.borderColor}`,
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    {/* Brand Logo Image with Error Fallback */}
                     <img
                       src={brandTheme.logoUrl}
                       alt={brandTheme.name}
@@ -327,7 +366,7 @@ export default function FilmVaultView({ films, onSaveFilm, onDeleteFilm }: FilmV
                     />
                     <span
                       style={{
-                        fontSize: '0.76rem',
+                        fontSize: '0.78rem',
                         fontWeight: '700',
                         color: brandTheme.primaryColor === '#1A1A1A' ? 'var(--text-main)' : brandTheme.primaryColor,
                         letterSpacing: '0.02em',
@@ -342,7 +381,7 @@ export default function FilmVaultView({ films, onSaveFilm, onDeleteFilm }: FilmV
                       fontSize: '0.72rem',
                       fontFamily: 'var(--font-mono)',
                       fontWeight: '700',
-                      padding: '2px 6px',
+                      padding: '2px 7px',
                       borderRadius: '4px',
                       background: brandTheme.primaryColor,
                       color: brandTheme.textColor,
@@ -352,29 +391,12 @@ export default function FilmVaultView({ films, onSaveFilm, onDeleteFilm }: FilmV
                   </span>
                 </div>
 
+                {/* Card Title & Quantity Pill */}
                 <div className="card-top">
                   <div className="card-title-group">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                      <span
-                        className="badge-tag"
-                        style={{
-                          background: typeConfig.bg,
-                          color: typeConfig.color,
-                          borderColor: typeConfig.border,
-                        }}
-                      >
-                        {typeConfig.label}
-                      </span>
-                      <span className="spec-pill">
-                        <strong>{formatConfig.badge}</strong>
-                      </span>
-                    </div>
-
-                    <h3 className="card-title" style={{ marginTop: '4px' }}>
-                      {film.name}
-                    </h3>
+                    <h3 className="card-title">{film.name}</h3>
                     <div className="card-subtitle">
-                      <span>{film.frames_per_roll}컷</span>
+                      <span>{film.frames_per_roll}컷 표준 롤</span>
                     </div>
                   </div>
 
@@ -382,9 +404,10 @@ export default function FilmVaultView({ films, onSaveFilm, onDeleteFilm }: FilmV
                     <div
                       style={{
                         fontFamily: 'var(--font-mono)',
-                        fontSize: '1.25rem',
+                        fontSize: '1.3rem',
                         fontWeight: '700',
                         color: 'var(--accent-amber-light)',
+                        lineHeight: 1,
                       }}
                     >
                       {film.quantity}
@@ -393,43 +416,96 @@ export default function FilmVaultView({ films, onSaveFilm, onDeleteFilm }: FilmV
                   </div>
                 </div>
 
-                {/* 껍데기만 바꾼 필름 (리브랜딩/OEM) 정보 배너 */}
+                {/* Notion Systematic Database Property Rows */}
+                <div className="notion-prop-table">
+                  <div className="notion-prop-row">
+                    <span className="notion-prop-key">🏷️ 필름 종류</span>
+                    <span className="notion-prop-val">
+                      <span
+                        className="notion-tag"
+                        style={{
+                          background: typeConfig.bg,
+                          color: typeConfig.color,
+                          borderColor: typeConfig.border,
+                        }}
+                      >
+                        {typeConfig.label}
+                      </span>
+                    </span>
+                  </div>
+
+                  <div className="notion-prop-row">
+                    <span className="notion-prop-key">📐 판형 포맷</span>
+                    <span className="notion-prop-val">
+                      <span className="spec-pill">
+                        <strong>{formatConfig.badge}</strong>
+                      </span>
+                    </span>
+                  </div>
+
+                  <div className="notion-prop-row">
+                    <span className="notion-prop-key">❄️ 보관 환경</span>
+                    <span className="notion-prop-val">
+                      <span
+                        className="notion-tag"
+                        style={{
+                          background: storageConfig.bg,
+                          color: storageConfig.color,
+                        }}
+                      >
+                        {storageConfig.icon} {storageConfig.label}
+                      </span>
+                    </span>
+                  </div>
+
+                  <div className="notion-prop-row">
+                    <span className="notion-prop-key">📅 유통기한</span>
+                    <span className="notion-prop-val">
+                      <span
+                        style={{
+                          fontFamily: 'var(--font-mono)',
+                          fontSize: '0.78rem',
+                          color: isExpiredDate || film.is_expired ? 'var(--accent-red)' : 'var(--text-main)',
+                          fontWeight: isExpiredDate || film.is_expired ? '700' : '500',
+                        }}
+                      >
+                        {film.expiry_date || '-'}
+                        {(isExpiredDate || film.is_expired) && ' (만료)'}
+                      </span>
+                    </span>
+                  </div>
+
+                  <div className="notion-prop-row">
+                    <span className="notion-prop-key">🎞️ 포장 형태</span>
+                    <span className="notion-prop-val">
+                      {film.is_bulk_rolled ? (
+                        <span className="notion-tag" style={{ background: 'rgba(16, 185, 129, 0.12)', color: '#10b981' }}>
+                          직접 감은 벌크
+                        </span>
+                      ) : (
+                        <span style={{ color: 'var(--text-muted)', fontSize: '0.76rem' }}>정규 카트리지</span>
+                      )}
+                    </span>
+                  </div>
+                </div>
+
+                {/* 껍데기만 바꾼 필름 (리브랜딩/OEM) Notion Callout */}
                 {film.is_rebranded && (
-                  <div className="rebranded-banner">
-                    <Sparkles size={14} style={{ flexShrink: 0, marginTop: '2px', color: '#f59e0b' }} />
+                  <div className="notion-callout warning">
+                    <Sparkles size={15} style={{ flexShrink: 0, marginTop: '2px', color: '#f59e0b' }} />
                     <div>
-                      <strong>리브랜딩(껍데기 바뀜) 정보:</strong>
-                      <div>{film.original_film_info || '원본 필름 정보 미기재'}</div>
+                      <strong style={{ display: 'block', marginBottom: '2px', color: 'var(--accent-amber-light)' }}>
+                        리브랜딩 (껍데기 바뀜):
+                      </strong>
+                      <span>{film.original_film_info || '원본 필름 정보 미기재'}</span>
                     </div>
                   </div>
                 )}
 
-                {/* Spec Pills & Tags */}
-                <div className="specs-pills">
-                  <span className="spec-pill" style={{ color: storageConfig.color }}>
-                    {storageConfig.icon} {storageConfig.label}
-                  </span>
-
-                  <span className={`spec-pill ${isExpiredDate || film.is_expired ? 'badge-tag expired' : ''}`}>
-                    📅 유통기한: <strong>{film.expiry_date}</strong>
-                    {(isExpiredDate || film.is_expired) && ' (만료)'}
-                  </span>
-
-                  {film.is_bulk_rolled && (
-                    <span className="badge-tag bulk">
-                      🎞️ 감은필름 (벌크)
-                    </span>
-                  )}
-                  {film.is_expired && (
-                    <span className="badge-tag expired">
-                      ⚠️ 썩필
-                    </span>
-                  )}
-                </div>
-
+                {/* Notes Notion Callout */}
                 {film.notes && (
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', background: 'var(--bg-card-subtle)', padding: '6px 10px', borderRadius: '6px' }}>
-                    {film.notes}
+                  <div className="notion-callout">
+                    <span>📝 {film.notes}</span>
                   </div>
                 )}
 
