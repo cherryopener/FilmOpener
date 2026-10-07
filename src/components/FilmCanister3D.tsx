@@ -94,12 +94,29 @@ export default function FilmCanister3D({
             </div>
           )}
 
+          {/* Expired Film Badge Overlay on Canister Body */}
+          {film.is_expired && (
+            <div className="canister-expired-tape">
+              <span>⚠️ 썩필 (만료)</span>
+            </div>
+          )}
+
+          {/* Sold Out (0 Roll) Overlay */}
+          {film.quantity <= 0 && (
+            <div className="canister-soldout-overlay">
+              <span>소진됨 (0롤)</span>
+            </div>
+          )}
+
           {/* Printed Canister Label */}
           <div className="canister-label-content">
             {/* Brand Header */}
             <div className="label-brand-row">
               <span className="brand-wordmark">{film.brand.toUpperCase()}</span>
-              {film.is_bulk_rolled && <span className="bulk-badge">BULK</span>}
+              <div style={{ display: 'flex', gap: '3px' }}>
+                {film.is_expired && <span className="bulk-badge" style={{ background: '#d97706' }}>썩필</span>}
+                {film.is_bulk_rolled && <span className="bulk-badge">BULK</span>}
+              </div>
             </div>
 
             {/* Film Name & Typo */}
@@ -159,9 +176,9 @@ export default function FilmCanister3D({
 
       {/* Under-Canister Shelf Metal Plaque (책장 선반 금속 네임택) */}
       {showShelfPlaque && (
-        <div className={`shelf-plaque ${isSelected ? 'active' : ''}`}>
+        <div className={`shelf-plaque ${isSelected ? 'active' : ''} ${film.is_expired ? 'expired-plaque' : ''}`}>
           <div className="plaque-top-row">
-            <span className="plaque-qty">
+            <span className={`plaque-qty ${film.quantity <= 0 ? 'zero' : ''}`}>
               {film.quantity > 0 ? `${film.quantity}롤 보유` : '품절 (0롤)'}
             </span>
             <span className="plaque-format">{formatText}</span>
@@ -172,8 +189,9 @@ export default function FilmCanister3D({
           </div>
 
           <div className="plaque-bottom-row">
-            <span className={`plaque-expiry ${film.is_expired ? 'expired' : ''}`}>
-              EXP {formattedExpiry}
+            <span className={`plaque-expiry ${film.is_expired ? 'expired' : ''}`} title={film.is_expired ? '유통기한 만료 썩필' : '정상 유통기한'}>
+              {film.is_expired ? '⚠️ 썩필 ' : 'EXP '}
+              {formattedExpiry}
             </span>
             <span className="plaque-storage">{storageIcon}</span>
           </div>

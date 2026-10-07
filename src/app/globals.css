@@ -1982,9 +1982,158 @@ html, body {
   color: #d1d1d6;
 }
 
-.shelf-plaque.active .plaque-action-btn {
-  background: #f59e0b;
+.shelf-plaque.expired-plaque {
+  border-color: rgba(245, 158, 11, 0.45);
+  background: linear-gradient(180deg, #201a14 0%, #15120e 100%);
+}
+
+.plaque-qty.zero {
+  color: #ff453a !important;
+}
+
+/* ADD FILM SHELF SLOT CARD */
+.add-film-shelf-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  border-radius: var(--radius-lg);
+  border: 1px dashed rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.02);
+  cursor: pointer;
+  transition: all 0.25s ease;
+  padding: 16px 12px;
+  text-align: center;
+  gap: 8px;
+}
+
+.add-film-shelf-slot:hover {
+  border-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.08);
+  transform: translateY(-6px);
+}
+
+.add-slot-plus {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: #fbbf24;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 2px;
+}
+
+.add-slot-text {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.add-slot-sub {
+  font-size: 0.68rem;
+  color: #a1a1a6;
+}
+
+/* CANISTER EXPIRED TAPE BADGE */
+.canister-expired-tape {
+  position: absolute;
+  top: 48px;
+  left: -8px;
+  right: -8px;
+  height: 20px;
+  background: #d97706;
   color: #000000;
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  transform: rotate(-10deg);
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+  border-top: 1px solid rgba(255, 255, 255, 0.4);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.4);
+}
+
+.canister-soldout-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(2px);
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ff453a;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+/* APPLE GLASS MODAL */
+.apple-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.apple-modal-card {
+  width: 100%;
+  max-width: 580px;
+  background: #13151d;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-xl);
+  padding: 28px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7);
+  animation: modal-pop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modal-pop {
+  0% { transform: scale(0.95); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.apple-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.apple-modal-header h3 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.apple-modal-close-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  color: #a1a1a6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.apple-modal-close-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
 }
 
 /* SELECTION TRAY BANNER */

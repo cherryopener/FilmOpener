@@ -235,10 +235,16 @@ export default function Home() {
     const result = await saveShootingRoll(roll, prev);
     setRolls(result.rolls);
     setDevelopers(result.developers);
+    if (result.films) {
+      setFilms(result.films);
+    }
   };
   const handleDeleteRoll = async (id: string) => {
-    const updated = await deleteShootingRoll(id);
-    setRolls(updated);
+    const result = await deleteShootingRoll(id);
+    setRolls(result.rolls);
+    if (result.films) {
+      setFilms(result.films);
+    }
   };
 
   // Handlers for Scans

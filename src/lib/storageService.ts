@@ -382,12 +382,14 @@ export const getShootingRolls = async (): Promise<ShootingRoll[]> => {
 export const saveShootingRoll = async (
   roll: ShootingRoll,
   previousRollState?: ShootingRoll
-): Promise<{ rolls: ShootingRoll[]; developers: DeveloperChemical[] }> => {
+): Promise<{ rolls: ShootingRoll[]; developers: DeveloperChemical[]; films: FilmItem[] }> => {
   initLocalStorageIfEmpty();
   const raw = localStorage.getItem(STORAGE_KEYS.SHOOTING_ROLLS);
   let list: ShootingRoll[] = raw ? JSON.parse(raw) : [...INITIAL_SHOOTING_ROLLS];
 
   const index = list.findIndex((r) => r.id === roll.id);
+  const isBrandNew = index < 0;
+
   if (index >= 0) {
     list[index] = { ...roll, updated_at: new Date().toISOString() };
   } else {
@@ -396,13 +398,57 @@ export const saveShootingRoll = async (
 
   localStorage.setItem(STORAGE_KEYS.SHOOTING_ROLLS, JSON.stringify(list));
 
-  // 3-6 & 4-3: 자가현상 시 현상액 사용 횟수, 롤 수, 희석비율 누적 연동 처리
+  // 1. Film Inventory Quantity Auto-Deduction & Adjustment:
+  const filmRaw = localStorage.getItem(STORAGE_KEYS.FILMS);
+  let filmList: FilmItem[] = filmRaw ? JSON.parse(filmRaw) : [...INITIAL_FILMS];
+  let updatedFilmForSupabase: FilmItem | null = null;
+  let prevFilmForSupabase: FilmItem | null = null;
+
+  if (isBrandNew && roll.film_id && !roll.is_external_roll) {
+    // Brand new roll created: deduct 1 roll from the selected film batch
+    const fIdx = filmList.findIndex((f) => f.id === roll.film_id);
+    if (fIdx >= 0 && filmList[fIdx].quantity > 0) {
+      filmList[fIdx] = {
+        ...filmList[fIdx],
+        quantity: filmList[fIdx].quantity - 1,
+        updated_at: new Date().toISOString(),
+      };
+      updatedFilmForSupabase = filmList[fIdx];
+      localStorage.setItem(STORAGE_KEYS.FILMS, JSON.stringify(filmList));
+    }
+  } else if (previousRollState && previousRollState.film_id !== roll.film_id) {
+    // If film_id was swapped on edit:
+    if (previousRollState.film_id) {
+      const prevFIdx = filmList.findIndex((f) => f.id === previousRollState.film_id);
+      if (prevFIdx >= 0) {
+        filmList[prevFIdx] = {
+          ...filmList[prevFIdx],
+          quantity: filmList[prevFIdx].quantity + 1,
+          updated_at: new Date().toISOString(),
+        };
+        prevFilmForSupabase = filmList[prevFIdx];
+      }
+    }
+    if (roll.film_id && !roll.is_external_roll) {
+      const newFIdx = filmList.findIndex((f) => f.id === roll.film_id);
+      if (newFIdx >= 0 && filmList[newFIdx].quantity > 0) {
+        filmList[newFIdx] = {
+          ...filmList[newFIdx],
+          quantity: filmList[newFIdx].quantity - 1,
+          updated_at: new Date().toISOString(),
+        };
+        updatedFilmForSupabase = filmList[newFIdx];
+      }
+    }
+    localStorage.setItem(STORAGE_KEYS.FILMS, JSON.stringify(filmList));
+  }
+
+  // 2. Developer Chemical usage accumulation
   const devRaw = localStorage.getItem(STORAGE_KEYS.DEVELOPERS);
   let devList: DeveloperChemical[] = devRaw ? JSON.parse(devRaw) : [...INITIAL_DEVELOPERS];
 
   let updatedDevForSupabase: DeveloperChemical | null = null;
 
-  // If this roll has self dev with a developer selected:
   const shouldAccumulate =
     roll.dev_type === 'self' &&
     roll.developer_id &&
@@ -445,6 +491,12 @@ export const saveShootingRoll = async (
           if (updatedDevForSupabase) {
             await supabase.from('developer_chemicals').upsert({ ...updatedDevForSupabase, user_id: user.id });
           }
+          if (updatedFilmForSupabase) {
+            await supabase.from('films').upsert({ ...updatedFilmForSupabase, user_id: user.id });
+          }
+          if (prevFilmForSupabase) {
+            await supabase.from('films').upsert({ ...prevFilmForSupabase, user_id: user.id });
+          }
         }
       } catch (e) {
         console.error('Supabase save shooting roll error:', e);
@@ -452,28 +504,56 @@ export const saveShootingRoll = async (
     }
   }
 
-  return { rolls: list, developers: devList };
+  return { rolls: list, developers: devList, films: filmList };
 };
 
-export const deleteShootingRoll = async (id: string): Promise<ShootingRoll[]> => {
+export const deleteShootingRoll = async (
+  id: string
+): Promise<{ rolls: ShootingRoll[]; films: FilmItem[] }> => {
   initLocalStorageIfEmpty();
   const raw = localStorage.getItem(STORAGE_KEYS.SHOOTING_ROLLS);
   let list: ShootingRoll[] = raw ? JSON.parse(raw) : [];
+
+  const targetRoll = list.find((r) => r.id === id);
   list = list.filter((r) => r.id !== id);
   localStorage.setItem(STORAGE_KEYS.SHOOTING_ROLLS, JSON.stringify(list));
+
+  // If the deleted roll was loaded from a film in stock, restore 1 roll back to inventory
+  const filmRaw = localStorage.getItem(STORAGE_KEYS.FILMS);
+  let filmList: FilmItem[] = filmRaw ? JSON.parse(filmRaw) : [...INITIAL_FILMS];
+  let restoredFilmForSupabase: FilmItem | null = null;
+
+  if (targetRoll && targetRoll.film_id && !targetRoll.is_external_roll) {
+    const fIdx = filmList.findIndex((f) => f.id === targetRoll.film_id);
+    if (fIdx >= 0) {
+      filmList[fIdx] = {
+        ...filmList[fIdx],
+        quantity: filmList[fIdx].quantity + 1,
+        updated_at: new Date().toISOString(),
+      };
+      restoredFilmForSupabase = filmList[fIdx];
+      localStorage.setItem(STORAGE_KEYS.FILMS, JSON.stringify(filmList));
+    }
+  }
 
   if (isSupabaseConfigured()) {
     const supabase = getSupabaseClient();
     if (supabase) {
       try {
         await supabase.from('shooting_rolls').delete().eq('id', id);
+        if (restoredFilmForSupabase) {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            await supabase.from('films').upsert({ ...restoredFilmForSupabase, user_id: user.id });
+          }
+        }
       } catch (e) {
         console.error('Supabase delete shooting roll error:', e);
       }
     }
   }
 
-  return list;
+  return { rolls: list, films: filmList };
 };
 
 // ==========================================

@@ -12,6 +12,9 @@ import {
   AgitationMethod,
   ScanMethod,
   DevType,
+  FilmType,
+  FilmFormat,
+  StorageMethod,
 } from '@/types';
 import FilmCanister3D from './FilmCanister3D';
 import {
@@ -44,6 +47,7 @@ import {
   Copy,
   Check,
   Film,
+  X,
 } from 'lucide-react';
 
 interface AppleScrollStudioProps {
@@ -156,6 +160,19 @@ export default function AppleScrollStudio({
   const [scanSoftware, setScanSoftware] = useState<string>('Negative Lab Pro v3.0');
   const [scanNotes, setScanNotes] = useState<string>('16bit DNG 캡처, 뉴트럴 톤 반전');
   const [isCopiedFolder, setIsCopiedFolder] = useState<boolean>(false);
+
+  // Quick Add Film Batch Modal State (Demonstrating separate lots for same film name)
+  const [isAddFilmOpen, setIsAddFilmOpen] = useState<boolean>(false);
+  const [newFilmName, setNewFilmName] = useState<string>('코닥 골드 200 (Kodak Gold 200)');
+  const [newFilmBrand, setNewFilmBrand] = useState<string>('Kodak');
+  const [newFilmType, setNewFilmType] = useState<FilmType>('color_negative');
+  const [newFilmFormat, setNewFilmFormat] = useState<FilmFormat>('135');
+  const [newFilmIso, setNewFilmIso] = useState<number>(200);
+  const [newFilmExpiry, setNewFilmExpiry] = useState<string>('2018-05-31');
+  const [newFilmStorage, setNewFilmStorage] = useState<StorageMethod>('frozen');
+  const [newFilmExpired, setNewFilmExpired] = useState<boolean>(true);
+  const [newFilmQuantity, setNewFilmQuantity] = useState<number>(2);
+  const [newFilmNotes, setNewFilmNotes] = useState<string>('서랍 안에서 발견된 빈티지 썩필 (냉동 보관)');
 
   // Selected Objects
   const selectedFilm = useMemo(
@@ -367,9 +384,52 @@ export default function AppleScrollStudio({
     setOutings((prev) => prev.filter((s) => s.id !== id));
   };
 
+  // Quick Add Film Batch (Supports adding multiple batches of same film with different expiry / expired status)
+  const handleQuickAddFilm = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newFilmName.trim() || !newFilmBrand.trim()) {
+      alert('필름 이름과 제조사를 입력해주세요.');
+      return;
+    }
+
+    const todayStr = new Date().toISOString().split('T')[0];
+    const isAutoExpired = newFilmExpired || (newFilmExpiry ? newFilmExpiry < todayStr : false);
+
+    const newFilm: FilmItem = {
+      id: `film-${Date.now()}`,
+      name: newFilmName.trim(),
+      brand: newFilmBrand.trim(),
+      type: newFilmType,
+      format: newFilmFormat,
+      iso: Number(newFilmIso) || 200,
+      expiry_date: newFilmExpiry,
+      storage_method: newFilmStorage,
+      is_bulk_rolled: false,
+      is_expired: isAutoExpired,
+      is_rebranded: false,
+      quantity: Number(newFilmQuantity) || 1,
+      frames_per_roll: newFilmFormat === '135' ? 36 : 12,
+      notes: newFilmNotes.trim() || undefined,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    await onSaveFilm(newFilm);
+    setSelectedFilmId(newFilm.id);
+    setIsAddFilmOpen(false);
+    alert(`✨ [${newFilm.name}] (유통기한: ${newFilm.expiry_date}, ${newFilm.quantity}롤)이 보관함에 새 배치로 등록되었습니다!`);
+  };
+
   // 1. Submit Shooting Roll (Save as Loaded or Unloaded)
   const handleCreateShootingRoll = async (shouldUnload: boolean = false) => {
     if (!selectedFilm || !selectedCamera) return;
+
+    if (selectedFilm.quantity <= 0) {
+      const proceed = confirm(
+        `⚠️ [${selectedFilm.name}]은(는) 현재 보유 잔여 수량이 0롤입니다.\n재고 차감 없이 계속 장전하시겠습니까?`
+      );
+      if (!proceed) return;
+    }
 
     const totalShotsCount = outings.reduce((acc, s) => acc + (Number(s.shots) || 0), 0);
 
@@ -415,8 +475,13 @@ export default function AppleScrollStudio({
       setTimeout(() => {
         scrollToChapter('section-development');
       }, 300);
+      alert(
+        `🎉 [${newRoll.title}] 촬영이 완료되어 필름을 꺼냈습니다!\n- [${selectedFilm.name}] 잔여 재고: 1롤 차감 반영\n- 암실 현상 대기 목록으로 이동합니다.`
+      );
     } else {
-      alert(`🎉 [${newRoll.title}] 촬영 롤이 카메라에 성공적으로 장전되었습니다!`);
+      alert(
+        `🎉 [${newRoll.title}] 촬영 롤이 카메라에 성공적으로 장전되었습니다!\n- [${selectedFilm.name}] 잔여 재고: ${selectedFilm.quantity}롤 ➔ ${Math.max(0, selectedFilm.quantity - 1)}롤 차감 반영`
+      );
     }
   };
 
@@ -609,9 +674,20 @@ export default function AppleScrollStudio({
           <div className="chapter-index">CHAPTER 01</div>
           <h2 className="chapter-title">보유 필름 보관소 (The Film Shelf)</h2>
           <p className="chapter-desc">
-            책장에 꽂힌 실제 필름 캐니스터를 고르듯 선택하세요. 유통기한과 보관 온도를 확인하고,
-            오늘 카메라에 장전할 필름을 들어 올립니다.
+            책장에 꽂힌 실제 필름 캐니스터를 고르듯 선택하세요. 같은 필름이라도 유통기한, 보관 방식,
+            썩은 필름(만료) 여부에 따라 각각 개별 캐니스터로 정밀 분리되어 보관됩니다.
           </p>
+          <div style={{ marginTop: '16px' }}>
+            <button
+              type="button"
+              className="apple-secondary-btn"
+              onClick={() => setIsAddFilmOpen(true)}
+              style={{ fontSize: '0.82rem', padding: '8px 18px' }}
+            >
+              <Plus size={14} color="#f59e0b" />
+              <span>새 필름 등록 (유통기한/썩필 개별 추가)</span>
+            </button>
+          </div>
         </div>
 
         {/* 3D Realistic Wooden / Anodized Shelf Rack */}
@@ -628,6 +704,19 @@ export default function AppleScrollStudio({
                 actionLabel="카메라에 장전"
               />
             ))}
+
+            {/* + Add New Batch Slot on the Shelf */}
+            <div
+              className="add-film-shelf-slot"
+              onClick={() => setIsAddFilmOpen(true)}
+              title="새 필름 배치 등록 (같은 이름이라도 유통기한/썩필/보관법 개별 등록)"
+            >
+              <div className="add-slot-plus">
+                <Plus size={22} />
+              </div>
+              <span className="add-slot-text">+ 새 필름 등록</span>
+              <span className="add-slot-sub">유통기한/썩필 분리</span>
+            </div>
           </div>
 
           <div className="shelf-wood-plank">
@@ -1524,6 +1613,174 @@ export default function AppleScrollStudio({
           <ArrowUp size={16} />
         </button>
       </nav>
+
+      {/* ============================================================
+          QUICK ADD FILM BATCH MODAL (유통기한/썩필/보관법 개별 분리 등록)
+          ============================================================ */}
+      {isAddFilmOpen && (
+        <div className="apple-modal-backdrop" onClick={() => setIsAddFilmOpen(false)}>
+          <div className="apple-modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="apple-modal-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Film size={20} color="#f59e0b" />
+                <h3>새 필름 배치 등록 (개별 유통기한/썩필 관리)</h3>
+              </div>
+              <button
+                type="button"
+                className="apple-modal-close-btn"
+                onClick={() => setIsAddFilmOpen(false)}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <p style={{ fontSize: '0.84rem', color: '#a1a1a6', marginBottom: '18px', lineHeight: 1.5 }}>
+              💡 같은 필름 이름(예: 코닥 골드 200)이라도 <strong>유통기한, 보관방법, 썩은 필름(만료) 여부</strong>에 따라
+              독립된 별도의 캐니스터로 선반에 자동 등록 및 관리됩니다.
+            </p>
+
+            <form onSubmit={handleQuickAddFilm} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <div className="field-group flex-1">
+                  <label>필름 이름</label>
+                  <input
+                    type="text"
+                    value={newFilmName}
+                    onChange={(e) => setNewFilmName(e.target.value)}
+                    placeholder="예: 코닥 골드 200"
+                    className="apple-input"
+                    required
+                  />
+                </div>
+                <div className="field-group" style={{ width: '140px' }}>
+                  <label>제조사 브랜드</label>
+                  <input
+                    type="text"
+                    value={newFilmBrand}
+                    onChange={(e) => setNewFilmBrand(e.target.value)}
+                    placeholder="예: Kodak, Fujifilm"
+                    className="apple-input"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <div className="field-group flex-1">
+                  <label>필름 종류</label>
+                  <select
+                    value={newFilmType}
+                    onChange={(e) => setNewFilmType(e.target.value as FilmType)}
+                    className="apple-input"
+                  >
+                    <option value="color_negative">컬러네가 (Color Negative)</option>
+                    <option value="bw_negative">흑백네가 (B&W Negative)</option>
+                    <option value="color_slide">컬러슬라이드 (E-6)</option>
+                    <option value="cinema">영화용 (ECN-2)</option>
+                    <option value="cinema_ahu">영화용 AHU (CineStill)</option>
+                  </select>
+                </div>
+                <div className="field-group" style={{ width: '110px' }}>
+                  <label>판형</label>
+                  <select
+                    value={newFilmFormat}
+                    onChange={(e) => setNewFilmFormat(e.target.value as FilmFormat)}
+                    className="apple-input"
+                  >
+                    <option value="135">135 (35mm)</option>
+                    <option value="120">120 (중형)</option>
+                    <option value="220">220</option>
+                  </select>
+                </div>
+                <div className="field-group" style={{ width: '90px' }}>
+                  <label>감도 (ISO)</label>
+                  <input
+                    type="number"
+                    value={newFilmIso}
+                    onChange={(e) => setNewFilmIso(Number(e.target.value))}
+                    className="apple-input"
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <div className="field-group flex-1">
+                  <label>유통기한 (EXP Date)</label>
+                  <input
+                    type="date"
+                    value={newFilmExpiry}
+                    onChange={(e) => setNewFilmExpiry(e.target.value)}
+                    className="apple-input"
+                  />
+                </div>
+                <div className="field-group flex-1">
+                  <label>보관 방법</label>
+                  <select
+                    value={newFilmStorage}
+                    onChange={(e) => setNewFilmStorage(e.target.value as StorageMethod)}
+                    className="apple-input"
+                  >
+                    <option value="room_temp">🌡️ 상온 보관</option>
+                    <option value="refrigerated">🧊 냉장 보관</option>
+                    <option value="frozen">❄️ 냉동 보관</option>
+                  </select>
+                </div>
+                <div className="field-group" style={{ width: '100px' }}>
+                  <label>보유 수량</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={newFilmQuantity}
+                    onChange={(e) => setNewFilmQuantity(Number(e.target.value))}
+                    className="apple-input"
+                  />
+                </div>
+              </div>
+
+              {/* Expired Checkbox & Notes */}
+              <div style={{ padding: '10px 14px', borderRadius: '10px', background: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', color: '#fbbf24', fontWeight: 600, fontSize: '0.85rem' }}>
+                  <input
+                    type="checkbox"
+                    checked={newFilmExpired}
+                    onChange={(e) => setNewFilmExpired(e.target.checked)}
+                    style={{ accentColor: '#f59e0b', width: '16px', height: '16px' }}
+                  />
+                  <span>⚠️ 썩은 필름 (유통기한 만료 썩필) 설정</span>
+                </label>
+              </div>
+
+              <div className="field-group">
+                <label>배치 메모 / 구입처</label>
+                <input
+                  type="text"
+                  value={newFilmNotes}
+                  onChange={(e) => setNewFilmNotes(e.target.value)}
+                  placeholder="예: 서랍에서 발견된 썩필, 당근마켓 구매, 충무로 직구 등"
+                  className="apple-input"
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
+                <button
+                  type="button"
+                  className="apple-secondary-btn"
+                  onClick={() => setIsAddFilmOpen(false)}
+                >
+                  취소
+                </button>
+                <button
+                  type="submit"
+                  className="apple-primary-btn glow"
+                >
+                  <span>선반에 캐니스터 등록</span>
+                  <Check size={16} />
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
