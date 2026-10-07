@@ -45,6 +45,9 @@ export default function FilmCanister3D({
   // Format badge
   const formatText = film.format === '135' ? '35mm' : film.format === '120' ? '120 중형' : film.format;
 
+  // Visual Stack Count: 1, 2, 3, 4, 5 (for 5+ rolls, shows 5 stacked)
+  const stackCount = Math.min(Math.max(film.quantity, 1), 5);
+
   return (
     <div
       className={`canister-slot-container ${isSelected ? 'selected' : ''}`}
@@ -58,120 +61,175 @@ export default function FilmCanister3D({
         }
       }}
     >
-      {/* 3D Film Canister Graphic */}
+      {/* 3D Film Canister Graphic with Multi-Roll Depth Stacking */}
       <div
         className="canister-wrapper"
-        style={{ width: `${width}px`, height: `${height}px` }}
+        style={{
+          width: `${width}px`,
+          height: `${height}px`,
+          marginLeft: stackCount > 1 ? `${Math.round((stackCount - 1) * 3.5)}px` : undefined,
+        }}
       >
-        {/* Top Spool Knob (중앙 회전축 돌기) */}
-        <div className="canister-spool-top">
-          <div className="spool-core" />
-        </div>
+        {/* Background Stacked Canisters (for 2, 3, 4, 5+ rolls) */}
+        {stackCount > 1 &&
+          Array.from({ length: stackCount - 1 }, (_, index) => {
+            const layerIndex = stackCount - 1 - index; // e.g. 4, 3, 2, 1
+            const xOffset = -7 * layerIndex;
+            const yOffset = -10 * layerIndex;
+            const zIndex = 5 - layerIndex;
+            const scaleVal = 1 - 0.02 * layerIndex;
+            const brightness = 1 - 0.09 * layerIndex;
 
-        {/* Top Metallic Crimped Cap (상단 금속 캡) */}
-        <div className="canister-metal-cap top" />
+            return (
+              <div
+                key={`stack-bg-${layerIndex}`}
+                className="canister-stack-layer"
+                style={{
+                  width: `${width}px`,
+                  height: `${height}px`,
+                  transform: `translate(${xOffset}px, ${yOffset}px) scale(${scaleVal})`,
+                  zIndex,
+                  filter: `brightness(${brightness})`,
+                }}
+              >
+                {/* Spool Knob */}
+                <div className="canister-spool-top">
+                  <div className="spool-core" />
+                </div>
+                {/* Metal Cap */}
+                <div className="canister-metal-cap top" />
+                {/* Canister Body */}
+                <div
+                  className="canister-body"
+                  style={{
+                    background: getCanisterGradient(film, brandTheme.primaryColor, brandTheme.secondaryColor),
+                  }}
+                >
+                  <div className="cylinder-lighting-left" />
+                  <div className="cylinder-specular-stripe" />
+                  <div className="cylinder-shadow-right" />
+                  <div className="stack-layer-label">
+                    <span className="brand-wordmark">{film.brand.toUpperCase()}</span>
+                  </div>
+                </div>
+                {/* Bottom Cap */}
+                <div className="canister-metal-cap bottom" />
+              </div>
+            );
+          })}
 
-        {/* Canister Body (원통형 본체 + 브랜드별 고유 리버리) */}
-        <div
-          className="canister-body"
-          style={{
-            background: getCanisterGradient(film, brandTheme.primaryColor, brandTheme.secondaryColor),
-            boxShadow: isSelected
-              ? `0 0 24px ${brandTheme.primaryColor}88, inset 0 0 12px rgba(255,255,255,0.25)`
-              : undefined,
-          }}
-        >
-          {/* Cylindrical Metallic Sheen Overlays */}
-          <div className="cylinder-lighting-left" />
-          <div className="cylinder-specular-stripe" />
-          <div className="cylinder-shadow-right" />
+        {/* Front Main Canister (Highest Z-Index) */}
+        <div className="canister-front-roll" style={{ width: `${width}px`, height: `${height}px`, zIndex: 10 }}>
+          {/* Top Spool Knob (중앙 회전축 돌기) */}
+          <div className="canister-spool-top">
+            <div className="spool-core" />
+          </div>
 
-          {/* Film Tongue (필름 혀 - 135 포맷일 때 튀어나오는 디테일) */}
-          {film.format === '135' && (
-            <div className="film-tongue">
-              <div className="tongue-sprocket" />
-              <div className="tongue-sprocket" />
-            </div>
-          )}
+          {/* Top Metallic Crimped Cap (상단 금속 캡) */}
+          <div className="canister-metal-cap top" />
 
-          {/* Expired Film Badge Overlay on Canister Body */}
-          {film.is_expired && (
-            <div className="canister-expired-tape">
-              <span>⚠️ 썩필 (만료)</span>
-            </div>
-          )}
+          {/* Canister Body (원통형 본체 + 브랜드별 고유 리버리) */}
+          <div
+            className="canister-body"
+            style={{
+              background: getCanisterGradient(film, brandTheme.primaryColor, brandTheme.secondaryColor),
+              boxShadow: isSelected
+                ? `0 0 24px ${brandTheme.primaryColor}88, inset 0 0 12px rgba(255,255,255,0.25)`
+                : undefined,
+            }}
+          >
+            {/* Cylindrical Metallic Sheen Overlays */}
+            <div className="cylinder-lighting-left" />
+            <div className="cylinder-specular-stripe" />
+            <div className="cylinder-shadow-right" />
 
-          {/* Sold Out (0 Roll) Overlay */}
-          {film.quantity <= 0 && (
-            <div className="canister-soldout-overlay">
-              <span>소진됨 (0롤)</span>
-            </div>
-          )}
+            {/* Film Tongue (필름 혀 - 135 포맷일 때 튀어나오는 디테일) */}
+            {film.format === '135' && (
+              <div className="film-tongue">
+                <div className="tongue-sprocket" />
+                <div className="tongue-sprocket" />
+              </div>
+            )}
 
-          {/* Printed Canister Label */}
-          <div className="canister-label-content">
-            {/* Brand Header */}
-            <div className="label-brand-row">
-              <span className="brand-wordmark">{film.brand.toUpperCase()}</span>
-              <div style={{ display: 'flex', gap: '3px' }}>
-                {film.is_expired && <span className="bulk-badge" style={{ background: '#d97706' }}>썩필</span>}
-                {film.is_bulk_rolled && <span className="bulk-badge">BULK</span>}
+            {/* Expired Film Badge Overlay on Canister Body */}
+            {film.is_expired && (
+              <div className="canister-expired-tape">
+                <span>⚠️ 썩필 (만료)</span>
+              </div>
+            )}
+
+            {/* Sold Out (0 Roll) Overlay */}
+            {film.quantity <= 0 && (
+              <div className="canister-soldout-overlay">
+                <span>소진됨 (0롤)</span>
+              </div>
+            )}
+
+            {/* Printed Canister Label */}
+            <div className="canister-label-content">
+              {/* Brand Header */}
+              <div className="label-brand-row">
+                <span className="brand-wordmark">{film.brand.toUpperCase()}</span>
+                <div style={{ display: 'flex', gap: '3px' }}>
+                  {film.is_expired && <span className="bulk-badge" style={{ background: '#d97706' }}>썩필</span>}
+                  {film.is_bulk_rolled && <span className="bulk-badge">BULK</span>}
+                </div>
+              </div>
+
+              {/* Film Name & Typo */}
+              <div className="label-film-title">
+                {getDisplayFilmName(film.name)}
+              </div>
+
+              {/* ISO & Spec Badge */}
+              <div className="label-specs-row">
+                <span className="iso-badge">ISO {film.iso}</span>
+                <span className="exp-count">{film.frames_per_roll} EXP</span>
+              </div>
+
+              {/* Film Type Stripe */}
+              <div
+                className="label-type-stripe"
+                style={{
+                  background: isBw
+                    ? '#111111'
+                    : isCinema
+                    ? '#0a192f'
+                    : isSlide
+                    ? '#5b1285'
+                    : brandTheme.secondaryColor,
+                  color: '#ffffff',
+                }}
+              >
+                <span>
+                  {isBw
+                    ? 'BLACK & WHITE'
+                    : isCinema
+                    ? 'CINEMA ECN-2'
+                    : isSlide
+                    ? 'COLOR SLIDE'
+                    : 'COLOR PRINT'}
+                </span>
+              </div>
+
+              {/* Barcode / DX Code Graphic Simulation */}
+              <div className="label-dx-code">
+                <div className="dx-bar" />
+                <div className="dx-bar thin" />
+                <div className="dx-bar wide" />
+                <div className="dx-bar" />
+                <div className="dx-bar thin" />
+                <div className="dx-bar wide" />
               </div>
             </div>
-
-            {/* Film Name & Typo */}
-            <div className="label-film-title">
-              {getDisplayFilmName(film.name)}
-            </div>
-
-            {/* ISO & Spec Badge */}
-            <div className="label-specs-row">
-              <span className="iso-badge">ISO {film.iso}</span>
-              <span className="exp-count">{film.frames_per_roll} EXP</span>
-            </div>
-
-            {/* Film Type Stripe */}
-            <div
-              className="label-type-stripe"
-              style={{
-                background: isBw
-                  ? '#111111'
-                  : isCinema
-                  ? '#0a192f'
-                  : isSlide
-                  ? '#5b1285'
-                  : brandTheme.secondaryColor,
-                color: '#ffffff',
-              }}
-            >
-              <span>
-                {isBw
-                  ? 'BLACK & WHITE'
-                  : isCinema
-                  ? 'CINEMA ECN-2'
-                  : isSlide
-                  ? 'COLOR SLIDE'
-                  : 'COLOR PRINT'}
-              </span>
-            </div>
-
-            {/* Barcode / DX Code Graphic Simulation */}
-            <div className="label-dx-code">
-              <div className="dx-bar" />
-              <div className="dx-bar thin" />
-              <div className="dx-bar wide" />
-              <div className="dx-bar" />
-              <div className="dx-bar thin" />
-              <div className="dx-bar wide" />
-            </div>
           </div>
+
+          {/* Bottom Metallic Crimped Cap (하단 금속 캡) */}
+          <div className="canister-metal-cap bottom" />
+
+          {/* Bottom Shadow on Shelf */}
+          <div className="canister-drop-shadow" />
         </div>
-
-        {/* Bottom Metallic Crimped Cap (하단 금속 캡) */}
-        <div className="canister-metal-cap bottom" />
-
-        {/* Bottom Shadow on Shelf */}
-        <div className="canister-drop-shadow" />
       </div>
 
       {/* Under-Canister Shelf Metal Plaque (책장 선반 금속 네임택) */}

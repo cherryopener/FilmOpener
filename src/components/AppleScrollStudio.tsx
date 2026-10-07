@@ -940,6 +940,38 @@ export default function AppleScrollStudio({
         <div className="shooting-workbench-grid">
           {/* Left: Rig Info & Sessions */}
           <div className="sessions-builder-card">
+            {/* 🎯 현재 선택된 장전 세트 (필름 + 카메라 + 렌즈) 한 줄 표시 */}
+            <div className="active-rig-summary-bar">
+              <div className="rig-bar-label">
+                <span className="rig-pulse-dot" />
+                <span>장전된 장비 세트:</span>
+              </div>
+              <div className="rig-bar-content">
+                <span className="rig-item-pill film" title="선택된 필름">
+                  🎞️ <strong>{selectedFilm?.name || '필름 미선택'}</strong>
+                  {selectedFilm?.is_expired ? ' (썩필)' : ''}
+                  <span className="tag-iso">ISO {selectedFilm?.iso}</span>
+                </span>
+                <span className="rig-plus">+</span>
+                <span className="rig-item-pill camera" title="선택된 카메라">
+                  📷 <strong>{selectedCamera?.brand} {selectedCamera?.model}</strong>
+                  <span className="tag-format">
+                    {selectedCamera?.format === '135_full' ? '35mm' : selectedCamera?.format}
+                  </span>
+                </span>
+                <span className="rig-plus">+</span>
+                <span className="rig-item-pill lens" title="결합된 렌즈">
+                  🔭 <strong>
+                    {selectedCamera?.lens_type === 'fixed'
+                      ? `${selectedCamera.fixed_lens_name} (일체형)`
+                      : selectedLens
+                      ? `${selectedLens.brand} ${selectedLens.name}`
+                      : '렌즈 미선택'}
+                  </strong>
+                </span>
+              </div>
+            </div>
+
             <div className="card-top-row">
               <div className="roll-name-input-group">
                 <label>롤 식별명 (Title)</label>
