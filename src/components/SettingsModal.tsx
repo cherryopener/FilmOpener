@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { exportFullBackup, importFullBackup, resetToInitialData } from '@/lib/storageService';
-import { Sun, Moon, Monitor, Download, Upload, RotateCcw, CheckCircle2, ShieldCheck, Github } from 'lucide-react';
+import { Sun, Moon, Monitor, Download, Upload, RotateCcw, CheckCircle2, ShieldCheck, GitBranch } from 'lucide-react';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -115,7 +115,7 @@ export default function SettingsModal({
           {/* GitHub / Vercel 배포 안내 */}
           <div style={{ padding: '14px', borderRadius: '10px', background: 'var(--bg-card-subtle)', border: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: '6px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '700', fontSize: '0.88rem', color: 'var(--text-main)' }}>
-              <Github size={16} /> GitHub & Vercel 배포 연결
+              <GitBranch size={16} /> GitHub & Vercel 배포 연결
             </div>
             <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: '1.5' }}>
               이 프로젝트는 GitHub 레포지토리(<code>cherryopener/FilmOpener</code>)에 push 후 Vercel에서 Git 저장소를 연결하여 배포할 수 있습니다.
