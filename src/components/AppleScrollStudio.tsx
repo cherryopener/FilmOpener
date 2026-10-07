@@ -354,6 +354,64 @@ export default function AppleScrollStudio({
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Scroll Reveal Intersection Observer (Apple-style fade-in & slide-up on scroll)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    if (!('IntersectionObserver' in window)) {
+      document.querySelectorAll('.reveal-on-scroll').forEach((el) => {
+        el.classList.add('revealed');
+      });
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('revealed');
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      {
+        root: null,
+        rootMargin: '0px 0px -40px 0px',
+        threshold: 0.08,
+      }
+    );
+
+    const checkAndObserve = () => {
+      const targets = document.querySelectorAll('.reveal-on-scroll:not(.revealed)');
+      const vh = window.innerHeight;
+      targets.forEach((target) => {
+        const rect = target.getBoundingClientRect();
+        // If element is already visible within the viewport upon initial load, reveal immediately
+        if (rect.top < vh - 20 && rect.bottom > 0) {
+          target.classList.add('revealed');
+        } else {
+          observer.observe(target);
+        }
+      });
+    };
+
+    checkAndObserve();
+
+    const container = document.querySelector('.apple-studio-container');
+    let mutationObserver: MutationObserver | null = null;
+    if (container) {
+      mutationObserver = new MutationObserver(() => {
+        checkAndObserve();
+      });
+      mutationObserver.observe(container, { childList: true, subtree: true });
+    }
+
+    return () => {
+      observer.disconnect();
+      if (mutationObserver) mutationObserver.disconnect();
+    };
+  }, []);
+
   // Handlers for Shooting Outings
   const handleAddOutingSession = () => {
     setOutings((prev) => [
@@ -635,19 +693,19 @@ export default function AppleScrollStudio({
       <section className="apple-hero-section">
         <div className="hero-glow-orb" />
         <div className="hero-content">
-          <div className="hero-kicker">
+          <div className="hero-kicker hero-reveal-1">
             <Sparkles size={16} /> The Art of Pure Analog Workflow
           </div>
-          <h1 className="hero-headline">
+          <h1 className="hero-headline hero-reveal-2">
             빛을 담고, 암실에서 깨워,<br />
             영원으로 스캔하다.
           </h1>
-          <p className="hero-subline">
+          <p className="hero-subline hero-reveal-3">
             필름 선택부터 카메라 결합, 출사 로깅, 정밀 암실 현상과 마스터 디지털 스캔까지.<br />
             아날로그 필름 사진의 모든 호흡을 하나의 인터랙티브 스토리로 기록합니다.
           </p>
 
-          <div className="hero-action-row">
+          <div className="hero-action-row hero-reveal-4">
             <button
               className="apple-primary-btn"
               onClick={() => scrollToChapter('section-films')}
@@ -671,13 +729,13 @@ export default function AppleScrollStudio({
           ============================================================ */}
       <section id="section-films" className="apple-chapter-section">
         <div className="chapter-header">
-          <div className="chapter-index">CHAPTER 01</div>
-          <h2 className="chapter-title">보유 필름 보관소 (The Film Shelf)</h2>
-          <p className="chapter-desc">
+          <div className="chapter-index reveal-on-scroll">CHAPTER 01</div>
+          <h2 className="chapter-title reveal-on-scroll reveal-title reveal-delay-1">보유 필름 보관소 (The Film Shelf)</h2>
+          <p className="chapter-desc reveal-on-scroll reveal-delay-2">
             책장에 꽂힌 실제 필름 캐니스터를 고르듯 선택하세요. 같은 필름이라도 유통기한, 보관 방식,
             썩은 필름(만료) 여부에 따라 각각 개별 캐니스터로 정밀 분리되어 보관됩니다.
           </p>
-          <div style={{ marginTop: '16px' }}>
+          <div style={{ marginTop: '16px' }} className="reveal-on-scroll reveal-delay-3">
             <button
               type="button"
               className="apple-secondary-btn"
@@ -691,31 +749,41 @@ export default function AppleScrollStudio({
         </div>
 
         {/* 3D Realistic Wooden / Anodized Shelf Rack */}
-        <div className="film-shelf-rack">
+        <div className="film-shelf-rack reveal-on-scroll reveal-scale reveal-delay-1">
           <div className="shelf-top-backplate" />
 
           <div className="shelf-grid">
-            {films.map((film) => (
-              <FilmCanister3D
+            {films.map((film, fIndex) => (
+              <div
                 key={film.id}
-                film={film}
-                isSelected={selectedFilmId === film.id}
-                onClick={() => setSelectedFilmId(film.id)}
-                actionLabel="카메라에 장전"
-              />
+                className="reveal-on-scroll"
+                style={{ transitionDelay: `${Math.min(0.06 * fIndex, 0.42)}s` }}
+              >
+                <FilmCanister3D
+                  film={film}
+                  isSelected={selectedFilmId === film.id}
+                  onClick={() => setSelectedFilmId(film.id)}
+                  actionLabel="카메라에 장전"
+                />
+              </div>
             ))}
 
             {/* + Add New Batch Slot on the Shelf */}
             <div
-              className="add-film-shelf-slot"
-              onClick={() => setIsAddFilmOpen(true)}
-              title="새 필름 배치 등록 (같은 이름이라도 유통기한/썩필/보관법 개별 등록)"
+              className="reveal-on-scroll"
+              style={{ transitionDelay: `${Math.min(0.06 * films.length, 0.48)}s` }}
             >
-              <div className="add-slot-plus">
-                <Plus size={22} />
+              <div
+                className="add-film-shelf-slot"
+                onClick={() => setIsAddFilmOpen(true)}
+                title="새 필름 배치 등록 (같은 이름이라도 유통기한/썩필/보관법 개별 등록)"
+              >
+                <div className="add-slot-plus">
+                  <Plus size={22} />
+                </div>
+                <span className="add-slot-text">+ 새 필름 등록</span>
+                <span className="add-slot-sub">유통기한/썩필 분리</span>
               </div>
-              <span className="add-slot-text">+ 새 필름 등록</span>
-              <span className="add-slot-sub">유통기한/썩필 분리</span>
             </div>
           </div>
 
@@ -727,7 +795,7 @@ export default function AppleScrollStudio({
 
         {/* Selected Film Preview Tray */}
         {selectedFilm && (
-          <div className="selection-tray-banner">
+          <div className="selection-tray-banner reveal-on-scroll reveal-delay-2">
             <div className="tray-info">
               <span className="tray-label">선택된 필름</span>
               <h3 className="tray-title">{selectedFilm.name}</h3>
@@ -752,9 +820,9 @@ export default function AppleScrollStudio({
           ============================================================ */}
       <section id="section-gear" className="apple-chapter-section">
         <div className="chapter-header">
-          <div className="chapter-index">CHAPTER 02</div>
-          <h2 className="chapter-title">기재실 & 렌즈 마운트 결합 (The Gear Rig)</h2>
-          <p className="chapter-desc">
+          <div className="chapter-index reveal-on-scroll">CHAPTER 02</div>
+          <h2 className="chapter-title reveal-on-scroll reveal-title reveal-delay-1">기재실 & 렌즈 마운트 결합 (The Gear Rig)</h2>
+          <p className="chapter-desc reveal-on-scroll reveal-delay-2">
             선택한 카메라의 기계식 셔터와 뷰파인더를 확인하세요. 카메라 마운트에 완벽하게 결합되는
             호환 렌즈가 자동으로 매칭됩니다.
           </p>
@@ -762,19 +830,20 @@ export default function AppleScrollStudio({
 
         <div className="gear-rig-workspace">
           {/* Camera Showcase Cards */}
-          <div className="cameras-showcase-column">
+          <div className="cameras-showcase-column reveal-on-scroll reveal-delay-1">
             <h3 className="column-title">1. 카메라 바디 선택</h3>
             <div className="camera-cards-list">
-              {cameras.map((camera) => {
+              {cameras.map((camera, cIndex) => {
                 const isSelected = selectedCameraId === camera.id;
                 const isBroken = camera.status !== 'active';
 
                 return (
                   <div
                     key={camera.id}
-                    className={`camera-visual-card ${isSelected ? 'selected' : ''} ${
+                    className={`camera-visual-card reveal-on-scroll ${isSelected ? 'selected' : ''} ${
                       isBroken ? 'disabled' : ''
                     }`}
+                    style={{ transitionDelay: `${Math.min(0.08 * cIndex, 0.4)}s` }}
                     onClick={() => {
                       if (!isBroken) setSelectedCameraId(camera.id);
                     }}
@@ -833,7 +902,7 @@ export default function AppleScrollStudio({
           </div>
 
           {/* Mount Matched Lenses Column */}
-          <div className="lenses-showcase-column">
+          <div className="lenses-showcase-column reveal-on-scroll reveal-delay-2">
             <h3 className="column-title">
               2. 마운트 호환 렌즈 매칭{' '}
               {selectedCamera?.lens_type === 'fixed' ? (
@@ -846,7 +915,7 @@ export default function AppleScrollStudio({
             </h3>
 
             {selectedCamera?.lens_type === 'fixed' ? (
-              <div className="fixed-lens-spotlight-card">
+              <div className="fixed-lens-spotlight-card reveal-on-scroll reveal-delay-1">
                 <div className="spotlight-badge">바디 일체형 광학계</div>
                 <h4>{selectedCamera.fixed_lens_name}</h4>
                 <p>
@@ -857,13 +926,14 @@ export default function AppleScrollStudio({
               </div>
             ) : (
               <div className="lens-cards-list">
-                {compatibleLenses.map((lens) => {
+                {compatibleLenses.map((lens, lIndex) => {
                   const isMounted = selectedLensId === lens.id;
 
                   return (
                     <div
                       key={lens.id}
-                      className={`lens-visual-card ${isMounted ? 'mounted' : ''}`}
+                      className={`lens-visual-card reveal-on-scroll ${isMounted ? 'mounted' : ''}`}
+                      style={{ transitionDelay: `${Math.min(0.08 * lIndex, 0.4)}s` }}
                       onClick={() => setSelectedLensId(lens.id)}
                     >
                       <div className="lens-graphic-barrel">
@@ -903,7 +973,7 @@ export default function AppleScrollStudio({
         </div>
 
         {/* Assembled Rig Bar */}
-        <div className="assembled-rig-footer">
+        <div className="assembled-rig-footer reveal-on-scroll reveal-delay-2">
           <div className="rig-summary">
             <span className="rig-tag">출사 준비 완료 세트</span>
             <h4>
@@ -929,9 +999,9 @@ export default function AppleScrollStudio({
           ============================================================ */}
       <section id="section-shooting" className="apple-chapter-section">
         <div className="chapter-header">
-          <div className="chapter-index">CHAPTER 03</div>
-          <h2 className="chapter-title">출사 일정 & 날씨 로깅 (Field Shooting Log)</h2>
-          <p className="chapter-desc">
+          <div className="chapter-index reveal-on-scroll">CHAPTER 03</div>
+          <h2 className="chapter-title reveal-on-scroll reveal-title reveal-delay-1">출사 일정 & 날씨 로깅 (Field Shooting Log)</h2>
+          <p className="chapter-desc reveal-on-scroll reveal-delay-2">
             빛과 공기의 상태를 기록하세요. 달력에서 출사일을 고르고 날씨 아이콘을 누르면,
             여러 번의 출사 일정이 하나의 롤에 차곡차곡 축적됩니다.
           </p>
@@ -939,9 +1009,9 @@ export default function AppleScrollStudio({
 
         <div className="shooting-workbench-grid">
           {/* Left: Rig Info & Sessions */}
-          <div className="sessions-builder-card">
+          <div className="sessions-builder-card reveal-on-scroll reveal-scale reveal-delay-1">
             {/* 🎯 현재 선택된 장전 세트 (필름 + 카메라 + 렌즈) 한 줄 표시 */}
-            <div className="active-rig-summary-bar">
+            <div className="active-rig-summary-bar reveal-on-scroll reveal-delay-1">
               <div className="rig-bar-label">
                 <span className="rig-pulse-dot" />
                 <span>장전된 장비 세트:</span>
@@ -972,7 +1042,7 @@ export default function AppleScrollStudio({
               </div>
             </div>
 
-            <div className="card-top-row">
+            <div className="card-top-row reveal-on-scroll reveal-delay-2">
               <div className="roll-name-input-group">
                 <label>롤 식별명 (Title)</label>
                 <input
@@ -1007,7 +1077,7 @@ export default function AppleScrollStudio({
             </div>
 
             {/* Outing Sessions List */}
-            <div className="outings-section">
+            <div className="outings-section reveal-on-scroll reveal-delay-2">
               <div className="outings-header">
                 <h4>출사 일정 기록 (복수 출사 지원)</h4>
                 <button
@@ -1022,7 +1092,11 @@ export default function AppleScrollStudio({
 
               <div className="outings-list">
                 {outings.map((session, index) => (
-                  <div key={session.id} className="outing-session-item">
+                  <div
+                    key={session.id}
+                    className="outing-session-item reveal-on-scroll"
+                    style={{ transitionDelay: `${Math.min(0.08 * index, 0.3)}s` }}
+                  >
                     <div className="session-index-col">
                       <span className="session-number">#{index + 1}</span>
                       {outings.length > 1 && (
@@ -1084,15 +1158,15 @@ export default function AppleScrollStudio({
                         </div>
                       </div>
 
-                      {/* Weather Selector Pills */}
+                      {/* Weather Selector Pills (Staggered Icon Revealing) */}
                       <div className="session-row-2">
                         <label>날씨 선택:</label>
                         <div className="weather-pills-group">
-                          {WEATHER_OPTIONS.map((w) => (
+                          {WEATHER_OPTIONS.map((w, wIdx) => (
                             <button
                               key={w.type}
                               type="button"
-                              className={`weather-pill ${
+                              className={`weather-pill reveal-on-scroll reveal-delay-${wIdx + 1} ${
                                 session.weather === w.type ? 'active' : ''
                               }`}
                               onClick={() =>
@@ -1125,7 +1199,7 @@ export default function AppleScrollStudio({
             </div>
 
             {/* Finish Film Unloading Section */}
-            <div className="unload-film-box">
+            <div className="unload-film-box reveal-on-scroll reveal-delay-3">
               <div className="unload-toggle-row">
                 <div>
                   <h4 className="unload-title">필름 촬영 완료 및 꺼내기 (Unload)</h4>
@@ -1178,16 +1252,16 @@ export default function AppleScrollStudio({
           ============================================================ */}
       <section id="section-development" className="apple-chapter-section">
         <div className="chapter-header">
-          <div className="chapter-index">CHAPTER 04</div>
-          <h2 className="chapter-title">암실 현상 공정 (Darkroom Chemistry)</h2>
-          <p className="chapter-desc">
+          <div className="chapter-index reveal-on-scroll">CHAPTER 04</div>
+          <h2 className="chapter-title reveal-on-scroll reveal-title reveal-delay-1">암실 현상 공정 (Darkroom Chemistry)</h2>
+          <p className="chapter-desc reveal-on-scroll reveal-delay-2">
             선택한 필름의 화학 조성(흑백 vs 컬러 vs 영화용)에 따라 올바른 현상액만 정밀하게
             표시됩니다. 희석비, 교반 방식, 온도를 설정하고 필름을 깨워내세요.
           </p>
         </div>
 
         {/* Pending Dev Rolls Queue Bar */}
-        <div className="pending-queue-bar">
+        <div className="pending-queue-bar reveal-on-scroll reveal-delay-1">
           <div className="queue-title-row">
             <h4>🧪 현상 대기 중인 필름 목록 ({pendingDevRolls.length}롤)</h4>
             <span className="queue-hint">
@@ -1213,7 +1287,7 @@ export default function AppleScrollStudio({
         </div>
 
         {/* Selected Dev Film Warning & Smart Filter Notice */}
-        <div className="chem-filter-banner">
+        <div className="chem-filter-banner reveal-on-scroll reveal-delay-2">
           <div className="banner-icon">
             {isDevFilmBw ? '🖤' : '🌈'}
           </div>
@@ -1236,7 +1310,7 @@ export default function AppleScrollStudio({
         {/* Chemistry Workbench */}
         <div className="chem-workbench-grid">
           {/* Left: Chemical Bottles Showcase */}
-          <div className="chem-bottles-column">
+          <div className="chem-bottles-column reveal-on-scroll reveal-delay-2">
             <div className="dev-type-segmented">
               <button
                 type="button"
@@ -1256,13 +1330,14 @@ export default function AppleScrollStudio({
 
             {devType === 'self' ? (
               <div className="bottles-grid">
-                {filteredDevelopers.map((chem) => {
+                {filteredDevelopers.map((chem, bIndex) => {
                   const isSelected = selectedDeveloperId === chem.id;
 
                   return (
                     <div
                       key={chem.id}
-                      className={`chem-bottle-card ${isSelected ? 'selected' : ''}`}
+                      className={`chem-bottle-card reveal-on-scroll ${isSelected ? 'selected' : ''}`}
+                      style={{ transitionDelay: `${Math.min(0.08 * bIndex, 0.35)}s` }}
                       onClick={() => setSelectedDeveloperId(chem.id)}
                     >
                       <div className="bottle-visual-wrapper">
@@ -1277,10 +1352,10 @@ export default function AppleScrollStudio({
                               <span className="chem-name">{chem.name}</span>
                               <span className="chem-type-tag">
                                 {chem.type === 'bw'
-                                  ? 'B&W DEV'
-                                  : chem.type === 'color'
-                                  ? 'C-41 KIT'
-                                  : 'ECN-2'}
+                                    ? 'B&W DEV'
+                                    : chem.type === 'color'
+                                    ? 'C-41 KIT'
+                                    : 'ECN-2'}
                               </span>
                             </div>
                           </div>
@@ -1330,7 +1405,7 @@ export default function AppleScrollStudio({
 
           {/* Right: Recipe Configuration Panel */}
           {devType === 'self' && (
-            <div className="chem-recipe-column">
+            <div className="chem-recipe-column reveal-on-scroll reveal-delay-3">
               <h4 className="recipe-title">현상 레시피 정밀 설정</h4>
 
               {/* Dilution Ratio */}
@@ -1413,7 +1488,7 @@ export default function AppleScrollStudio({
         </div>
 
         {/* Finish Development Action Bar */}
-        <div className="assembled-rig-footer">
+        <div className="assembled-rig-footer reveal-on-scroll reveal-delay-3">
           <div className="rig-summary">
             <span className="rig-tag">현상 완료 준비</span>
             <h4>
@@ -1436,16 +1511,16 @@ export default function AppleScrollStudio({
           ============================================================ */}
       <section id="section-scans" className="apple-chapter-section">
         <div className="chapter-header">
-          <div className="chapter-index">CHAPTER 05</div>
-          <h2 className="chapter-title">스캔 & 디지털 아카이브 (Scan Vault)</h2>
-          <p className="chapter-desc">
+          <div className="chapter-index reveal-on-scroll">CHAPTER 05</div>
+          <h2 className="chapter-title reveal-on-scroll reveal-title reveal-delay-1">스캔 & 디지털 아카이브 (Scan Vault)</h2>
+          <p className="chapter-desc reveal-on-scroll reveal-delay-2">
             현상이 끝난 네거티브를 디지털 마스터로 승화시킵니다. 스캐너 기종을 선택하고,
             체계적인 폴더명을 자동 생성하여 영구 보관소에 등록하세요.
           </p>
         </div>
 
         {/* Pending Scan Rolls Bar */}
-        <div className="pending-queue-bar">
+        <div className="pending-queue-bar reveal-on-scroll reveal-delay-1">
           <div className="queue-title-row">
             <h4>💾 스캔 대기 중인 필름 목록 ({pendingScanRolls.length}롤)</h4>
             <span className="queue-hint">
@@ -1472,7 +1547,7 @@ export default function AppleScrollStudio({
 
         <div className="scan-workbench-grid">
           {/* Scanner Equipment Showcase */}
-          <div className="scanners-showcase-column">
+          <div className="scanners-showcase-column reveal-on-scroll reveal-delay-2">
             <h4 className="column-title">1. 스캔 방식 및 장비 선택</h4>
             <div className="scanner-presets-grid">
               {[
@@ -1496,12 +1571,14 @@ export default function AppleScrollStudio({
                   title: '현상소 하이엔드 스캐너',
                   desc: 'Noritsu HS-1800 / Fuji Frontier SP-3000',
                 },
-              ].map((s) => {
+              ].map((s, sIdx) => {
                 const isSelected = scanMethod === s.method;
                 return (
                   <div
                     key={s.method}
-                    className={`scanner-card ${isSelected ? 'selected' : ''}`}
+                    className={`scanner-card reveal-on-scroll reveal-delay-${sIdx + 1} ${
+                      isSelected ? 'selected' : ''
+                    }`}
                     onClick={() => {
                       setScanMethod(s.method as ScanMethod);
                       setScannerModel(s.desc);
@@ -1520,7 +1597,7 @@ export default function AppleScrollStudio({
           </div>
 
           {/* Folder Name & Archive Details */}
-          <div className="folder-naming-column">
+          <div className="folder-naming-column reveal-on-scroll reveal-delay-3">
             <h4 className="column-title">2. 아카이브 폴더명 & 디지타이징 옵션</h4>
 
             <div className="folder-name-box">

@@ -3597,3 +3597,144 @@ html, body {
     padding: 8px 10px;
   }
 }
+
+/* ==========================================================================
+   APPLE SCROLL REVEAL - CINEMATIC FADE-IN & SLIDE-UP ANIMATIONS
+   ========================================================================== */
+
+/* Hero on-mount entrance animations */
+@keyframes heroEntranceSlide {
+  0% {
+    opacity: 0;
+    transform: translateY(28px);
+    filter: blur(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+@keyframes heroSoftEntrance {
+  0% {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hero-reveal-1 {
+  animation: heroSoftEntrance 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+}
+
+.hero-reveal-2 {
+  animation: heroEntranceSlide 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.25s both;
+}
+
+.hero-reveal-3 {
+  animation: heroEntranceSlide 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.42s both;
+}
+
+.hero-reveal-4 {
+  animation: heroSoftEntrance 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.6s both;
+}
+
+/* Base scroll reveal: initially hidden and offset downwards */
+.reveal-on-scroll {
+  opacity: 0;
+  transform: translateY(34px);
+  transition: opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+/* When in view / revealed */
+.reveal-on-scroll.revealed {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+/* Apple Title blur-to-sharp focus effect */
+.reveal-title {
+  filter: blur(7px);
+  transition: opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.85s cubic-bezier(0.16, 1, 0.3, 1),
+              filter 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.reveal-title.revealed {
+  filter: blur(0);
+}
+
+/* Scale reveal for major rack & cards */
+.reveal-scale {
+  transform: translateY(38px) scale(0.97);
+  transition: opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.reveal-scale.revealed {
+  transform: translateY(0) scale(1);
+}
+
+/* Staggered delay timing curves */
+.reveal-delay-1 {
+  transition-delay: 0.08s;
+}
+
+.reveal-delay-2 {
+  transition-delay: 0.16s;
+}
+
+.reveal-delay-3 {
+  transition-delay: 0.24s;
+}
+
+.reveal-delay-4 {
+  transition-delay: 0.32s;
+}
+
+.reveal-delay-5 {
+  transition-delay: 0.40s;
+}
+
+.reveal-delay-6 {
+  transition-delay: 0.48s;
+}
+
+/* Icon popping micro-animation when weather pills reveal */
+.weather-pill.reveal-on-scroll {
+  transform: translateY(20px) scale(0.92);
+}
+
+.weather-pill.reveal-on-scroll.revealed {
+  transform: translateY(0) scale(1);
+}
+
+/* Accessibility: reduce motion override */
+@media (prefers-reduced-motion: reduce) {
+  .hero-reveal-1,
+  .hero-reveal-2,
+  .hero-reveal-3,
+  .hero-reveal-4 {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+  }
+
+  .reveal-on-scroll,
+  .reveal-title,
+  .reveal-scale,
+  .weather-pill.reveal-on-scroll {
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+    transition: none !important;
+  }
+}
+
