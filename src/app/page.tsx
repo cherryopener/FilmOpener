@@ -40,6 +40,7 @@ import ScanVaultView from '@/components/ScanVaultView';
 import DashboardOverview from '@/components/DashboardOverview';
 import SettingsModal from '@/components/SettingsModal';
 import AuthView from '@/components/AuthView';
+import AppleScrollStudio from '@/components/AppleScrollStudio';
 import { isSupabaseConfigured, getSupabaseClient, signOutUser } from '@/lib/supabase';
 import { User } from '@supabase/supabase-js';
 
@@ -57,12 +58,15 @@ import {
   Monitor,
   LogOut,
   User as UserIcon,
+  Sparkles,
 } from 'lucide-react';
 
 type TabType = 'dashboard' | 'films' | 'gear' | 'shooting' | 'development' | 'developers' | 'scans';
 type ThemeMode = 'system' | 'light' | 'dark';
+type ViewMode = 'apple_flow' | 'table_inventory';
 
 export default function Home() {
+  const [viewMode, setViewMode] = useState<ViewMode>('apple_flow');
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
   const [selectedDevRollId, setSelectedDevRollId] = useState<string | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -290,6 +294,46 @@ export default function Home() {
     );
   }
 
+  // 3. Apple Cinematic Scroll Mode (Default flagship experience)
+  if (viewMode === 'apple_flow') {
+    return (
+      <>
+        <AppleScrollStudio
+          films={films}
+          cameras={cameras}
+          lenses={lenses}
+          developers={developers}
+          rolls={rolls}
+          scans={scans}
+          onSaveFilm={handleSaveFilm}
+          onSaveCamera={handleSaveCamera}
+          onSaveLens={handleSaveLens}
+          onSaveDeveloper={handleSaveDeveloper}
+          onSaveRoll={handleSaveRoll}
+          onSaveScan={handleSaveScan}
+          onOpenSettings={() => setIsSettingsOpen(true)}
+          onSwitchToTableView={() => setViewMode('table_inventory')}
+          userEmail={user?.email}
+          onLogout={async () => {
+            await signOutUser();
+            setUser(null);
+            await loadData();
+          }}
+        />
+
+        {isSettingsOpen && (
+          <SettingsModal
+            isOpen={isSettingsOpen}
+            onClose={() => setIsSettingsOpen(false)}
+            onRefreshData={loadData}
+            currentTheme={theme}
+            onThemeChange={applyTheme}
+          />
+        )}
+      </>
+    );
+  }
+
   return (
     <div className="app-container">
       {/* Sidebar for Mac & Desktop PC */}
@@ -302,6 +346,26 @@ export default function Home() {
             <h1>FilmOpener</h1>
             <p>Analog Studio</p>
           </div>
+        </div>
+
+        {/* Switch back to Apple Cinematic Flow Button */}
+        <div style={{ padding: '0 16px 12px' }}>
+          <button
+            className="btn btn-primary btn-sm"
+            style={{
+              width: '100%',
+              background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+              color: '#ffffff',
+              boxShadow: '0 4px 14px rgba(245, 158, 11, 0.3)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+            }}
+            onClick={() => setViewMode('apple_flow')}
+          >
+            <Sparkles size={14} /> Apple 시네마틱 스크롤
+          </button>
         </div>
 
         <nav className="sidebar-nav">
@@ -429,6 +493,17 @@ export default function Home() {
                 </button>
               </div>
             )}
+
+            {/* Switch to Apple Cinematic Scroll */}
+            <button
+              className="btn btn-secondary btn-sm"
+              onClick={() => setViewMode('apple_flow')}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+              title="Apple 시네마틱 스크롤 모드로 전환"
+            >
+              <Sparkles size={14} color="#f59e0b" />
+              <span>시네마틱 스크롤</span>
+            </button>
 
             {/* Quick Theme Switcher Button */}
             <button
