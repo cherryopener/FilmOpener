@@ -157,6 +157,8 @@ export interface ShootingRoll {
   dev_temp_celsius?: number;            // 현상 온도 (°C)
   dev_time?: string;                    // 현상 시간 (e.g. 9분 30초)
   stop_fix_wash_notes?: string;         // 정지/정착/수세/포토플로 등 메모
+  is_external_roll?: boolean;           // 목록 외/외부 필름(남의 필름, 오래 묵힌 미등록 필름) 여부
+  external_film_info?: string;          // 외부 필름 설명 (e.g. 지수 부탁 필름, 2018년 서랍 발견 필름)
   notes?: string;
   created_at: string;
   updated_at: string;

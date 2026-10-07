@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { FilmItem, CameraItem, LensItem, DeveloperChemical, ShootingRoll, ScanLog } from '@/types';
-import { Film, Camera, Aperture, FlaskConical, Folder, Sparkles, Plus, Clock, CheckCircle2, AlertTriangle, ArrowRight, Snowflake } from 'lucide-react';
+import { Film, Camera, Aperture, FlaskConical, Droplets, Folder, Sparkles, Plus, Clock, CheckCircle2, AlertTriangle, ArrowRight, Snowflake } from 'lucide-react';
 
 interface DashboardOverviewProps {
   films: FilmItem[];
@@ -11,7 +11,7 @@ interface DashboardOverviewProps {
   developers: DeveloperChemical[];
   rolls: ShootingRoll[];
   scans: ScanLog[];
-  onNavigate: (tab: 'dashboard' | 'films' | 'gear' | 'shooting' | 'developers' | 'scans') => void;
+  onNavigate: (tab: 'dashboard' | 'films' | 'gear' | 'shooting' | 'development' | 'developers' | 'scans') => void;
 }
 
 export default function DashboardOverview({
@@ -62,6 +62,9 @@ export default function DashboardOverview({
           <button className="btn btn-primary btn-sm" onClick={() => onNavigate('shooting')}>
             <Plus size={14} /> 새 촬영 롤 장전
           </button>
+          <button className="btn btn-secondary btn-sm" onClick={() => onNavigate('development')}>
+            <FlaskConical size={14} /> 현상 관리 ({unloadedRolls.length}롤 대기)
+          </button>
           <button className="btn btn-secondary btn-sm" onClick={() => onNavigate('films')}>
             <Film size={14} /> 필름 보관함 ({totalFilmQuantity}롤)
           </button>
@@ -69,7 +72,7 @@ export default function DashboardOverview({
             <Camera size={14} /> 카메라/렌즈 관리
           </button>
           <button className="btn btn-secondary btn-sm" onClick={() => onNavigate('developers')}>
-            <FlaskConical size={14} /> 현상액 사용 현황
+            <Droplets size={14} /> 현상액 라이브러리
           </button>
           <button className="btn btn-secondary btn-sm" onClick={() => onNavigate('scans')}>
             <Folder size={14} /> 스캔 아카이브 ({scans.length}롤)
@@ -79,25 +82,25 @@ export default function DashboardOverview({
 
       {/* Stats Overview */}
       <div className="stats-grid">
-        <div className="stat-card" style={{ '--stat-accent': '#f59e0b' } as React.CSSProperties}>
+        <div className="stat-card" style={{ '--stat-accent': '#f59e0b' } as React.CSSProperties} onClick={() => onNavigate('films')}>
           <div className="stat-label"><Film size={15} /> 보유 필름 재고</div>
           <div className="stat-value">{totalFilmQuantity} 롤</div>
           <div className="stat-desc">냉장/냉동 {coldStoredCount}롤 신선 보관</div>
         </div>
 
-        <div className="stat-card" style={{ '--stat-accent': '#3b82f6' } as React.CSSProperties}>
+        <div className="stat-card" style={{ '--stat-accent': '#3b82f6' } as React.CSSProperties} onClick={() => onNavigate('gear')}>
           <div className="stat-label"><Camera size={15} /> 즉시 촬영 가능 바디</div>
           <div className="stat-value">{activeCameras.length} 대</div>
           <div className="stat-desc">정상 작동 카메라 (고장/수리중 제외)</div>
         </div>
 
-        <div className="stat-card" style={{ '--stat-accent': '#a855f7' } as React.CSSProperties}>
+        <div className="stat-card" style={{ '--stat-accent': '#a855f7', cursor: 'pointer' } as React.CSSProperties} onClick={() => onNavigate('development')}>
           <div className="stat-label"><Clock size={15} /> 현상 대기 중인 롤</div>
           <div className="stat-value">{unloadedRolls.length} 롤</div>
-          <div className="stat-desc">촬영 완료 후 현상 대기</div>
+          <div className="stat-desc">촬영 완료 후 현상 대기 (클릭 시 이동)</div>
         </div>
 
-        <div className="stat-card" style={{ '--stat-accent': '#10b981' } as React.CSSProperties}>
+        <div className="stat-card" style={{ '--stat-accent': '#10b981', cursor: 'pointer' } as React.CSSProperties} onClick={() => onNavigate('scans')}>
           <div className="stat-label"><Folder size={15} /> 총 스캔 완료 컷수</div>
           <div className="stat-value">{totalScannedFrames} 컷</div>
           <div className="stat-desc">{scans.length}개 폴더 아카이빙</div>

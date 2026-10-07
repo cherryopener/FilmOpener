@@ -37,6 +37,10 @@ export default function ScanVaultView({
   const [scanDate, setScanDate] = useState('');
   const [notes, setNotes] = useState('');
 
+  const pendingScanRolls = useMemo(() => {
+    return developedRolls.filter((r) => r.status === 'developed');
+  }, [developedRolls]);
+
   const openAddModal = () => {
     setEditingScan(null);
     setIsLegacyArchive(false);
@@ -44,7 +48,7 @@ export default function ScanVaultView({
     setScanDate(today);
 
     if (developedRolls.length > 0) {
-      const firstRoll = developedRolls[0];
+      const firstRoll = pendingScanRolls[0] || developedRolls[0];
       setSelectedRollId(firstRoll.id);
       setFilmTitle(`${firstRoll.title} - ${firstRoll.film_name_snapshot}`);
       setCameraLensInfo(`${firstRoll.camera_name_snapshot}${firstRoll.lens_name_snapshot ? ` + ${firstRoll.lens_name_snapshot}` : ''}`);
@@ -58,6 +62,27 @@ export default function ScanVaultView({
       setTotalFrames(36);
       setFolderName(`${today}_Roll_Scan`);
     }
+
+    setScanMethod('dslr');
+    setScannerModel('Sony A7R IV + 90mm Macro');
+    setStoragePath('외장SSD / Photo_Archive / 2026');
+    setSoftwareUsed('Lightroom + Negative Lab Pro v3.0');
+    setNotes('');
+    setIsModalOpen(true);
+  };
+
+  const openAddModalForRoll = (roll: ShootingRoll) => {
+    setEditingScan(null);
+    setIsLegacyArchive(false);
+    const today = new Date().toISOString().split('T')[0];
+    setScanDate(today);
+
+    setSelectedRollId(roll.id);
+    setFilmTitle(`${roll.title} - ${roll.film_name_snapshot}`);
+    setCameraLensInfo(`${roll.camera_name_snapshot}${roll.lens_name_snapshot ? ` + ${roll.lens_name_snapshot}` : ''}`);
+    setTotalFrames(roll.total_shots || 36);
+    const safeDate = roll.loaded_date || today;
+    setFolderName(`${safeDate}_${roll.film_name_snapshot.split(' ')[0]}_${roll.camera_name_snapshot.split(' ')[0]}`);
 
     setScanMethod('dslr');
     setScannerModel('Sony A7R IV + 90mm Macro');
@@ -190,6 +215,67 @@ export default function ScanVaultView({
           💡 <strong>안내:</strong> 본 시스템은 대용량 이미지 파일 자체를 업로드하는 대신, 어떤 필름을 어떤 방식으로 스캔하여 총 몇컷이 나왔는지, 그리고 <strong>저장한 폴더명</strong>과 스토리지 경로를 체계적으로 관리하는 아카이브 장부입니다.
         </span>
       </div>
+
+      {/* 🎞️ 현상 완료 후 스캔 대기 중인 필름 목록 배너 */}
+      {pendingScanRolls.length > 0 && (
+        <div
+          style={{
+            background: 'rgba(16, 185, 129, 0.06)',
+            border: '1px solid rgba(16, 185, 129, 0.25)',
+            borderRadius: 'var(--radius-lg)',
+            padding: '16px 20px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Sparkles size={16} color="#10b981" />
+              <h4 style={{ fontSize: '0.92rem', fontWeight: '700', color: 'var(--text-main)' }}>
+                현상 완료 / 스캔 대기 중인 필름 ({pendingScanRolls.length}롤)
+              </h4>
+            </div>
+            <span style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: '600' }}>
+              디지타이징 준비 완료
+            </span>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '10px' }}>
+            {pendingScanRolls.map((roll) => (
+              <div
+                key={roll.id}
+                style={{
+                  background: 'var(--bg-card)',
+                  border: '1px solid var(--border-subtle)',
+                  borderRadius: 'var(--radius-md)',
+                  padding: '12px 14px',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  gap: '8px',
+                }}
+              >
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {roll.title}
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    🎞️ {roll.film_name_snapshot} ({roll.developed_date || '현상 완료'})
+                  </div>
+                </div>
+                <button
+                  className="btn btn-primary btn-sm"
+                  style={{ fontSize: '0.74rem', padding: '4px 10px', background: '#10b981', borderColor: '#10b981', flexShrink: 0 }}
+                  onClick={() => openAddModalForRoll(roll)}
+                >
+                  스캔 등록
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Apple-style Segmented Scan Method Navigation */}
       <div style={{ display: 'flex', overflowX: 'auto', paddingBottom: '2px' }}>

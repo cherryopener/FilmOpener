@@ -42,9 +42,10 @@ interface ShootingViewProps {
   films: FilmItem[];
   cameras: CameraItem[];
   lenses: LensItem[];
-  developers: DeveloperChemical[];
+  developers?: DeveloperChemical[];
   onSaveRoll: (roll: ShootingRoll, previousRoll?: ShootingRoll) => Promise<void>;
   onDeleteRoll: (id: string) => Promise<void>;
+  onNavigateToDev?: (rollId?: string) => void;
 }
 
 export default function ShootingView({
@@ -52,9 +53,9 @@ export default function ShootingView({
   films,
   cameras,
   lenses,
-  developers,
   onSaveRoll,
   onDeleteRoll,
+  onNavigateToDev,
 }: ShootingViewProps) {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -71,26 +72,10 @@ export default function ShootingView({
   const [status, setStatus] = useState<RollStatus>('loaded');
   const [isoRated, setIsoRated] = useState<number | ''>('');
   const [totalShots, setTotalShots] = useState<number | ''>(36);
+  const [notes, setNotes] = useState('');
 
   // 3-3 & 3-4. 출사일 세션 목록 (다중 추가 지원)
   const [sessions, setSessions] = useState<ShootingSession[]>([]);
-
-  // 3-6. 현상 방법 관리
-  const [devType, setDevType] = useState<DevType>('none');
-  const [labName, setLabName] = useState('');
-  const [developedDate, setDevelopedDate] = useState('');
-  const [developerId, setDeveloperId] = useState('');
-  const [devMethod, setDevMethod] = useState<AgitationMethod>('inversion');
-  const [dilutionRatio, setDilutionRatio] = useState('1:1');
-  const [customDilution, setCustomDilution] = useState('');
-  const [devQuantityRolls, setDevQuantityRolls] = useState<number>(1);
-  const [chemicalVolumeMl, setChemicalVolumeMl] = useState<number | ''>(250);
-  const [dilutionLiquidVolumeMl, setDilutionLiquidVolumeMl] = useState<number | ''>(250);
-  const [agitationDetails, setAgitationDetails] = useState('');
-  const [devTempCelsius, setDevTempCelsius] = useState<number | ''>(20);
-  const [devTime, setDevTime] = useState('');
-  const [stopFixWashNotes, setStopFixWashNotes] = useState('');
-  const [notes, setNotes] = useState('');
 
   // 2-2 & 3-1. 수리필요(고장)이나 수리중일 경우 현재 사용이 불가능하므로 "사용한 카메라 목록"에 뜨지 않도록 필터링!
   const availableCameras = useMemo(() => {
@@ -127,20 +112,6 @@ export default function ShootingView({
       },
     ]);
 
-    setDevType('none');
-    setLabName('');
-    setDevelopedDate('');
-    setDeveloperId(developers[0]?.id || '');
-    setDevMethod('inversion');
-    setDilutionRatio('1:1');
-    setCustomDilution('');
-    setDevQuantityRolls(1);
-    setChemicalVolumeMl(250);
-    setDilutionLiquidVolumeMl(250);
-    setAgitationDetails('초기 30초 연속 반전 교반 후, 매 1분마다 10초간 4회 반전 교반');
-    setDevTempCelsius(20);
-    setDevTime('9분 30초');
-    setStopFixWashNotes('');
     setNotes('');
     setIsModalOpen(true);
   };
@@ -157,28 +128,6 @@ export default function ShootingView({
     setIsoRated(roll.iso_rated ?? '');
     setTotalShots(roll.total_shots ?? 36);
     setSessions(roll.shooting_sessions && roll.shooting_sessions.length > 0 ? [...roll.shooting_sessions] : []);
-    setDevType(roll.dev_type);
-    setLabName(roll.lab_name || '');
-    setDevelopedDate(roll.developed_date || '');
-    setDeveloperId(roll.developer_id || developers[0]?.id || '');
-    setDevMethod(roll.dev_method || 'inversion');
-
-    const isPresetDilution = COMMON_DILUTIONS.includes(roll.dilution_ratio || '');
-    if (isPresetDilution) {
-      setDilutionRatio(roll.dilution_ratio || '1:1');
-      setCustomDilution('');
-    } else {
-      setDilutionRatio('기타 직접입력');
-      setCustomDilution(roll.dilution_ratio || '');
-    }
-
-    setDevQuantityRolls(roll.dev_quantity_rolls || 1);
-    setChemicalVolumeMl(roll.chemical_volume_ml ?? '');
-    setDilutionLiquidVolumeMl(roll.dilution_liquid_volume_ml ?? '');
-    setAgitationDetails(roll.agitation_details || '');
-    setDevTempCelsius(roll.dev_temp_celsius ?? 20);
-    setDevTime(roll.dev_time || '');
-    setStopFixWashNotes(roll.stop_fix_wash_notes || '');
     setNotes(roll.notes || '');
     setIsModalOpen(true);
   };
@@ -224,11 +173,14 @@ export default function ShootingView({
     const filmObj = films.find((f) => f.id === filmId);
     const camObj = cameras.find((c) => c.id === cameraId);
     const lensObj = lenses.find((l) => l.id === lensId);
-    const devObj = developers.find((d) => d.id === developerId);
 
     const effectiveTitle = title.trim() || `${camObj ? `${camObj.brand} ${camObj.model}` : 'Roll'} - ${filmObj ? filmObj.name : 'Film'} (${loadedDate})`;
 
-    const finalDilution = dilutionRatio === '기타 직접입력' ? customDilution.trim() : dilutionRatio;
+    // If film is unloaded but status is still loaded, update to unloaded
+    let effectiveStatus = status;
+    if (unloadedDate && status === 'loaded') {
+      effectiveStatus = 'unloaded';
+    }
 
     const newRoll: ShootingRoll = {
       id: editingRoll ? editingRoll.id : `roll-${Date.now()}`,
@@ -243,24 +195,25 @@ export default function ShootingView({
         : (lensObj ? `${lensObj.brand} ${lensObj.name}` : undefined),
       loaded_date: loadedDate,
       unloaded_date: unloadedDate || undefined,
-      status,
+      status: editingRoll?.status === 'developed' || editingRoll?.status === 'scanned' ? editingRoll.status : effectiveStatus,
       shooting_sessions: sessions,
       iso_rated: isoRated !== '' ? Number(isoRated) : undefined,
       total_shots: totalShots !== '' ? Number(totalShots) : undefined,
-      dev_type: devType,
-      lab_name: devType === 'lab' ? labName.trim() : undefined,
-      developed_date: developedDate || undefined,
-      developer_id: devType === 'self' ? developerId : undefined,
-      developer_name_snapshot: devType === 'self' && devObj ? devObj.name : undefined,
-      dev_method: devType === 'self' ? devMethod : undefined,
-      dilution_ratio: devType === 'self' ? finalDilution : undefined,
-      dev_quantity_rolls: Number(devQuantityRolls) || 1,
-      chemical_volume_ml: chemicalVolumeMl !== '' ? Number(chemicalVolumeMl) : undefined,
-      dilution_liquid_volume_ml: dilutionLiquidVolumeMl !== '' ? Number(dilutionLiquidVolumeMl) : undefined,
-      agitation_details: devType === 'self' ? agitationDetails.trim() : undefined,
-      dev_temp_celsius: devTempCelsius !== '' ? Number(devTempCelsius) : undefined,
-      dev_time: devTime.trim() || undefined,
-      stop_fix_wash_notes: stopFixWashNotes.trim() || undefined,
+      // Preserve existing development data if previously developed
+      dev_type: editingRoll?.dev_type || 'none',
+      lab_name: editingRoll?.lab_name,
+      developed_date: editingRoll?.developed_date,
+      developer_id: editingRoll?.developer_id,
+      developer_name_snapshot: editingRoll?.developer_name_snapshot,
+      dev_method: editingRoll?.dev_method,
+      dilution_ratio: editingRoll?.dilution_ratio,
+      dev_quantity_rolls: editingRoll?.dev_quantity_rolls || 1,
+      chemical_volume_ml: editingRoll?.chemical_volume_ml,
+      dilution_liquid_volume_ml: editingRoll?.dilution_liquid_volume_ml,
+      agitation_details: editingRoll?.agitation_details,
+      dev_temp_celsius: editingRoll?.dev_temp_celsius,
+      dev_time: editingRoll?.dev_time,
+      stop_fix_wash_notes: editingRoll?.stop_fix_wash_notes,
       notes: notes.trim() || undefined,
       created_at: editingRoll ? editingRoll.created_at : new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -268,6 +221,17 @@ export default function ShootingView({
 
     await onSaveRoll(newRoll, editingRoll || undefined);
     setIsModalOpen(false);
+  };
+
+  const handleQuickUnload = async (roll: ShootingRoll) => {
+    const today = new Date().toISOString().split('T')[0];
+    const updated: ShootingRoll = {
+      ...roll,
+      status: 'unloaded',
+      unloaded_date: roll.unloaded_date || today,
+      updated_at: new Date().toISOString(),
+    };
+    await onSaveRoll(updated, roll);
   };
 
   const filteredRolls = useMemo(() => {
@@ -504,7 +468,26 @@ export default function ShootingView({
                   </div>
                 )}
 
-                {/* 3-6. 현상 방법 요약 Notion Callout */}
+                {/* 현상 대기 상태 알림 Callout */}
+                {roll.status === 'unloaded' && (
+                  <div className="notion-callout" style={{ background: 'rgba(59, 130, 246, 0.08)', borderColor: 'rgba(59, 130, 246, 0.25)', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: 'var(--accent-blue)', fontWeight: '500' }}>
+                      <FlaskConical size={14} />
+                      <span><strong>현상 대기 중</strong>인 필름입니다</span>
+                    </div>
+                    {onNavigateToDev && (
+                      <button
+                        className="btn btn-primary btn-sm"
+                        style={{ padding: '3px 10px', fontSize: '0.75rem', background: 'var(--accent-purple)', borderColor: 'var(--accent-purple)' }}
+                        onClick={() => onNavigateToDev(roll.id)}
+                      >
+                        🧪 현상 진행하기 →
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {/* 3-6. 현상 방법 요약 Notion Callout (현상 완료 후) */}
                 {roll.dev_type !== 'none' && (
                   <div className="notion-callout" style={{ background: 'rgba(168, 85, 247, 0.08)', borderColor: 'rgba(168, 85, 247, 0.25)', flexDirection: 'column', gap: '4px' }}>
                     <div style={{ color: '#c084fc', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '5px' }}>
@@ -535,9 +518,28 @@ export default function ShootingView({
                   <span style={{ fontSize: '0.72rem', color: 'var(--text-dim)', fontFamily: 'var(--font-mono)' }}>
                     등록: {roll.created_at?.split('T')[0] || '-'}
                   </span>
-                  <div style={{ display: 'flex', gap: '6px' }}>
+                  <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                    {roll.status === 'loaded' && (
+                      <button
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => handleQuickUnload(roll)}
+                        title="촬영을 마치고 현상 대기 목록으로 이동합니다"
+                      >
+                        🏁 촬영 종료
+                      </button>
+                    )}
+                    {roll.status === 'unloaded' && onNavigateToDev && (
+                      <button
+                        className="btn btn-primary btn-sm"
+                        style={{ background: 'var(--accent-purple)', borderColor: 'var(--accent-purple)' }}
+                        onClick={() => onNavigateToDev(roll.id)}
+                        title="현상 관리 탭으로 이동하여 현상액 및 교반 기록"
+                      >
+                        <FlaskConical size={13} /> 현상하기
+                      </button>
+                    )}
                     <button className="btn btn-secondary btn-sm" onClick={() => openEditModal(roll)}>
-                      <Edit2 size={13} /> 수정 / 현상기록
+                      <Edit2 size={13} /> 수정
                     </button>
                     <button
                       className="btn btn-danger btn-sm"
@@ -562,7 +564,7 @@ export default function ShootingView({
         <div className="modal-overlay">
           <div className="modal-dialog" style={{ maxWidth: '720px' }}>
             <div className="modal-header">
-              <h2>{editingRoll ? '촬영 롤 상세 및 현상 관리' : '새 필름 장전 & 촬영 등록'}</h2>
+              <h2>{editingRoll ? '촬영 롤 상세 및 출사 기록' : '새 필름 장전 & 촬영 등록'}</h2>
               <button className="btn btn-subtle btn-icon" onClick={() => setIsModalOpen(false)}>✕</button>
             </div>
 
@@ -813,196 +815,15 @@ export default function ShootingView({
                   </div>
                 </div>
 
-                {/* 현상 방법 관리 (현상소 vs 자가현상) */}
-                <div style={{ border: '1px solid var(--border-normal)', borderRadius: '10px', padding: '16px', background: 'rgba(255,255,255,0.015)' }}>
-                  <h4 style={{ fontSize: '0.92rem', fontWeight: '700', color: 'var(--text-main)', marginBottom: '8px' }}>
-                    필름 현상 방법 및 약품 관리
-                  </h4>
-
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label className="form-label">현상 구분</label>
-                      <select
-                        className="form-select"
-                        value={devType}
-                        onChange={(e) => setDevType(e.target.value as DevType)}
-                      >
-                        <option value="none">현상 전 (미정)</option>
-                        <option value="lab">🏬 현상소 위탁</option>
-                        <option value="self">🧪 자가 현상 (Home Development)</option>
-                      </select>
-                    </div>
-
-                    <div className="form-group">
-                      <label className="form-label">현상 날짜</label>
-                      <input
-                        className="form-input"
-                        type="date"
-                        value={developedDate}
-                        onChange={(e) => setDevelopedDate(e.target.value)}
-                      />
+                {/* 현상 워크플로우 안내 Callout */}
+                {status === 'unloaded' && (
+                  <div className="notion-callout" style={{ background: 'rgba(59, 130, 246, 0.08)', borderColor: 'rgba(59, 130, 246, 0.25)' }}>
+                    <FlaskConical size={16} style={{ color: 'var(--accent-blue)', flexShrink: 0 }} />
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-main)', lineHeight: '1.45' }}>
+                      <strong>필름 촬영 완료 (현상 대기)</strong>: 촬영 정보 저장 후 신규 <strong>[🧪 현상 관리]</strong> 탭에서 현상액 선택, 희석비율, 교반 방법 및 시간/온도를 체계적으로 입력하여 현상을 완료할 수 있습니다.
                     </div>
                   </div>
-
-                  {devType === 'lab' && (
-                    <div className="form-group" style={{ marginTop: '10px' }}>
-                      <label className="form-label">현상소 이름</label>
-                      <input
-                        className="form-input"
-                        type="text"
-                        placeholder="예: 고래사진관, 필름로그, 충무로 포토마루 등"
-                        value={labName}
-                        onChange={(e) => setLabName(e.target.value)}
-                      />
-                    </div>
-                  )}
-
-                  {devType === 'self' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '12px' }}>
-                      <div className="form-row">
-                        <div className="form-group">
-                          <label className="form-label">사용한 현상액 *</label>
-                          <select
-                            className="form-select"
-                            value={developerId}
-                            onChange={(e) => setDeveloperId(e.target.value)}
-                            required
-                          >
-                            {developers.map((d) => (
-                              <option key={d.id} value={d.id}>
-                                {d.name} ({d.manufacturer}, {d.type}) - 누적 {d.total_rolls_processed}롤 사용됨
-                              </option>
-                            ))}
-                            {developers.length === 0 && <option value="">등록된 현상액이 없습니다</option>}
-                          </select>
-                        </div>
-
-                        <div className="form-group">
-                          <label className="form-label">
-                            함께 현상한 롤 수 (누적 카운트용) *
-                          </label>
-                          <input
-                            className="form-input"
-                            type="number"
-                            min="1"
-                            value={devQuantityRolls}
-                            onChange={(e) => setDevQuantityRolls(Number(e.target.value))}
-                            required
-                          />
-                          <span style={{ fontSize: '0.72rem', color: 'var(--text-dim)' }}>
-                            탱크에 2롤, 3롤 함께 현상 시 해당 수량만큼 4번 현상액에 누적됩니다.
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* 현상 방식 & 희석 비율 */}
-                      <div className="form-row">
-                        <div className="form-group">
-                          <label className="form-label">현상 방식 (교반 형태)</label>
-                          <select
-                            className="form-select"
-                            value={devMethod}
-                            onChange={(e) => setDevMethod(e.target.value as AgitationMethod)}
-                          >
-                            <option value="rotary">로터리 현상 (Rotary - Jobo 등)</option>
-                            <option value="inversion">수교반 (탱크 수동 반전 교반)</option>
-                            <option value="stand">스탠딩 (정치현상 1시간+)</option>
-                            <option value="semi_stand">세미스탠딩</option>
-                            <option value="other">기타</option>
-                          </select>
-                        </div>
-
-                        <div className="form-group">
-                          <label className="form-label">희석 비율 (Dilution)</label>
-                          <select
-                            className="form-select"
-                            value={dilutionRatio}
-                            onChange={(e) => setDilutionRatio(e.target.value)}
-                          >
-                            {COMMON_DILUTIONS.map((d) => (
-                              <option key={d} value={d}>{d}</option>
-                            ))}
-                          </select>
-                        </div>
-                      </div>
-
-                      {dilutionRatio === '기타 직접입력' && (
-                        <div className="form-group">
-                          <label className="form-label">직접 희석비율 입력</label>
-                          <input
-                            className="form-input"
-                            type="text"
-                            placeholder="예: 1:31 (HC-110 Dilution B)"
-                            value={customDilution}
-                            onChange={(e) => setCustomDilution(e.target.value)}
-                          />
-                        </div>
-                      )}
-
-                      {/* 액량, 온도, 시간 */}
-                      <div className="form-row-3">
-                        <div className="form-group">
-                          <label className="form-label">현상액 원액량 (ml)</label>
-                          <input
-                            className="form-input"
-                            type="number"
-                            placeholder="250"
-                            value={chemicalVolumeMl}
-                            onChange={(e) => setChemicalVolumeMl(e.target.value === '' ? '' : Number(e.target.value))}
-                          />
-                        </div>
-
-                        <div className="form-group">
-                          <label className="form-label">현상 온도 (°C)</label>
-                          <input
-                            className="form-input"
-                            type="number"
-                            step="0.5"
-                            placeholder="20"
-                            value={devTempCelsius}
-                            onChange={(e) => setDevTempCelsius(e.target.value === '' ? '' : Number(e.target.value))}
-                          />
-                        </div>
-
-                        <div className="form-group">
-                          <label className="form-label">현상 시간</label>
-                          <input
-                            className="form-input"
-                            type="text"
-                            placeholder="예: 9분 45초"
-                            value={devTime}
-                            onChange={(e) => setDevTime(e.target.value)}
-                          />
-                        </div>
-                      </div>
-
-                      {/* 세세한 교반 설정 (몇분간 몇회의 회전/반전) */}
-                      <div className="form-group">
-                        <label className="form-label">
-                          교반 세부 설정 (몇분간 몇회의 회전/반전 교반) *
-                        </label>
-                        <input
-                          className="form-input"
-                          type="text"
-                          placeholder="예: 초기 30초 연속 교반, 매 1분마다 10초간 4회 반전 교반 / 로터리 50rpm"
-                          value={agitationDetails}
-                          onChange={(e) => setAgitationDetails(e.target.value)}
-                        />
-                      </div>
-
-                      <div className="form-group">
-                        <label className="form-label">정지 / 정착 / 수세 메모</label>
-                        <input
-                          className="form-input"
-                          type="text"
-                          placeholder="예: 물정지 1분 -> 래피드픽서 1:4 5분 -> 일포드 수세법 -> 포토플로"
-                          value={stopFixWashNotes}
-                          onChange={(e) => setStopFixWashNotes(e.target.value)}
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
+                )}
 
                 {/* 기타 메모 */}
                 <div className="form-group">

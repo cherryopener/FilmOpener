@@ -34,6 +34,7 @@ import {
 import FilmVaultView from '@/components/FilmVaultView';
 import GearView from '@/components/GearView';
 import ShootingView from '@/components/ShootingView';
+import DevelopmentView from '@/components/DevelopmentView';
 import DeveloperView from '@/components/DeveloperView';
 import ScanVaultView from '@/components/ScanVaultView';
 import DashboardOverview from '@/components/DashboardOverview';
@@ -44,6 +45,7 @@ import {
   Camera,
   Layers,
   FlaskConical,
+  Droplets,
   Folder,
   LayoutDashboard,
   Settings,
@@ -52,11 +54,12 @@ import {
   Monitor,
 } from 'lucide-react';
 
-type TabType = 'dashboard' | 'films' | 'gear' | 'shooting' | 'developers' | 'scans';
+type TabType = 'dashboard' | 'films' | 'gear' | 'shooting' | 'development' | 'developers' | 'scans';
 type ThemeMode = 'system' | 'light' | 'dark';
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
+  const [selectedDevRollId, setSelectedDevRollId] = useState<string | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -211,13 +214,15 @@ export default function Home() {
   };
 
   const developedRolls = rolls.filter((r) => r.status === 'developed' || r.status === 'scanned');
+  const pendingDevRollsCount = rolls.filter((r) => r.status === 'unloaded').length;
 
   // Page titles without task number prefixes
   const pageTitles: Record<TabType, string> = {
     dashboard: '대시보드 (Studio Hub)',
     films: '보유 필름 보관소 (Film Inventory)',
     gear: '카메라 & 렌즈 장비함 (Gear Vault)',
-    shooting: '촬영 & 현상 관리 (Shooting Logs)',
+    shooting: '촬영 관리 (Shooting Logs)',
+    development: '현상 관리 (Development & Lab)',
     developers: '현상액 라이브러리 (Developer Chemistry)',
     scans: '필름 스캔 관리 (Scan Archive)',
   };
@@ -273,10 +278,23 @@ export default function Home() {
           </button>
 
           <button
+            className={`nav-item ${activeTab === 'development' ? 'active' : ''}`}
+            onClick={() => setActiveTab('development')}
+          >
+            <FlaskConical size={18} />
+            <span>현상 관리</span>
+            {pendingDevRollsCount > 0 && (
+              <span className="badge" style={{ background: 'var(--accent-purple)', color: '#fff' }}>
+                {pendingDevRollsCount}
+              </span>
+            )}
+          </button>
+
+          <button
             className={`nav-item ${activeTab === 'developers' ? 'active' : ''}`}
             onClick={() => setActiveTab('developers')}
           >
-            <FlaskConical size={18} />
+            <Droplets size={18} />
             <span>현상액 관리</span>
             <span className="badge">{developers.length}</span>
           </button>
@@ -390,6 +408,23 @@ export default function Home() {
                 developers={developers}
                 onSaveRoll={handleSaveRoll}
                 onDeleteRoll={handleDeleteRoll}
+                onNavigateToDev={(rollId) => {
+                  setSelectedDevRollId(rollId || null);
+                  setActiveTab('development');
+                }}
+              />
+            )}
+
+            {activeTab === 'development' && (
+              <DevelopmentView
+                rolls={rolls}
+                films={films}
+                developers={developers}
+                onSaveRoll={handleSaveRoll}
+                onDeleteRoll={handleDeleteRoll}
+                onNavigateToScan={(rollId) => setActiveTab('scans')}
+                initialRollId={selectedDevRollId}
+                onClearInitialRollId={() => setSelectedDevRollId(null)}
               />
             )}
 
@@ -448,11 +483,33 @@ export default function Home() {
         </button>
 
         <button
+          className={`mobile-nav-btn ${activeTab === 'development' ? 'active' : ''}`}
+          onClick={() => setActiveTab('development')}
+          style={{ position: 'relative' }}
+        >
+          <FlaskConical size={20} />
+          <span>현상</span>
+          {pendingDevRollsCount > 0 && (
+            <span
+              style={{
+                position: 'absolute',
+                top: '5px',
+                right: '12px',
+                width: '7px',
+                height: '7px',
+                borderRadius: '50%',
+                background: 'var(--accent-purple)',
+              }}
+            />
+          )}
+        </button>
+
+        <button
           className={`mobile-nav-btn ${activeTab === 'developers' ? 'active' : ''}`}
           onClick={() => setActiveTab('developers')}
         >
-          <FlaskConical size={20} />
-          <span>현상액</span>
+          <Droplets size={20} />
+          <span>약품</span>
         </button>
 
         <button
