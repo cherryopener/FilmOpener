@@ -113,6 +113,7 @@ export default function GearView({
       fixed_max_aperture: camLensType === 'fixed' && camFixedMaxAperture !== '' ? Number(camFixedMaxAperture) : undefined,
       status: camStatus,
       serial_number: camSerial.trim() || undefined,
+      image_url: editingCamera?.image_url,
       notes: camNotes.trim() || undefined,
       created_at: editingCamera ? editingCamera.created_at : new Date().toISOString(),
     };

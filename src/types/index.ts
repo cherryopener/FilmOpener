@@ -70,6 +70,7 @@ export interface CameraItem {
   fixed_max_aperture?: number;          // 일체형 최대개방 f값
   status: EquipmentStatus;              // 상태
   serial_number?: string;               // 시리얼 번호
+  image_url?: string;                   // 사용자 업로드 카메라 사진 (Base64 / URL)
   notes?: string;
   created_at: string;
 }

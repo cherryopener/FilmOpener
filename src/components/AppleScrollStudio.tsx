@@ -15,6 +15,8 @@ import {
   FilmType,
   FilmFormat,
   StorageMethod,
+  CameraFormat,
+  EquipmentStatus,
 } from '@/types';
 import FilmCanister3D from './FilmCanister3D';
 import {
@@ -48,6 +50,8 @@ import {
   Check,
   Film,
   X,
+  Upload,
+  Image as ImageIcon,
 } from 'lucide-react';
 
 interface AppleScrollStudioProps {
@@ -126,6 +130,27 @@ export default function AppleScrollStudio({
   const [unloadedDate, setUnloadedDate] = useState<string>(
     new Date().toISOString().split('T')[0]
   );
+
+  // Active Loaded Shooting Rolls Queue (currently loaded in cameras)
+  const [activeShootingRollId, setActiveShootingRollId] = useState<string | null>(null);
+  const currentlyLoadedRolls = useMemo(
+    () => rolls.filter((r) => r.status === 'loaded'),
+    [rolls]
+  );
+
+  // Quick Add Camera Modal State (with Real Photo Upload)
+  const [isAddCameraOpen, setIsAddCameraOpen] = useState<boolean>(false);
+  const [newCamBrand, setNewCamBrand] = useState<string>('Leica');
+  const [newCamModel, setNewCamModel] = useState<string>('M6 Classic');
+  const [newCamFormat, setNewCamFormat] = useState<CameraFormat>('135_full');
+  const [newCamLensType, setNewCamLensType] = useState<'interchangeable' | 'fixed'>('interchangeable');
+  const [newCamFixedName, setNewCamFixedName] = useState<string>('');
+  const [newCamFixedFocal, setNewCamFixedFocal] = useState<string>('');
+  const [newCamFixedAperture, setNewCamFixedAperture] = useState<string>('');
+  const [newCamStatus, setNewCamStatus] = useState<EquipmentStatus>('active');
+  const [newCamSerial, setNewCamSerial] = useState<string>('');
+  const [newCamImage, setNewCamImage] = useState<string>('');
+  const [newCamNotes, setNewCamNotes] = useState<string>('');
 
   // Active Dev Roll Selection
   const pendingDevRolls = useMemo(
@@ -479,10 +504,181 @@ export default function AppleScrollStudio({
     alert(`✨ [${newFilm.name}] (유통기한: ${newFilm.expiry_date}, ${newFilm.quantity}롤)이 보관함에 새 배치로 등록되었습니다!`);
   };
 
+  // Select an already loaded shooting roll to continue logging
+  const handleSelectLoadedRoll = (roll: ShootingRoll) => {
+    setActiveShootingRollId(roll.id);
+    setRollTitle(roll.title);
+    if (roll.film_id) setSelectedFilmId(roll.film_id);
+    if (roll.camera_id) setSelectedCameraId(roll.camera_id);
+    if (roll.lens_id) setSelectedLensId(roll.lens_id);
+    if (roll.loaded_date) setLoadedDate(roll.loaded_date);
+    if (roll.iso_rated) setIsoRated(roll.iso_rated);
+    if (roll.unloaded_date) setUnloadedDate(roll.unloaded_date);
+
+    if (roll.shooting_sessions && roll.shooting_sessions.length > 0) {
+      setOutings(
+        roll.shooting_sessions.map((s) => ({
+          id: s.id,
+          date: s.date,
+          weather: s.weather,
+          location: s.location || '',
+          shots: Number(s.shots_taken) || 0,
+          notes: s.notes || '',
+        }))
+      );
+    } else {
+      setOutings([
+        {
+          id: `session-${Date.now()}`,
+          date: roll.loaded_date || new Date().toISOString().split('T')[0],
+          weather: 'sunny',
+          location: '',
+          shots: roll.total_shots || 0,
+          notes: roll.notes || '',
+        },
+      ]);
+    }
+  };
+
+  // Start fresh with a new roll to load
+  const handleStartNewRoll = () => {
+    setActiveShootingRollId(null);
+    const today = new Date().toISOString().split('T')[0];
+    setLoadedDate(today);
+    setUnloadedDate(today);
+    if (selectedFilm) {
+      setRollTitle(`#${today.slice(0, 7)} ${selectedFilm.name} 첫 롤`);
+      setIsoRated(selectedFilm.iso);
+    } else {
+      setRollTitle('');
+      setIsoRated(200);
+    }
+    setOutings([
+      {
+        id: `session-${Date.now()}`,
+        date: today,
+        weather: 'sunny',
+        location: '',
+        shots: 12,
+        notes: '',
+      },
+    ]);
+  };
+
+  // Camera Photo Upload (FileReader -> Base64)
+  const handleCameraPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      alert('카메라 사진 파일 크기는 5MB 이하로 업로드해주세요.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        setNewCamImage(reader.result);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Save New Camera
+  const handleSaveNewCamera = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCamBrand.trim() || !newCamModel.trim()) {
+      alert('제조사와 모델명을 입력해주세요.');
+      return;
+    }
+
+    const newCam: CameraItem = {
+      id: `cam-${Date.now()}`,
+      brand: newCamBrand.trim(),
+      model: newCamModel.trim(),
+      format: newCamFormat,
+      lens_type: newCamLensType,
+      fixed_lens_name: newCamLensType === 'fixed' && newCamFixedName.trim() ? newCamFixedName.trim() : undefined,
+      fixed_focal_length: newCamLensType === 'fixed' && newCamFixedFocal ? Number(newCamFixedFocal) : undefined,
+      fixed_max_aperture: newCamLensType === 'fixed' && newCamFixedAperture ? Number(newCamFixedAperture) : undefined,
+      status: newCamStatus,
+      serial_number: newCamSerial.trim() || undefined,
+      image_url: newCamImage || undefined,
+      notes: newCamNotes.trim() || undefined,
+      created_at: new Date().toISOString(),
+    };
+
+    await onSaveCamera(newCam);
+    setSelectedCameraId(newCam.id);
+    setIsAddCameraOpen(false);
+    setNewCamImage('');
+    setNewCamNotes('');
+    setNewCamSerial('');
+    alert(`📷 [${newCam.brand} ${newCam.model}] 카메라가 성공적으로 등록되었습니다!`);
+  };
+
   // 1. Submit Shooting Roll (Save as Loaded or Unloaded)
   const handleCreateShootingRoll = async (shouldUnload: boolean = false) => {
     if (!selectedFilm || !selectedCamera) return;
 
+    const totalShotsCount = outings.reduce((acc, s) => acc + (Number(s.shots) || 0), 0);
+
+    // [A] Case 1: Updating an already loaded roll
+    if (activeShootingRollId) {
+      const existingRoll = rolls.find((r) => r.id === activeShootingRollId);
+      const updatedRoll: ShootingRoll = {
+        ...(existingRoll || {}),
+        id: activeShootingRollId,
+        title: rollTitle || existingRoll?.title || `${selectedFilm.name} 출사롤`,
+        film_id: selectedFilm.id,
+        film_name_snapshot: selectedFilm.name,
+        camera_id: selectedCamera.id,
+        camera_name_snapshot: `${selectedCamera.brand} ${selectedCamera.model}`,
+        lens_id: selectedLens?.id,
+        lens_name_snapshot:
+          selectedCamera.lens_type === 'fixed'
+            ? selectedCamera.fixed_lens_name
+            : selectedLens
+            ? `${selectedLens.brand} ${selectedLens.name}`
+            : undefined,
+        loaded_date: loadedDate,
+        unloaded_date: shouldUnload ? unloadedDate : undefined,
+        status: shouldUnload ? 'unloaded' : 'loaded',
+        shooting_sessions: outings.map((s) => ({
+          id: s.id,
+          date: s.date,
+          weather: s.weather,
+          location: s.location || '출사 장소 미입력',
+          shots_taken: Number(s.shots) || 0,
+          notes: s.notes,
+        })),
+        iso_rated: isoRated,
+        total_shots: totalShotsCount,
+        dev_type: existingRoll?.dev_type || 'none',
+        dev_quantity_rolls: existingRoll?.dev_quantity_rolls || 1,
+        notes: `장전 완료: ${loadedDate}${shouldUnload ? ` / 촬영 종료: ${unloadedDate}` : ''}`,
+        created_at: existingRoll?.created_at || new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      await onSaveRoll(updatedRoll, existingRoll);
+
+      if (shouldUnload) {
+        setActiveShootingRollId(null);
+        setDevSelectedRollId(updatedRoll.id);
+        setTimeout(() => {
+          scrollToChapter('section-development');
+        }, 300);
+        alert(
+          `🎉 [${updatedRoll.title}] 촬영을 종료하고 필름을 꺼냈습니다!\n(※ 이미 장전 시 1롤이 차감되었으므로 추가 차감되지 않습니다.)\n- 암실 현상 대기 목록으로 이동합니다.`
+        );
+      } else {
+        alert(
+          `💾 [${updatedRoll.title}] 장전된 롤의 출사 기록이 업데이트되었습니다!\n(계속해서 다음 출사일을 추가할 수 있습니다.)`
+        );
+      }
+      return;
+    }
+
+    // [B] Case 2: Creating a brand new roll
     if (selectedFilm.quantity <= 0) {
       const proceed = confirm(
         `⚠️ [${selectedFilm.name}]은(는) 현재 보유 잔여 수량이 0롤입니다.\n재고 차감 없이 계속 장전하시겠습니까?`
@@ -490,10 +686,9 @@ export default function AppleScrollStudio({
       if (!proceed) return;
     }
 
-    const totalShotsCount = outings.reduce((acc, s) => acc + (Number(s.shots) || 0), 0);
-
+    const newRollId = `roll-${Date.now()}`;
     const newRoll: ShootingRoll = {
-      id: `roll-${Date.now()}`,
+      id: newRollId,
       title: rollTitle || `${selectedFilm.name} 출사롤`,
       film_id: selectedFilm.id,
       film_name_snapshot: selectedFilm.name,
@@ -528,7 +723,6 @@ export default function AppleScrollStudio({
 
     await onSaveRoll(newRoll);
 
-    // If unloaded, auto scroll to Development chapter!
     if (shouldUnload) {
       setDevSelectedRollId(newRoll.id);
       setTimeout(() => {
@@ -538,8 +732,9 @@ export default function AppleScrollStudio({
         `🎉 [${newRoll.title}] 촬영이 완료되어 필름을 꺼냈습니다!\n- [${selectedFilm.name}] 잔여 재고: 1롤 차감 반영\n- 암실 현상 대기 목록으로 이동합니다.`
       );
     } else {
+      setActiveShootingRollId(newRollId);
       alert(
-        `🎉 [${newRoll.title}] 촬영 롤이 카메라에 성공적으로 장전되었습니다!\n- [${selectedFilm.name}] 잔여 재고: ${selectedFilm.quantity}롤 ➔ ${Math.max(0, selectedFilm.quantity - 1)}롤 차감 반영`
+        `🎉 [${newRoll.title}] 촬영 롤이 카메라에 성공적으로 장전되었습니다!\n- [${selectedFilm.name}] 잔여 재고: 1롤 차감 반영\n이제 상단 장전 롤 목록에서 언제든 불러와 출사 기록을 추가할 수 있습니다.`
       );
     }
   };
@@ -736,17 +931,7 @@ export default function AppleScrollStudio({
             책장에 꽂힌 실제 필름 캐니스터를 고르듯 선택하세요. 같은 필름이라도 유통기한, 보관 방식,
             썩은 필름(만료) 여부에 따라 각각 개별 캐니스터로 정밀 분리되어 보관됩니다.
           </p>
-          <div style={{ marginTop: '16px' }} className="reveal-on-scroll reveal-delay-3">
-            <button
-              type="button"
-              className="apple-secondary-btn"
-              onClick={() => setIsAddFilmOpen(true)}
-              style={{ fontSize: '0.82rem', padding: '8px 18px' }}
-            >
-              <Plus size={14} color="#f59e0b" />
-              <span>새 필름 등록 (유통기한/썩필 개별 추가)</span>
-            </button>
-          </div>
+
         </div>
 
         {/* 3D Realistic Wooden / Anodized Shelf Rack */}
@@ -832,7 +1017,17 @@ export default function AppleScrollStudio({
         <div className="gear-rig-workspace">
           {/* Camera Showcase Cards */}
           <div className="cameras-showcase-column reveal-on-scroll reveal-delay-1">
-            <h3 className="column-title">1. 카메라 바디 선택</h3>
+            <div className="column-title-row">
+              <h3 className="column-title">1. 카메라 바디 선택</h3>
+              <button
+                type="button"
+                className="apple-mini-add-btn"
+                onClick={() => setIsAddCameraOpen(true)}
+              >
+                <Plus size={14} />
+                <span>+ 새 카메라 추가</span>
+              </button>
+            </div>
             <div className="camera-cards-list">
               {cameras.map((camera, cIndex) => {
                 const isSelected = selectedCameraId === camera.id;
@@ -861,24 +1056,35 @@ export default function AppleScrollStudio({
                     </div>
 
                     <div className="cam-graphic-wrapper">
-                      {/* Stylized Vector Camera Graphic */}
-                      <div className="camera-vector-body">
-                        <div className="cam-top-plate">
-                          <div className="cam-shutter-dial" />
-                          <div className="cam-winder-lever" />
-                          <div className="cam-viewfinder-window" />
+                      {camera.image_url ? (
+                        <div className="camera-photo-wrapper">
+                          <img
+                            src={camera.image_url}
+                            alt={camera.model}
+                            className="camera-real-photo"
+                          />
+                          <div className="camera-photo-overlay" />
                         </div>
-                        <div className="cam-leatherette-grip">
-                          <div className="cam-red-dot" />
-                          <div className="cam-bayonet-mount">
-                            <div className="mount-inner-throat">
-                              <span className="mount-text">
-                                {camera.lens_type === 'fixed' ? 'FIXED' : 'BAYONET'}
-                              </span>
+                      ) : (
+                        /* Stylized Vector Camera Graphic */
+                        <div className="camera-vector-body">
+                          <div className="cam-top-plate">
+                            <div className="cam-shutter-dial" />
+                            <div className="cam-winder-lever" />
+                            <div className="cam-viewfinder-window" />
+                          </div>
+                          <div className="cam-leatherette-grip">
+                            <div className="cam-red-dot" />
+                            <div className="cam-bayonet-mount">
+                              <div className="mount-inner-throat">
+                                <span className="mount-text">
+                                  {camera.lens_type === 'fixed' ? 'FIXED' : 'BAYONET'}
+                                </span>
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
+                      )}
                     </div>
 
                     <div className="cam-details">
@@ -1011,11 +1217,58 @@ export default function AppleScrollStudio({
         <div className="shooting-workbench-grid">
           {/* Left: Rig Info & Sessions */}
           <div className="sessions-builder-card reveal-on-scroll reveal-scale reveal-delay-1">
+            {/* 🎞️ 현재 카메라에 장전되어 촬영 진행 중인 롤 목록 (계속 촬영 지원) */}
+            {currentlyLoadedRolls.length > 0 && (
+              <div className="loaded-rolls-selector-strip reveal-on-scroll reveal-delay-1">
+                <div className="loaded-strip-header">
+                  <div className="loaded-strip-title">
+                    <span className="rig-pulse-dot" />
+                    <span>현재 카메라에 장전 중인 롤 ({currentlyLoadedRolls.length})</span>
+                  </div>
+                  <span className="loaded-strip-hint">
+                    저장해 둔 롤을 클릭하면 저장했던 출사 정보와 장비 세트가 즉시 복원됩니다.
+                  </span>
+                </div>
+                <div className="loaded-strip-pills">
+                  {currentlyLoadedRolls.map((loadedRoll) => {
+                    const isCurrent = activeShootingRollId === loadedRoll.id;
+                    return (
+                      <button
+                        key={loadedRoll.id}
+                        type="button"
+                        className={`loaded-roll-pill ${isCurrent ? 'active' : ''}`}
+                        onClick={() => handleSelectLoadedRoll(loadedRoll)}
+                        title={`장전일: ${loadedRoll.loaded_date} / 총 ${loadedRoll.total_shots || 0}컷`}
+                      >
+                        <span className="pill-roll-title">{loadedRoll.title}</span>
+                        <span className="pill-badge-info">
+                          {loadedRoll.film_name_snapshot} • {loadedRoll.camera_name_snapshot}
+                        </span>
+                        {isCurrent && <span className="pill-live-tag">선택됨</span>}
+                      </button>
+                    );
+                  })}
+                  <button
+                    type="button"
+                    className={`loaded-roll-pill new-create ${!activeShootingRollId ? 'active' : ''}`}
+                    onClick={handleStartNewRoll}
+                    title="새로운 필름 롤을 새로 장전합니다."
+                  >
+                    <span>+ 새로운 롤 장전하기</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* 🎯 현재 선택된 장전 세트 (필름 + 카메라 + 렌즈) 한 줄 표시 */}
             <div className="active-rig-summary-bar reveal-on-scroll reveal-delay-1">
               <div className="rig-bar-label">
                 <span className="rig-pulse-dot" />
-                <span>장전된 장비 세트:</span>
+                <span>
+                  {activeShootingRollId
+                    ? '현재 선택된 장전 롤:'
+                    : '장전될 장비 세트:'}
+                </span>
               </div>
               <div className="rig-bar-content">
                 <span className="rig-item-pill film" title="선택된 필름">
@@ -1230,7 +1483,11 @@ export default function AppleScrollStudio({
                   onClick={() => handleCreateShootingRoll(false)}
                 >
                   <Camera size={15} />
-                  <span>현재 상태로 장전 저장 (계속 촬영 중)</span>
+                  <span>
+                    {activeShootingRollId
+                      ? '현재 롤 출사 기록 저장 (계속 촬영 중)'
+                      : '현재 상태로 장전 저장 (계속 촬영 중)'}
+                  </span>
                 </button>
 
                 <button
@@ -1884,6 +2141,214 @@ export default function AppleScrollStudio({
                   className="apple-primary-btn glow"
                 >
                   <span>선반에 캐니스터 등록</span>
+                  <Check size={16} />
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================
+          QUICK ADD CAMERA MODAL (카메라 실물 사진 업로드 & 기기 등록)
+          ============================================================ */}
+      {isAddCameraOpen && (
+        <div className="apple-modal-backdrop" onClick={() => setIsAddCameraOpen(false)}>
+          <div className="apple-modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="apple-modal-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Camera size={20} color="#f59e0b" />
+                <h3>새 카메라 바디 등록 (실물 사진 & 기기 스펙)</h3>
+              </div>
+              <button
+                type="button"
+                className="apple-modal-close-btn"
+                onClick={() => setIsAddCameraOpen(false)}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveNewCamera} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              {/* Photo Upload Section */}
+              <div className="field-group">
+                <label>카메라 실물 사진 (내 기기 사진 업로드)</label>
+                {newCamImage ? (
+                  <div className="photo-preview-box">
+                    <img src={newCamImage} alt="카메라 미리보기" className="camera-real-photo" />
+                    <button
+                      type="button"
+                      className="photo-remove-btn"
+                      onClick={() => setNewCamImage('')}
+                      title="사진 삭제"
+                    >
+                      <X size={14} />
+                      <span>사진 삭제</span>
+                    </button>
+                  </div>
+                ) : (
+                  <label className="photo-uploader-area">
+                    <Upload size={24} color="#f59e0b" style={{ marginBottom: '8px' }} />
+                    <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#f5f5f7' }}>
+                      클릭하여 카메라 사진 파일 선택
+                    </span>
+                    <span style={{ fontSize: '0.74rem', color: '#86868b', marginTop: '4px' }}>
+                      JPG, PNG, WEBP 등 지원 (최대 5MB)
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleCameraPhotoUpload}
+                      style={{ display: 'none' }}
+                    />
+                  </label>
+                )}
+              </div>
+
+              {/* Brand & Model */}
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <div className="field-group" style={{ width: '150px' }}>
+                  <label>제조사 (Brand)</label>
+                  <input
+                    type="text"
+                    value={newCamBrand}
+                    onChange={(e) => setNewCamBrand(e.target.value)}
+                    placeholder="예: Leica, Nikon"
+                    className="apple-input"
+                    required
+                  />
+                </div>
+                <div className="field-group flex-1">
+                  <label>모델명 (Model)</label>
+                  <input
+                    type="text"
+                    value={newCamModel}
+                    onChange={(e) => setNewCamModel(e.target.value)}
+                    placeholder="예: M6 Classic, FM2"
+                    className="apple-input"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Format & Lens Type & Status */}
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <div className="field-group flex-1">
+                  <label>판형 (Format)</label>
+                  <select
+                    value={newCamFormat}
+                    onChange={(e) => setNewCamFormat(e.target.value as CameraFormat)}
+                    className="apple-input"
+                  >
+                    <option value="135_full">35mm 풀프레임 (135)</option>
+                    <option value="135_half">35mm 하프프레임</option>
+                    <option value="120_66">중형 6x6 (Hasselblad 등)</option>
+                    <option value="120_67">중형 6x7 (Pentax 67 등)</option>
+                    <option value="120_645">중형 6x4.5</option>
+                    <option value="panorama">파노라마 (XPan 등)</option>
+                    <option value="other">기타</option>
+                  </select>
+                </div>
+                <div className="field-group flex-1">
+                  <label>렌즈 유형</label>
+                  <select
+                    value={newCamLensType}
+                    onChange={(e) => setNewCamLensType(e.target.value as 'interchangeable' | 'fixed')}
+                    className="apple-input"
+                  >
+                    <option value="interchangeable">렌즈 교환식 (바요넷/스크류)</option>
+                    <option value="fixed">일체형 렌즈 (P&S / RF)</option>
+                  </select>
+                </div>
+                <div className="field-group flex-1">
+                  <label>작동 상태</label>
+                  <select
+                    value={newCamStatus}
+                    onChange={(e) => setNewCamStatus(e.target.value as EquipmentStatus)}
+                    className="apple-input"
+                  >
+                    <option value="active">정상 작동</option>
+                    <option value="needs_repair">수리 필요 (고장)</option>
+                    <option value="in_repair">수리 입고 중</option>
+                    <option value="collection">소장용</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Fixed Lens Details if fixed */}
+              {newCamLensType === 'fixed' && (
+                <div style={{ display: 'flex', gap: '12px', background: 'rgba(255,255,255,0.03)', padding: '10px', borderRadius: '10px' }}>
+                  <div className="field-group flex-1">
+                    <label>일체형 렌즈명</label>
+                    <input
+                      type="text"
+                      value={newCamFixedName}
+                      onChange={(e) => setNewCamFixedName(e.target.value)}
+                      placeholder="예: Summicron 40mm f/2"
+                      className="apple-input"
+                    />
+                  </div>
+                  <div className="field-group" style={{ width: '90px' }}>
+                    <label>초점거리(mm)</label>
+                    <input
+                      type="number"
+                      value={newCamFixedFocal}
+                      onChange={(e) => setNewCamFixedFocal(e.target.value)}
+                      placeholder="40"
+                      className="apple-input"
+                    />
+                  </div>
+                  <div className="field-group" style={{ width: '90px' }}>
+                    <label>최대조리개(f)</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={newCamFixedAperture}
+                      onChange={(e) => setNewCamFixedAperture(e.target.value)}
+                      placeholder="2.0"
+                      className="apple-input"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Serial & Notes */}
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <div className="field-group flex-1">
+                  <label>시리얼 번호 (선택사항)</label>
+                  <input
+                    type="text"
+                    value={newCamSerial}
+                    onChange={(e) => setNewCamSerial(e.target.value)}
+                    placeholder="예: 2478910"
+                    className="apple-input"
+                  />
+                </div>
+                <div className="field-group flex-1">
+                  <label>메모 (바디 상태, 특징 등)</label>
+                  <input
+                    type="text"
+                    value={newCamNotes}
+                    onChange={(e) => setNewCamNotes(e.target.value)}
+                    placeholder="예: 뷰파인더 청소 완료, 셔터스피드 점검필"
+                    className="apple-input"
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
+                <button
+                  type="button"
+                  className="apple-secondary-btn"
+                  onClick={() => setIsAddCameraOpen(false)}
+                >
+                  취소
+                </button>
+                <button
+                  type="submit"
+                  className="apple-primary-btn glow"
+                >
+                  <span>카메라 바디 등록</span>
                   <Check size={16} />
                 </button>
               </div>

@@ -38,6 +38,7 @@ CREATE TABLE IF NOT EXISTS cameras (
   fixed_max_aperture NUMERIC(4, 2),
   status VARCHAR(50) NOT NULL DEFAULT 'active', -- active, needs_repair, in_repair, for_sale, collection
   serial_number VARCHAR(100),
+  image_url TEXT,
   notes TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
