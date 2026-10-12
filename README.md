@@ -1,4 +1,4 @@
-# FilmOpener (필름오프너) 🎞️
+# FilmOpener (필름따개) 🎞️
 
 > **아날로그 필름 & 카메라·촬영·자가현상·스캔 통합 워크플로우 매니저**  
 > Responsive Web & Mobile App built with Next.js, Supabase, and Vercel.
