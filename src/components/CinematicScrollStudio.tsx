@@ -459,6 +459,8 @@ export default function CinematicScrollStudio({
   const [newFilmBrandMode, setNewFilmBrandMode] = useState<string>('');
   const [newFilmType, setNewFilmType] = useState<FilmType>('color_negative');
   const [newFilmFormat, setNewFilmFormat] = useState<FilmFormat>('135');
+  const [newFilmFramesOption, setNewFilmFramesOption] = useState<'36' | '24' | 'custom'>('36');
+  const [newFilmFramesPerRoll, setNewFilmFramesPerRoll] = useState<number>(36);
   const [newFilmIso, setNewFilmIso] = useState<number>(200);
   const [newFilmExpiry, setNewFilmExpiry] = useState<string>('');
   const [newFilmExpiryYear, setNewFilmExpiryYear] = useState<string>('');
@@ -467,7 +469,36 @@ export default function CinematicScrollStudio({
   const [newFilmStorage, setNewFilmStorage] = useState<StorageMethod>('room_temp');
   const [newFilmExpired, setNewFilmExpired] = useState<boolean>(false);
   const [newFilmQuantity, setNewFilmQuantity] = useState<number>(1);
+  const [newFilmBulkRolled, setNewFilmBulkRolled] = useState<boolean>(false);
   const [newFilmNotes, setNewFilmNotes] = useState<string>('');
+
+  // Quick Add External Roll (외부 필름 / 남의 필름 / 오래 묵힌 미등록 필름 바로 현상)
+  const [isAddExternalRollOpen, setIsAddExternalRollOpen] = useState<boolean>(false);
+  const [extRollTitle, setExtRollTitle] = useState<string>('');
+  const [extRollFilmName, setExtRollFilmName] = useState<string>('');
+  const [extRollFilmType, setExtRollFilmType] = useState<FilmType>('color_negative');
+  const [extRollFormat, setExtRollFormat] = useState<FilmFormat>('135');
+  const [extRollIso, setExtRollIso] = useState<number | ''>(400);
+  const [extRollNotes, setExtRollNotes] = useState<string>('');
+
+  const handleCinematicFormatChange = (fmt: FilmFormat) => {
+    setNewFilmFormat(fmt);
+    if (fmt === '120') {
+      setNewFilmFramesPerRoll(12);
+    } else if (fmt === '220') {
+      setNewFilmFramesPerRoll(24);
+    } else if (fmt === 'large_sheet') {
+      setNewFilmFramesPerRoll(1);
+    } else if (fmt === '110') {
+      if (newFilmFramesOption === '36') {
+        setNewFilmFramesOption('24');
+        setNewFilmFramesPerRoll(24);
+      }
+    } else {
+      if (newFilmFramesOption === '36') setNewFilmFramesPerRoll(36);
+      else if (newFilmFramesOption === '24') setNewFilmFramesPerRoll(24);
+    }
+  };
 
   // Selected Objects
   const selectedFilm = useMemo(
@@ -581,24 +612,53 @@ export default function CinematicScrollStudio({
     return films.find((f) => f.id === currentDevRoll.film_id) || selectedFilm;
   }, [currentDevRoll, films, selectedFilm]);
 
+  // The active film type for currentDevRoll (supports external film types & name inferences)
+  const currentDevFilmType = useMemo((): FilmType => {
+    if (currentDevRoll?.external_film_type) {
+      return currentDevRoll.external_film_type;
+    }
+    if (currentDevRoll?.film_id) {
+      const f = films.find((film) => film.id === currentDevRoll.film_id);
+      if (f) return f.type;
+    }
+    if (currentDevRoll?.film_name_snapshot) {
+      const fn = currentDevRoll.film_name_snapshot.toLowerCase();
+      if (fn.includes('trix') || fn.includes('tri-x') || fn.includes('hp5') || fn.includes('흑백') || fn.includes('b&w') || fn.includes('delta') || fn.includes('acros') || fn.includes('pan') || fn.includes('fp4')) {
+        return 'bw_negative';
+      }
+      if (fn.includes('scala') || fn.includes('흑백슬라')) return 'bw_slide';
+      if (fn.includes('cinestill') || fn.includes('씨네스틸') || fn.includes('시네스틸')) return 'cinestill';
+      if (fn.includes('ahu')) return 'cinema_ahu';
+      if (fn.includes('500t') || fn.includes('250d') || fn.includes('50d') || fn.includes('영화') || fn.includes('ecn')) return 'cinema';
+      if (fn.includes('ektachrome') || fn.includes('provia') || fn.includes('velvia') || fn.includes('slide') || fn.includes('슬라이드')) return 'color_slide';
+    }
+    return currentDevFilm?.type || 'color_negative';
+  }, [currentDevRoll, films, currentDevFilm]);
+
   // Dynamic Developer Filter:
   // IF Film is B&W -> ONLY B&W Developers & B&W Labs! HIDE Color kits!
   const isDevFilmBw = useMemo(() => {
-    if (!currentDevFilm) return false;
-    return currentDevFilm.type === 'bw_negative' || currentDevFilm.type === 'bw_slide';
-  }, [currentDevFilm]);
+    return currentDevFilmType === 'bw_negative' || currentDevFilmType === 'bw_slide';
+  }, [currentDevFilmType]);
 
   const filteredDevelopers = useMemo(() => {
     if (isDevFilmBw) {
       // ONLY Black & White chemicals!
       return developers.filter((d) => d.type === 'bw');
     }
-    if (currentDevFilm?.type === 'cinema' || currentDevFilm?.type === 'cinema_ahu') {
+    if (currentDevFilmType === 'cinema') {
       return developers.filter((d) => d.type === 'cinema');
     }
-    // Color negative / slide
-    return developers.filter((d) => d.type === 'color' || d.type === 'slide');
-  }, [developers, isDevFilmBw, currentDevFilm]);
+    if (currentDevFilmType === 'cinestill' || currentDevFilmType === 'cinema_ahu') {
+      return developers.filter((d) => d.type === 'color' || d.type === 'cinema');
+    }
+    if (currentDevFilmType === 'color_slide') {
+      const slideDevs = developers.filter((d) => d.type === 'slide');
+      return slideDevs.length > 0 ? slideDevs : developers.filter((d) => d.type === 'color');
+    }
+    // Color negative
+    return developers.filter((d) => d.type === 'color');
+  }, [developers, isDevFilmBw, currentDevFilmType]);
 
   // Sync selected developer chemical
   useEffect(() => {
@@ -645,7 +705,11 @@ export default function CinematicScrollStudio({
         matchedType = 'bw_slide';
       } else if (fn.includes('ektachrome') || fn.includes('provia') || fn.includes('velvia') || fn.includes('slide') || fn.includes('슬라이드')) {
         matchedType = 'color_slide';
-      } else if (fn.includes('500t') || fn.includes('250d') || fn.includes('50d') || fn.includes('cinestill') || fn.includes('시네') || fn.includes('영화')) {
+      } else if (fn.includes('cinestill') || fn.includes('씨네스틸') || fn.includes('시네스틸')) {
+        matchedType = 'cinestill';
+      } else if (fn.includes('ahu')) {
+        matchedType = 'cinema_ahu';
+      } else if (fn.includes('500t') || fn.includes('250d') || fn.includes('50d') || fn.includes('시네') || fn.includes('영화') || fn.includes('ecn')) {
         matchedType = 'cinema';
       } else {
         matchedType = 'color_negative';
@@ -658,7 +722,7 @@ export default function CinematicScrollStudio({
       setFolderColor('mac_glossy_black');
     } else if (matchedType === 'color_slide') {
       setFolderColor('mac_green');
-    } else if (matchedType === 'cinema' || matchedType === 'cinema_ahu') {
+    } else if (matchedType === 'cinema' || matchedType === 'cinestill' || matchedType === 'cinema_ahu') {
       setFolderColor('mac_yellow');
     } else {
       setFolderColor('mac_sky_blue');
@@ -683,8 +747,9 @@ export default function CinematicScrollStudio({
             color_slide: 3,
             bw_slide: 4,
             cinema: 5,
-            cinema_ahu: 6,
-            other: 7,
+            cinestill: 6,
+            cinema_ahu: 7,
+            other: 8,
           };
           return (
             (typePriority[a.type] || 99) - (typePriority[b.type] || 99) ||
@@ -1069,6 +1134,11 @@ export default function CinematicScrollStudio({
       else finalExpiry = '유통기한 미상 (노괴/썩필)';
     }
 
+    const isMediumOrLarge = newFilmFormat === '120' || newFilmFormat === '220' || newFilmFormat === 'large_sheet';
+    const computedFrames = isMediumOrLarge
+      ? (newFilmFormat === '120' ? 12 : newFilmFormat === '220' ? 24 : 1)
+      : (Number(newFilmFramesPerRoll) || (newFilmFormat === '110' ? 24 : 36));
+
     const newFilm: FilmItem = {
       id: `film-${Date.now()}`,
       name: newFilmName.trim(),
@@ -1078,12 +1148,12 @@ export default function CinematicScrollStudio({
       iso: Number(newFilmIso) || 200,
       expiry_date: finalExpiry,
       storage_method: newFilmStorage,
-      is_bulk_rolled: false,
+      is_bulk_rolled: newFilmBulkRolled,
       is_expired: isAutoExpired,
       freshness_status: newFilmFreshness,
       is_rebranded: false,
       quantity: Number(newFilmQuantity) || 1,
-      frames_per_roll: newFilmFormat === '135' ? 36 : 12,
+      frames_per_roll: computedFrames,
       notes: newFilmNotes.trim() || undefined,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -1098,6 +1168,7 @@ export default function CinematicScrollStudio({
     setNewFilmExpiry('');
     setNewFilmExpiryYear('');
     setNewFilmExpiryMonth('');
+    setNewFilmBulkRolled(false);
     setNewFilmNotes('');
     const freshnessLabel =
       newFilmFreshness === 'fresh'
@@ -1106,6 +1177,46 @@ export default function CinematicScrollStudio({
         ? '💀 틀딱 (푹썩필)'
         : '⚠️ 노괴 (썩필)';
     alert(`✨ [${newFilm.name}] (${freshnessLabel}, ${newFilm.quantity}롤)이 보관함에 새 배치로 등록되었습니다!`);
+  };
+
+  // Quick Add External Roll (남의 필름 / 오래 묵힌 미등록 필름 바로 현상)
+  const handleQuickAddExternalRoll = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!extRollFilmName.trim()) {
+      alert('필름 이름을 입력해 주세요.');
+      return;
+    }
+    const today = new Date().toISOString().split('T')[0];
+    const newRoll: ShootingRoll = {
+      id: `roll-ext-${Date.now()}`,
+      title: extRollTitle.trim() || `[외부] ${extRollFilmName.trim()} 현상`,
+      film_name_snapshot: extRollFilmName.trim(),
+      camera_name_snapshot: '외부 필름 (촬영 정보 미기록)',
+      is_external_roll: true,
+      external_film_type: extRollFilmType,
+      external_film_info: `${extRollFilmName.trim()} (${extRollFormat}, ISO ${extRollIso || 400})`,
+      iso_rated: Number(extRollIso) || 400,
+      status: 'unloaded',
+      loaded_date: today,
+      unloaded_date: today,
+      shooting_sessions: [],
+      dev_type: 'none',
+      dev_quantity_rolls: 1,
+      notes: extRollNotes.trim() || undefined,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    await onSaveRoll(newRoll);
+    setDevSelectedRollId(newRoll.id);
+    setIsAddExternalRollOpen(false);
+    setExtRollTitle('');
+    setExtRollFilmName('');
+    setExtRollFilmType('color_negative');
+    setExtRollFormat('135');
+    setExtRollIso(400);
+    setExtRollNotes('');
+    alert(`🧪 [${newRoll.title}] 외부 필름이 암실 현상 대기 목록에 등록되었습니다!\n필름 특성에 맞는 현상액이 자동 추천됩니다.`);
   };
 
   // Select an already loaded shooting roll to continue logging
@@ -2336,13 +2447,34 @@ export default function CinematicScrollStudio({
 
         {/* Pending Dev Rolls Queue Bar */}
         <div className="pending-queue-bar reveal-on-scroll reveal-delay-1">
-          <div className="queue-title-row">
-            <h4>🧪 현상 대기 중인 필름 목록 ({pendingDevRolls.length}롤)</h4>
-            <span className="queue-hint">
-              {pendingDevRolls.length === 0
-                ? '현재 현상 대기 중인 필름이 없습니다. (위에서 촬영 종료 시 자동 등록)'
-                : '현상할 롤을 클릭하면 필름 특성에 맞는 약품이 자동으로 필터링됩니다.'}
-            </span>
+          <div className="queue-title-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+            <div>
+              <h4>🧪 현상 대기 중인 필름 목록 ({pendingDevRolls.length}롤)</h4>
+              <span className="queue-hint">
+                {pendingDevRolls.length === 0
+                  ? '현재 현상 대기 중인 필름이 없습니다. (위에서 촬영 종료 시 자동 등록)'
+                  : '현상할 롤을 클릭하면 필름 특성에 맞는 약품이 자동으로 필터링됩니다.'}
+              </span>
+            </div>
+            <button
+              type="button"
+              className="glass-btn-accent"
+              style={{
+                padding: '6px 14px',
+                fontSize: '0.8rem',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                borderRadius: '8px',
+                background: 'rgba(245, 158, 11, 0.15)',
+                color: '#f59e0b',
+                border: '1px solid rgba(245, 158, 11, 0.35)',
+                cursor: 'pointer',
+              }}
+              onClick={() => setIsAddExternalRollOpen(true)}
+            >
+              <Plus size={14} /> 외부 필름 등록 (남의 필름 / 오래된 롤)
+            </button>
           </div>
 
           <div className="queue-chips-row">
@@ -2357,13 +2489,23 @@ export default function CinematicScrollStudio({
                 <span className="chip-film">{roll.film_name_snapshot}</span>
               </button>
             ))}
+            <button
+              type="button"
+              className="queue-chip"
+              style={{ borderStyle: 'dashed', borderColor: 'rgba(255, 255, 255, 0.25)', opacity: 0.85 }}
+              onClick={() => setIsAddExternalRollOpen(true)}
+              title="촬영 기록 없이 외부에서 가져온 필름 바로 현상 대기에 추가"
+            >
+              <span className="chip-name">+ 외부 필름 등록</span>
+              <span className="chip-film">남의 롤 / 보관 롤</span>
+            </button>
           </div>
         </div>
 
         {/* Selected Dev Film Warning & Smart Filter Notice */}
         <div className="chem-filter-banner reveal-on-scroll reveal-delay-2">
           <div className="banner-icon">
-            {devType === 'lab' ? '🏢' : isDevFilmBw ? '🖤' : '🌈'}
+            {devType === 'lab' ? '🏢' : isDevFilmBw ? '🖤' : currentDevFilmType === 'cinema' ? '🎬' : currentDevFilmType === 'cinestill' ? '✨' : currentDevFilmType === 'cinema_ahu' ? '🟡' : '🌈'}
           </div>
           <div className="banner-text">
             {devType === 'lab' ? (
@@ -2371,7 +2513,7 @@ export default function CinematicScrollStudio({
                 <strong>현상소 위탁 모드: 전문 사진관 / 현상소 접수</strong>
                 <p>
                   선택된 대상: <strong>{currentDevRoll?.title || selectedFilm?.name}</strong>{' '}
-                  ({currentDevFilm?.name || selectedFilm?.name}).{' '}
+                  ({currentDevRoll?.film_name_snapshot || currentDevFilm?.name || selectedFilm?.name}).{' '}
                   전문 현상소에 맡겨 처리하므로 개인 현상액 약품은 사용되거나 누적되지 않습니다.
                 </p>
               </>
@@ -2379,14 +2521,24 @@ export default function CinematicScrollStudio({
               <>
                 <strong>
                   {isDevFilmBw
-                    ? '흑백 필름 감지: 흑백 전용 현상액만 활성화됨'
-                    : '컬러 / 영화용 필름 감지: C-41 / ECN-2 화학 공정 활성화'}
+                    ? '흑백 필름 감지: 흑백 전용 현상액(B&W)만 활성화됨'
+                    : currentDevFilmType === 'cinema'
+                    ? '영화용 ECN-2 감지: 렘젯 카본 제거 ECN-2 전용 현상액만 활성화됨'
+                    : currentDevFilmType === 'cinestill' || currentDevFilmType === 'cinema_ahu'
+                    ? '렘젯 제거/AHU 필름 감지: C-41 컬러 현상액 및 ECN-2 현상액 호환'
+                    : currentDevFilmType === 'color_slide'
+                    ? '슬라이드 필름 감지: E-6 / 컬러 현상액 활성화'
+                    : '컬러 네가 감지: C-41 표준 컬러 화학 공정 활성화'}
                 </strong>
                 <p>
                   선택된 대상: <strong>{currentDevRoll?.title || selectedFilm?.name}</strong>{' '}
-                  ({currentDevFilm?.name || selectedFilm?.name}).{' '}
+                  ({currentDevRoll?.film_name_snapshot || currentDevFilm?.name || selectedFilm?.name}).{' '}
                   {isDevFilmBw
                     ? '오염 및 유제 손상을 방지하기 위해 컬러 현상액(C-41)은 목록에서 자동으로 제외되었습니다.'
+                    : currentDevFilmType === 'cinema'
+                    ? '카본 렘젯층 보호 및 제거를 위해 C-41은 제외되고 ECN-2 전용 약품이 표시됩니다.'
+                    : currentDevFilmType === 'cinestill' || currentDevFilmType === 'cinema_ahu'
+                    ? '렘젯층이 없어 현상액 오염 우려 없이 C-41 컬러 현상액 키트 또는 ECN-2를 모두 사용할 수 있습니다.'
                     : '흑백 현상액은 제외되고 전용 컬러 화학 키트가 표시됩니다.'}
                 </p>
               </>
@@ -3677,20 +3829,26 @@ export default function CinematicScrollStudio({
                     <option value="color_negative">컬러네가 (Color Negative)</option>
                     <option value="bw_negative">흑백네가 (B&W Negative)</option>
                     <option value="color_slide">컬러슬라이드 (E-6)</option>
-                    <option value="cinema">영화용 (ECN-2)</option>
-                    <option value="cinema_ahu">영화용 AHU (CineStill)</option>
+                    <option value="bw_slide">흑백슬라이드 (B&W Slide)</option>
+                    <option value="cinema">영화용 ECN-2 (렘젯)</option>
+                    <option value="cinestill">시네스틸 (렘젯 제거)</option>
+                    <option value="cinema_ahu">영화용 AHU (렘젯 없음)</option>
+                    <option value="other">기타</option>
                   </select>
                 </div>
-                <div className="field-group" style={{ width: '110px' }}>
-                  <label>판형</label>
+                <div className="field-group" style={{ width: '135px' }}>
+                  <label>판형 (포맷)</label>
                   <select
                     value={newFilmFormat}
-                    onChange={(e) => setNewFilmFormat(e.target.value as FilmFormat)}
+                    onChange={(e) => handleCinematicFormatChange(e.target.value as FilmFormat)}
                     className="apple-input"
                   >
                     <option value="135">135 (35mm)</option>
                     <option value="120">120 (중형)</option>
-                    <option value="220">220</option>
+                    <option value="220">220 (중형)</option>
+                    <option value="large_sheet">대형 (시트)</option>
+                    <option value="110">110</option>
+                    <option value="other">기타 포맷</option>
                   </select>
                 </div>
                 <div className="field-group" style={{ width: '90px' }}>
@@ -3915,35 +4073,112 @@ export default function CinematicScrollStudio({
                         ))}
                       </select>
                     </div>
+                    <span style={{ fontSize: '11px', color: '#8e8e93', marginTop: '6px', display: 'block', lineHeight: 1.45 }}>
+                      * 일자 없이 <strong>년도(YYYY)와 월(MM)</strong>만 순서대로 기록됩니다.<br />
+                      날짜를 모르면 위의 [로리/노괴/틀딱]을 누르세요.
+                    </span>
                   </div>
                 </div>
               </div>
 
-              {/* 보관 방법 & 보유 수량 */}
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <div className="field-group flex-1">
-                  <label>보관 방법</label>
-                  <select
-                    value={newFilmStorage}
-                    onChange={(e) => setNewFilmStorage(e.target.value as StorageMethod)}
-                    className="apple-input"
-                  >
-                    <option value="room_temp">🌡️ 상온 보관</option>
-                    <option value="refrigerated">🧊 냉장 보관</option>
-                    <option value="frozen">❄️ 냉동 보관</option>
-                  </select>
-                </div>
-                <div className="field-group" style={{ width: '110px' }}>
-                  <label>보유 수량</label>
+              {/* 보관 방법, 보유 수량 & 롤당 컷수 (중형/대형은 컷수 선택 숨김, 110은 24컷/직접) */}
+              {(() => {
+                const isMediumOrLarge = newFilmFormat === '120' || newFilmFormat === '220' || newFilmFormat === 'large_sheet';
+                const is110 = newFilmFormat === '110';
+
+                return (
+                  <div style={{ display: 'flex', gap: '12px' }}>
+                    <div className="field-group flex-1">
+                      <label>보관 방법</label>
+                      <select
+                        value={newFilmStorage}
+                        onChange={(e) => setNewFilmStorage(e.target.value as StorageMethod)}
+                        className="apple-input"
+                      >
+                        <option value="room_temp">🌡️ 상온 보관</option>
+                        <option value="refrigerated">🧊 냉장 보관</option>
+                        <option value="frozen">❄️ 냉동 보관</option>
+                      </select>
+                    </div>
+                    <div className="field-group" style={{ width: isMediumOrLarge ? '140px' : '100px' }}>
+                      <label>{newFilmFormat === 'large_sheet' ? '보유 수량 (매)' : '보유 수량'}</label>
+                      <input
+                        type="number"
+                        min="1"
+                        value={newFilmQuantity}
+                        onChange={(e) => setNewFilmQuantity(Number(e.target.value))}
+                        onFocus={(e) => e.target.select()}
+                        className="apple-input"
+                      />
+                    </div>
+                    {!isMediumOrLarge && (
+                      <div className="field-group" style={{ minWidth: is110 ? '120px' : '155px' }}>
+                        <label>롤당 컷수</label>
+                        <div style={{ display: 'flex', gap: '4px' }}>
+                          {!is110 && (
+                            <button
+                              type="button"
+                              className={`preset-pill ${newFilmFramesOption === '36' ? 'active' : ''}`}
+                              style={{ padding: '6px 8px', fontSize: '11px', flex: 1, justifyContent: 'center' }}
+                              onClick={() => {
+                                setNewFilmFramesOption('36');
+                                setNewFilmFramesPerRoll(36);
+                              }}
+                            >
+                              36컷
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            className={`preset-pill ${newFilmFramesOption === '24' ? 'active' : ''}`}
+                            style={{ padding: '6px 8px', fontSize: '11px', flex: 1, justifyContent: 'center' }}
+                            onClick={() => {
+                              setNewFilmFramesOption('24');
+                              setNewFilmFramesPerRoll(24);
+                            }}
+                          >
+                            24컷
+                          </button>
+                          <button
+                            type="button"
+                            className={`preset-pill ${newFilmFramesOption === 'custom' ? 'active' : ''}`}
+                            style={{ padding: '6px 8px', fontSize: '11px', flex: 1, justifyContent: 'center' }}
+                            onClick={() => {
+                              setNewFilmFramesOption('custom');
+                              if (newFilmFramesPerRoll === 36 || newFilmFramesPerRoll === 24) setNewFilmFramesPerRoll(12);
+                            }}
+                          >
+                            직접
+                          </button>
+                        </div>
+                        {newFilmFramesOption === 'custom' && (
+                          <input
+                            type="number"
+                            min="1"
+                            placeholder="컷수 입력"
+                            value={newFilmFramesPerRoll}
+                            onChange={(e) => setNewFilmFramesPerRoll(Number(e.target.value))}
+                            className="apple-input"
+                            style={{ marginTop: '6px', padding: '6px 8px', fontSize: '12px' }}
+                            autoFocus
+                          />
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
+              <div style={{ display: 'flex', gap: '20px', margin: '2px 0 4px 0' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.84rem', color: '#e5e5ea' }}>
                   <input
-                    type="number"
-                    min="1"
-                    value={newFilmQuantity}
-                    onChange={(e) => setNewFilmQuantity(Number(e.target.value))}
-                    onFocus={(e) => e.target.select()}
-                    className="apple-input"
+                    type="checkbox"
+                    checked={newFilmBulkRolled}
+                    onChange={(e) => setNewFilmBulkRolled(e.target.checked)}
+                    style={{ accentColor: '#f59e0b', width: '16px', height: '16px', cursor: 'pointer' }}
                   />
-                </div>
+                  <span>🎞️ 감은 필름 (벌크 로딩 / 소분 롤)</span>
+                </label>
               </div>
 
               <div className="field-group">
@@ -4062,7 +4297,7 @@ export default function CinematicScrollStudio({
                 </div>
               </div>
 
-              {/* Format & Lens Type & Status */}
+              {/* Format & Lens Type */}
               <div style={{ display: 'flex', gap: '12px' }}>
                 <div className="field-group flex-1">
                   <label>판형 (Format)</label>
@@ -4073,9 +4308,12 @@ export default function CinematicScrollStudio({
                   >
                     <option value="135_full">35mm 풀프레임 (135)</option>
                     <option value="135_half">35mm 하프프레임</option>
+                    <option value="120_645">중형 6x4.5</option>
                     <option value="120_66">중형 6x6 (Hasselblad 등)</option>
                     <option value="120_67">중형 6x7 (Pentax 67 등)</option>
-                    <option value="120_645">중형 6x4.5</option>
+                    <option value="120_69">중형 6x9</option>
+                    <option value="large_4x5">대형 4x5</option>
+                    <option value="large_8x10">대형 8x10</option>
                     <option value="panorama">파노라마 (XPan 등)</option>
                     <option value="other">기타</option>
                   </select>
@@ -4091,6 +4329,10 @@ export default function CinematicScrollStudio({
                     <option value="fixed">일체형 렌즈 (P&S / RF)</option>
                   </select>
                 </div>
+              </div>
+
+              {/* Status & Serial */}
+              <div style={{ display: 'flex', gap: '12px' }}>
                 <div className="field-group flex-1">
                   <label>작동 상태</label>
                   <select
@@ -4098,11 +4340,22 @@ export default function CinematicScrollStudio({
                     onChange={(e) => setNewCamStatus(e.target.value as EquipmentStatus)}
                     className="apple-input"
                   >
-                    <option value="active">정상 작동</option>
+                    <option value="active">정상 작동 (촬영 가능)</option>
                     <option value="needs_repair">수리 필요 (고장)</option>
                     <option value="in_repair">수리 입고 중</option>
-                    <option value="collection">소장용</option>
+                    <option value="for_sale">판매 예정</option>
+                    <option value="collection">소장 / 보관</option>
                   </select>
+                </div>
+                <div className="field-group flex-1">
+                  <label>시리얼 번호 (선택사항)</label>
+                  <input
+                    type="text"
+                    value={newCamSerial}
+                    onChange={(e) => setNewCamSerial(e.target.value)}
+                    placeholder="예: 2478910"
+                    className="apple-input"
+                  />
                 </div>
               </div>
 
@@ -4171,28 +4424,16 @@ export default function CinematicScrollStudio({
                 </div>
               )}
 
-              {/* Serial & Notes */}
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <div className="field-group flex-1">
-                  <label>시리얼 번호 (선택사항)</label>
-                  <input
-                    type="text"
-                    value={newCamSerial}
-                    onChange={(e) => setNewCamSerial(e.target.value)}
-                    placeholder="예: 2478910"
-                    className="apple-input"
-                  />
-                </div>
-                <div className="field-group flex-1">
-                  <label>메모 (바디 상태, 특징 등)</label>
-                  <input
-                    type="text"
-                    value={newCamNotes}
-                    onChange={(e) => setNewCamNotes(e.target.value)}
-                    placeholder="예: 뷰파인더 청소 완료, 셔터스피드 점검필"
-                    className="apple-input"
-                  />
-                </div>
+              {/* Notes */}
+              <div className="field-group">
+                <label>메모 (바디 상태, 특징 등)</label>
+                <input
+                  type="text"
+                  value={newCamNotes}
+                  onChange={(e) => setNewCamNotes(e.target.value)}
+                  placeholder="예: 뷰파인더 청소 완료, 셔터스피드 점검필"
+                  className="apple-input"
+                />
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
@@ -4300,11 +4541,11 @@ export default function CinematicScrollStudio({
                 </div>
               </div>
 
-              {/* Mount & Category & Aperture */}
+              {/* Mount & Category */}
               <div style={{ display: 'flex', gap: '12px' }}>
                 <div className="field-group flex-1">
                   <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span>렌즈 마운트 (보유 카메라 마운트)</span>
+                    <span>렌즈 마운트</span>
                     <span style={{ fontSize: '0.7rem', color: '#34d399' }}>
                       보유 카메라 연동 드롭다운
                     </span>
@@ -4350,8 +4591,48 @@ export default function CinematicScrollStudio({
                     <option value="zoom">줌렌즈 (Zoom)</option>
                   </select>
                 </div>
+              </div>
+
+              {/* Focal Lengths & Aperture */}
+              <div style={{ display: 'flex', gap: '12px' }}>
+                {newLensCategory === 'prime' ? (
+                  <div className="field-group flex-1">
+                    <label>초점거리 (mm)</label>
+                    <input
+                      type="number"
+                      value={newLensFocalMin}
+                      onChange={(e) => setNewLensFocalMin(Number(e.target.value))}
+                      placeholder="50"
+                      className="apple-input"
+                      required
+                    />
+                  </div>
+                ) : (
+                  <div className="field-group flex-1">
+                    <label>초점거리 범위 (mm)</label>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <input
+                        type="number"
+                        value={newLensFocalMin}
+                        onChange={(e) => setNewLensFocalMin(Number(e.target.value))}
+                        placeholder="최소 35"
+                        className="apple-input flex-1"
+                        required
+                      />
+                      <span style={{ color: '#86868b' }}>~</span>
+                      <input
+                        type="number"
+                        value={newLensFocalMax}
+                        onChange={(e) => setNewLensFocalMax(Number(e.target.value))}
+                        placeholder="최대 70"
+                        className="apple-input flex-1"
+                        required
+                      />
+                    </div>
+                  </div>
+                )}
                 <div className="field-group flex-1">
-                  <label>최대개방 f값</label>
+                  <label>최대개방 f값 (조리개)</label>
                   <input
                     type="number"
                     step="0.1"
@@ -4364,32 +4645,8 @@ export default function CinematicScrollStudio({
                 </div>
               </div>
 
-              {/* Focal Lengths & Format */}
+              {/* Format & Status */}
               <div style={{ display: 'flex', gap: '12px' }}>
-                <div className="field-group flex-1">
-                  <label>{newLensCategory === 'zoom' ? '최소 초점거리 (mm)' : '초점거리 (mm)'}</label>
-                  <input
-                    type="number"
-                    value={newLensFocalMin}
-                    onChange={(e) => setNewLensFocalMin(Number(e.target.value))}
-                    placeholder="50"
-                    className="apple-input"
-                    required
-                  />
-                </div>
-                {newLensCategory === 'zoom' && (
-                  <div className="field-group flex-1">
-                    <label>최대 초점거리 (mm)</label>
-                    <input
-                      type="number"
-                      value={newLensFocalMax}
-                      onChange={(e) => setNewLensFocalMax(Number(e.target.value))}
-                      placeholder="85"
-                      className="apple-input"
-                      required
-                    />
-                  </div>
-                )}
                 <div className="field-group flex-1">
                   <label>호환 판형</label>
                   <select
@@ -4399,6 +4656,7 @@ export default function CinematicScrollStudio({
                   >
                     <option value="135">35mm (135)</option>
                     <option value="120">중형 (120)</option>
+                    <option value="large">대형</option>
                     <option value="other">기타</option>
                   </select>
                 </div>
@@ -4410,8 +4668,10 @@ export default function CinematicScrollStudio({
                     className="apple-input"
                   >
                     <option value="active">정상 작동</option>
-                    <option value="needs_repair">수리 필요</option>
-                    <option value="collection">소장용</option>
+                    <option value="needs_repair">수리 필요 (고장)</option>
+                    <option value="in_repair">수리 입고 중</option>
+                    <option value="for_sale">판매 예정</option>
+                    <option value="collection">소장 / 보관</option>
                   </select>
                 </div>
               </div>
@@ -4465,28 +4725,28 @@ export default function CinematicScrollStudio({
           QUICK ADD SCANNER / DIGITIZING RIG MODAL
           ============================================================ */}
       {isAddScannerOpen && (
-        <div className="apple-glass-modal-overlay">
-          <div className="apple-glass-modal" style={{ maxWidth: '580px' }}>
-            <div className="modal-top-bar">
-              <div className="modal-title-box">
-                <span className="modal-icon-bubble">
-                  <HardDrive size={18} />
-                </span>
-                <div>
-                  <h3>새 스캐너 / 디지타이징 장비 등록</h3>
-                  <p>미러리스 디지타이징 리그, 평판, 필름 전용 스캐너를 등록합니다.</p>
-                </div>
+        <div className="apple-modal-backdrop" onClick={() => setIsAddScannerOpen(false)}>
+          <div className="apple-modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="apple-modal-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <HardDrive size={20} color="#f59e0b" />
+                <h3>새 스캐너 / 디지타이징 장비 등록</h3>
               </div>
               <button
                 type="button"
-                className="modal-close-x"
+                className="apple-modal-close-btn"
                 onClick={() => setIsAddScannerOpen(false)}
+                title="닫기"
               >
                 <X size={18} />
               </button>
             </div>
 
-            <form onSubmit={handleSaveNewScanner} className="apple-modal-form">
+            <p style={{ fontSize: '0.84rem', color: '#a1a1a6', marginBottom: '18px', lineHeight: 1.5 }}>
+              💡 미러리스 디지타이징 리그, 평판, 필름 전용 스캐너를 등록합니다.
+            </p>
+
+            <form onSubmit={handleSaveNewScanner} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div className="field-group">
                 <label>장비명 / 세트 명칭 *</label>
                 <input
@@ -4576,9 +4836,139 @@ export default function CinematicScrollStudio({
                 </button>
                 <button
                   type="submit"
-                  className="apple-primary-btn amber-glow"
+                  className="apple-primary-btn glow"
                 >
                   <span>장비 등록 완료</span>
+                  <Check size={16} />
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================
+          QUICK ADD EXTERNAL ROLL MODAL (남의 필름 / 오래된 필름 바로 현상)
+          ============================================================ */}
+      {isAddExternalRollOpen && (
+        <div className="apple-modal-backdrop" onClick={() => setIsAddExternalRollOpen(false)}>
+          <div className="apple-modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="apple-modal-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <FlaskConical size={20} color="#f59e0b" />
+                <h3>외부 필름 등록 (목록 외 롤 바로 현상)</h3>
+              </div>
+              <button
+                type="button"
+                className="apple-modal-close-btn"
+                onClick={() => setIsAddExternalRollOpen(false)}
+                title="닫기"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <p style={{ fontSize: '0.84rem', color: '#a1a1a6', marginBottom: '18px', lineHeight: 1.5 }}>
+              💡 촬영 장비 결합 없이 외부에서 수령하거나 묵혀둔 필름을 현상 대기열에 바로 등록합니다.<br />
+              필름 종류에 따라 올바른 현상액(C-41, ECN-2, B&W 등)이 자동으로 매칭됩니다.
+            </p>
+
+            <form onSubmit={handleQuickAddExternalRoll} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <div className="field-group flex-1">
+                  <label>식별명 / 제목</label>
+                  <input
+                    type="text"
+                    value={extRollTitle}
+                    onChange={(e) => setExtRollTitle(e.target.value)}
+                    placeholder="예: 지수 부탁 롤, 서랍 속 10년 묵은 흑백"
+                    className="apple-input"
+                  />
+                </div>
+                <div className="field-group flex-1">
+                  <label>필름 종류 (화학 프로세스) *</label>
+                  <select
+                    value={extRollFilmType}
+                    onChange={(e) => setExtRollFilmType(e.target.value as FilmType)}
+                    className="apple-input"
+                    required
+                  >
+                    <option value="color_negative">컬러네가 (Color Negative, C-41)</option>
+                    <option value="bw_negative">흑백네가 (B&W Negative)</option>
+                    <option value="cinema">영화용 ECN-2 (렘젯 있음)</option>
+                    <option value="cinestill">시네스틸 (렘젯 제거됨)</option>
+                    <option value="cinema_ahu">영화용 AHU (렘젯 없음)</option>
+                    <option value="color_slide">컬러슬라이드 (Color Slide, E-6)</option>
+                    <option value="bw_slide">흑백슬라이드 (B&W Slide)</option>
+                    <option value="other">기타</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <div className="field-group flex-1">
+                  <label>필름 이름 / 세부 모델 *</label>
+                  <input
+                    type="text"
+                    value={extRollFilmName}
+                    onChange={(e) => setExtRollFilmName(e.target.value)}
+                    placeholder="예: Kodak Tri-X 400, Cinestill 800T, Fuji C200"
+                    className="apple-input"
+                    autoFocus
+                    required
+                  />
+                </div>
+                <div className="field-group" style={{ width: '130px' }}>
+                  <label>판형 (포맷)</label>
+                  <select
+                    value={extRollFormat}
+                    onChange={(e) => setExtRollFormat(e.target.value as FilmFormat)}
+                    className="apple-input"
+                  >
+                    <option value="135">135 (35mm)</option>
+                    <option value="120">120 (중형)</option>
+                    <option value="220">220 (중형)</option>
+                    <option value="large_sheet">대형 (시트)</option>
+                    <option value="110">110</option>
+                    <option value="other">기타</option>
+                  </select>
+                </div>
+                <div className="field-group" style={{ width: '110px' }}>
+                  <label>촬영 감도 (ISO)</label>
+                  <input
+                    type="number"
+                    value={extRollIso}
+                    onChange={(e) => setExtRollIso(e.target.value === '' ? '' : Number(e.target.value))}
+                    placeholder="400"
+                    className="apple-input"
+                  />
+                </div>
+              </div>
+
+              <div className="field-group">
+                <label>의뢰인 / 보관 메모</label>
+                <input
+                  type="text"
+                  value={extRollNotes}
+                  onChange={(e) => setExtRollNotes(e.target.value)}
+                  placeholder="예: 친구 의뢰 롤, 증감 촬영 여부 등"
+                  className="apple-input"
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
+                <button
+                  type="button"
+                  className="apple-secondary-btn"
+                  onClick={() => setIsAddExternalRollOpen(false)}
+                >
+                  취소
+                </button>
+                <button
+                  type="submit"
+                  className="apple-primary-btn glow"
+                >
+                  <span>현상 대기 목록에 등록</span>
                   <Check size={16} />
                 </button>
               </div>

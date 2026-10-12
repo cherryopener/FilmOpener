@@ -24,7 +24,7 @@ export default function FilmCanister3D({
 }: FilmCanister3DProps) {
   const brandTheme = getBrandTheme(film.brand, film.name);
   const isBw = film.type === 'bw_negative' || film.type === 'bw_slide';
-  const isCinema = film.type === 'cinema' || film.type === 'cinema_ahu';
+  const isCinema = film.type === 'cinema' || film.type === 'cinestill' || film.type === 'cinema_ahu';
   const isSlide = film.type === 'color_slide' || film.type === 'bw_slide';
 
   // Format expiration date to clean compact YY.MM (e.g. 26.08, 98.05)
@@ -339,7 +339,7 @@ function getCanisterGradient(film: FilmItem, primary: string, secondary: string)
   if (name.includes('velvia') || name.includes('provia')) {
     return 'linear-gradient(135deg, #7B1FA2 0%, #4A148C 40%, #00796B 80%, #004D40 100%)';
   }
-  if (name.includes('800t') || name.includes('vision') || film.type === 'cinema' || film.type === 'cinema_ahu') {
+  if (name.includes('800t') || name.includes('vision') || film.type === 'cinema' || film.type === 'cinestill' || film.type === 'cinema_ahu') {
     return 'linear-gradient(135deg, #00838F 0%, #004D40 45%, #B71C1C 85%, #880E4F 100%)';
   }
   if (brand.includes('fuji') || brand.includes('후지')) {

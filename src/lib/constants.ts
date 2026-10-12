@@ -18,8 +18,9 @@ export const FILM_TYPE_CONFIG: Record<FilmType, { label: string; bg: string; col
   bw_slide: { label: '흑백 슬라이드', bg: NOTION_COLORS.brown.bg, color: NOTION_COLORS.brown.text, border: NOTION_COLORS.brown.border },
   color_negative: { label: '컬러 네가', bg: NOTION_COLORS.orange.bg, color: NOTION_COLORS.orange.text, border: NOTION_COLORS.orange.border },
   color_slide: { label: '컬러 슬라이드', bg: NOTION_COLORS.purple.bg, color: NOTION_COLORS.purple.text, border: NOTION_COLORS.purple.border },
-  cinema: { label: '영화용 (ECN-2)', bg: NOTION_COLORS.blue.bg, color: NOTION_COLORS.blue.text, border: NOTION_COLORS.blue.border },
-  cinema_ahu: { label: '영화용 AHU (렘젯제거)', bg: NOTION_COLORS.red.bg, color: NOTION_COLORS.red.text, border: NOTION_COLORS.red.border },
+  cinema: { label: '영화용 ECN-2 (렘젯)', bg: NOTION_COLORS.blue.bg, color: NOTION_COLORS.blue.text, border: NOTION_COLORS.blue.border },
+  cinestill: { label: '시네스틸 (렘젯 제거)', bg: NOTION_COLORS.red.bg, color: NOTION_COLORS.red.text, border: NOTION_COLORS.red.border },
+  cinema_ahu: { label: '영화용 AHU (렘젯 없음)', bg: NOTION_COLORS.yellow.bg, color: NOTION_COLORS.yellow.text, border: NOTION_COLORS.yellow.border },
   other: { label: '기타', bg: NOTION_COLORS.gray.bg, color: NOTION_COLORS.gray.text, border: NOTION_COLORS.gray.border },
 };
 

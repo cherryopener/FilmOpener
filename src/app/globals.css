@@ -2293,13 +2293,30 @@ html, body {
 
 .apple-modal-card {
   width: 100%;
-  max-width: 580px;
+  max-width: 620px;
+  max-height: min(90vh, calc(100dvh - 32px));
+  overflow-y: auto;
+  box-sizing: border-box;
   background: #13151d;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: var(--radius-xl);
   padding: 28px;
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7);
   animation: modal-pop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.apple-modal-card .field-group {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.apple-modal-card select.apple-input,
+.apple-modal-card input.apple-input,
+.apple-modal-card textarea.apple-input {
+  box-sizing: border-box;
+  max-width: 100%;
+  min-width: 0;
 }
 
 @keyframes modal-pop {

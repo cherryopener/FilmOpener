@@ -19,7 +19,7 @@ export default function FilmVaultView({ films, onSaveFilm, onDeleteFilm }: FilmV
   const [filterFormat, setFilterFormat] = useState<string>('all');
   const [filterStorage, setFilterStorage] = useState<string>('all');
   const [filterSpecial, setFilterSpecial] = useState<string>('all');
-  const [sortBy, setSortBy] = useState<'brand' | 'type' | 'iso_asc' | 'iso_desc' | 'expiry_soon' | 'qty_desc'>('expiry_soon');
+  const [sortBy, setSortBy] = useState<'brand' | 'type' | 'iso_asc' | 'iso_desc' | 'expiry_soon' | 'qty_desc' | 'freshness' | 'freshness_desc'>('expiry_soon');
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingFilm, setEditingFilm] = useState<FilmItem | null>(null);
@@ -38,10 +38,9 @@ export default function FilmVaultView({ films, onSaveFilm, onDeleteFilm }: FilmV
   const [storageMethod, setStorageMethod] = useState<StorageMethod>('room_temp');
   const [isBulkRolled, setIsBulkRolled] = useState(false);
   const [isExpired, setIsExpired] = useState(false);
-  const [isRebranded, setIsRebranded] = useState(false);
-  const [originalFilmInfo, setOriginalFilmInfo] = useState('');
   const [quantity, setQuantity] = useState<number>(1);
   const [framesPerRoll, setFramesPerRoll] = useState<number>(36);
+  const [framesOption, setFramesOption] = useState<'36' | '24' | 'custom'>('36');
   const [notes, setNotes] = useState('');
 
   const openAddModal = () => {
@@ -59,12 +58,33 @@ export default function FilmVaultView({ films, onSaveFilm, onDeleteFilm }: FilmV
     setStorageMethod('room_temp');
     setIsBulkRolled(false);
     setIsExpired(false);
-    setIsRebranded(false);
-    setOriginalFilmInfo('');
     setQuantity(1);
     setFramesPerRoll(36);
+    setFramesOption('36');
     setNotes('');
     setIsModalOpen(true);
+  };
+
+  const handleFormatChange = (newFormat: FilmFormat) => {
+    setFormat(newFormat);
+    if (newFormat === '120') {
+      setFramesPerRoll(12);
+    } else if (newFormat === '220') {
+      setFramesPerRoll(24);
+    } else if (newFormat === 'large_sheet') {
+      setFramesPerRoll(1);
+    } else if (newFormat === '110') {
+      if (framesOption === '36') {
+        setFramesOption('24');
+        setFramesPerRoll(24);
+      }
+    } else {
+      if (framesOption === '36') {
+        setFramesPerRoll(36);
+      } else if (framesOption === '24') {
+        setFramesPerRoll(24);
+      }
+    }
   };
 
   const openEditModal = (film: FilmItem) => {
@@ -100,10 +120,29 @@ export default function FilmVaultView({ films, onSaveFilm, onDeleteFilm }: FilmV
     setStorageMethod(film.storage_method);
     setIsBulkRolled(film.is_bulk_rolled);
     setIsExpired(film.is_expired);
-    setIsRebranded(film.is_rebranded);
-    setOriginalFilmInfo(film.original_film_info || '');
     setQuantity(film.quantity);
-    setFramesPerRoll(film.frames_per_roll);
+
+    const isMedOrLarge = film.format === '120' || film.format === '220' || film.format === 'large_sheet';
+    if (isMedOrLarge) {
+      setFramesPerRoll(film.frames_per_roll || (film.format === '120' ? 12 : film.format === '220' ? 24 : 1));
+    } else if (film.format === '110') {
+      setFramesPerRoll(film.frames_per_roll || 24);
+      if (film.frames_per_roll === 24) {
+        setFramesOption('24');
+      } else {
+        setFramesOption('custom');
+      }
+    } else {
+      setFramesPerRoll(film.frames_per_roll || 36);
+      if (film.frames_per_roll === 36) {
+        setFramesOption('36');
+      } else if (film.frames_per_roll === 24) {
+        setFramesOption('24');
+      } else {
+        setFramesOption('custom');
+      }
+    }
+
     setNotes(film.notes || '');
     setIsModalOpen(true);
   };
@@ -132,6 +171,11 @@ export default function FilmVaultView({ films, onSaveFilm, onDeleteFilm }: FilmV
       else finalExpiry = '유통기한 미상 (노괴/썩필)';
     }
 
+    const isMediumOrLarge = format === '120' || format === '220' || format === 'large_sheet';
+    const computedFrames = isMediumOrLarge
+      ? (format === '120' ? 12 : format === '220' ? 24 : 1)
+      : (Number(framesPerRoll) || (format === '110' ? 24 : 36));
+
     const newFilm: FilmItem = {
       id: editingFilm ? editingFilm.id : `film-${Date.now()}`,
       name: name.trim(),
@@ -144,10 +188,10 @@ export default function FilmVaultView({ films, onSaveFilm, onDeleteFilm }: FilmV
       is_bulk_rolled: isBulkRolled,
       is_expired: autoExpired,
       freshness_status: freshnessStatus,
-      is_rebranded: isRebranded,
-      original_film_info: isRebranded ? originalFilmInfo.trim() : undefined,
+      is_rebranded: false,
+      original_film_info: undefined,
       quantity: Number(quantity) || 1,
-      frames_per_roll: Number(framesPerRoll) || 36,
+      frames_per_roll: computedFrames,
       notes: notes.trim(),
       created_at: editingFilm ? editingFilm.created_at : new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -157,14 +201,29 @@ export default function FilmVaultView({ films, onSaveFilm, onDeleteFilm }: FilmV
     setIsModalOpen(false);
   };
 
+  const getFilmFreshness = (f: FilmItem): FreshnessStatus => {
+    if (f.freshness_status === 'deep_expired' || (f.expiry_date && f.expiry_date.includes('틀딱'))) {
+      return 'deep_expired';
+    }
+    const todayStr = new Date().toISOString().split('T')[0];
+    if (
+      f.freshness_status === 'expired' ||
+      (f.expiry_date && f.expiry_date.includes('노괴')) ||
+      f.is_expired ||
+      (f.expiry_date && !f.expiry_date.includes('미상') && f.expiry_date < todayStr)
+    ) {
+      return 'expired';
+    }
+    return 'fresh';
+  };
+
   // Filter & Sort Logic
   const filteredFilms = useMemo(() => {
     return films.filter((f) => {
       const searchLower = search.toLowerCase();
       const matchSearch =
         f.name.toLowerCase().includes(searchLower) ||
-        f.brand.toLowerCase().includes(searchLower) ||
-        (f.original_film_info && f.original_film_info.toLowerCase().includes(searchLower));
+        f.brand.toLowerCase().includes(searchLower);
 
       if (!matchSearch) return false;
 
@@ -172,9 +231,10 @@ export default function FilmVaultView({ films, onSaveFilm, onDeleteFilm }: FilmV
       if (filterFormat !== 'all' && f.format !== filterFormat) return false;
       if (filterStorage !== 'all' && f.storage_method !== filterStorage) return false;
 
-      if (filterSpecial === 'expired' && !f.is_expired) return false;
+      if (filterSpecial === 'fresh' && getFilmFreshness(f) !== 'fresh') return false;
+      if (filterSpecial === 'expired' && getFilmFreshness(f) !== 'expired') return false;
+      if (filterSpecial === 'deep_expired' && getFilmFreshness(f) !== 'deep_expired') return false;
       if (filterSpecial === 'bulk' && !f.is_bulk_rolled) return false;
-      if (filterSpecial === 'rebranded' && !f.is_rebranded) return false;
 
       return true;
     });
@@ -189,11 +249,33 @@ export default function FilmVaultView({ films, onSaveFilm, onDeleteFilm }: FilmV
         return aExhausted ? 1 : -1;
       }
 
+      if (sortBy === 'freshness') {
+        const order: Record<FreshnessStatus, number> = { fresh: 1, expired: 2, deep_expired: 3 };
+        const scoreA = order[getFilmFreshness(a)] || 2;
+        const scoreB = order[getFilmFreshness(b)] || 2;
+        return scoreA - scoreB || a.expiry_date.localeCompare(b.expiry_date);
+      }
+      if (sortBy === 'freshness_desc') {
+        const order: Record<FreshnessStatus, number> = { fresh: 1, expired: 2, deep_expired: 3 };
+        const scoreA = order[getFilmFreshness(a)] || 2;
+        const scoreB = order[getFilmFreshness(b)] || 2;
+        return scoreB - scoreA || b.expiry_date.localeCompare(a.expiry_date);
+      }
       if (sortBy === 'brand') {
         return a.brand.localeCompare(b.brand, 'ko-KR');
       }
       if (sortBy === 'type') {
-        return a.type.localeCompare(b.type);
+        const typeOrder: Record<FilmType, number> = {
+          color_negative: 1,
+          bw_negative: 2,
+          color_slide: 3,
+          bw_slide: 4,
+          cinema: 5,
+          cinestill: 6,
+          cinema_ahu: 7,
+          other: 8,
+        };
+        return (typeOrder[a.type] || 99) - (typeOrder[b.type] || 99) || a.name.localeCompare(b.name, 'ko-KR');
       }
       if (sortBy === 'iso_asc') {
         return a.iso - b.iso;
@@ -279,13 +361,19 @@ export default function FilmVaultView({ films, onSaveFilm, onDeleteFilm }: FilmV
             className={`segmented-item ${filterType === 'cinema' ? 'active' : ''}`}
             onClick={() => setFilterType('cinema')}
           >
-            영화용 (ECN-2) <span className="segmented-badge">{films.filter((f) => f.type === 'cinema').reduce((acc, f) => acc + (f.quantity || 0), 0)}</span>
+            영화용 ECN-2 (렘젯) <span className="segmented-badge">{films.filter((f) => f.type === 'cinema').reduce((acc, f) => acc + (f.quantity || 0), 0)}</span>
+          </button>
+          <button
+            className={`segmented-item ${filterType === 'cinestill' ? 'active' : ''}`}
+            onClick={() => setFilterType('cinestill')}
+          >
+            시네스틸 (렘젯 제거) <span className="segmented-badge">{films.filter((f) => f.type === 'cinestill').reduce((acc, f) => acc + (f.quantity || 0), 0)}</span>
           </button>
           <button
             className={`segmented-item ${filterType === 'cinema_ahu' ? 'active' : ''}`}
             onClick={() => setFilterType('cinema_ahu')}
           >
-            영화용 AHU <span className="segmented-badge">{films.filter((f) => f.type === 'cinema_ahu').reduce((acc, f) => acc + (f.quantity || 0), 0)}</span>
+            영화용 AHU (렘젯 없음) <span className="segmented-badge">{films.filter((f) => f.type === 'cinema_ahu').reduce((acc, f) => acc + (f.quantity || 0), 0)}</span>
           </button>
           <button
             className={`segmented-item ${filterType === 'color_slide' ? 'active' : ''}`}
@@ -308,7 +396,7 @@ export default function FilmVaultView({ films, onSaveFilm, onDeleteFilm }: FilmV
           <Search size={16} color="var(--text-dim)" />
           <input
             type="text"
-            placeholder="필름명, 제조사, 원본 껍데기 검색..."
+            placeholder="필름명, 제조사 검색..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -321,7 +409,9 @@ export default function FilmVaultView({ films, onSaveFilm, onDeleteFilm }: FilmV
             onChange={(e) => setSortBy(e.target.value as any)}
             title="정렬 기준"
           >
-            <option value="expiry_soon">⏱️ 유통기한 임박순</option>
+            <option value="expiry_soon">⏱️ 유통기한순</option>
+            <option value="freshness">🌸 신선도순 (로리 → 노괴 → 틀딱)</option>
+            <option value="freshness_desc">💀 신선도 역순 (틀딱 → 노괴 → 로리)</option>
             <option value="brand">🏢 회사(제조사)별</option>
             <option value="type">🎞️ 필름 종류별</option>
             <option value="iso_asc">⚡ ISO 낮은순</option>
@@ -357,11 +447,13 @@ export default function FilmVaultView({ films, onSaveFilm, onDeleteFilm }: FilmV
             className="select-custom"
             value={filterSpecial}
             onChange={(e) => setFilterSpecial(e.target.value)}
+            title="상태 필터"
           >
             <option value="all">전체 상태</option>
-            <option value="bulk">🎞️ 감은필름 (벌크)</option>
-            <option value="expired">⚠️ 썩필 (만료필름)</option>
-            <option value="rebranded">🏷️ 껍데기만 바꾼 필름</option>
+            <option value="fresh">🌸 로리 (싱싱)</option>
+            <option value="expired">⚠️ 노괴 (만료)</option>
+            <option value="deep_expired">💀 틀딱 (썩필)</option>
+            <option value="bulk">🎞️ 감은 필름 (벌크)</option>
           </select>
 
           <button className="btn btn-primary" onClick={openAddModal}>
@@ -764,12 +856,13 @@ export default function FilmVaultView({ films, onSaveFilm, onDeleteFilm }: FilmV
                       value={type}
                       onChange={(e) => setType(e.target.value as FilmType)}
                     >
-                      <option value="bw_negative">흑백네가</option>
-                      <option value="bw_slide">흑백슬라이드</option>
-                      <option value="color_negative">컬러네가</option>
-                      <option value="color_slide">컬러슬라이드</option>
-                      <option value="cinema">영화용 (ECN-2 렘젯)</option>
-                      <option value="cinema_ahu">영화용AHU (렘젯제거/씨네스틸)</option>
+                      <option value="color_negative">컬러네가 (Color Negative)</option>
+                      <option value="bw_negative">흑백네가 (B&W Negative)</option>
+                      <option value="cinema">영화용 ECN-2 (렘젯)</option>
+                      <option value="cinestill">시네스틸 (렘젯 제거)</option>
+                      <option value="cinema_ahu">영화용 AHU (렘젯 없음)</option>
+                      <option value="color_slide">컬러슬라이드 (Color Slide)</option>
+                      <option value="bw_slide">흑백슬라이드 (B&W Slide)</option>
                       <option value="other">기타</option>
                     </select>
                   </div>
@@ -779,7 +872,7 @@ export default function FilmVaultView({ films, onSaveFilm, onDeleteFilm }: FilmV
                     <select
                       className="form-select"
                       value={format}
-                      onChange={(e) => setFormat(e.target.value as FilmFormat)}
+                      onChange={(e) => handleFormatChange(e.target.value as FilmFormat)}
                     >
                       <option value="135">135 (35mm)</option>
                       <option value="120">120 (중형)</option>
@@ -791,40 +884,104 @@ export default function FilmVaultView({ films, onSaveFilm, onDeleteFilm }: FilmV
                   </div>
                 </div>
 
-                {/* ISO, 수량, 컷수 */}
-                <div className="form-row-3">
-                  <div className="form-group">
-                    <label className="form-label">감도 (ISO)</label>
-                    <input
-                      className="form-input"
-                      type="number"
-                      placeholder="예: 400"
-                      value={iso}
-                      onChange={(e) => setIso(Number(e.target.value))}
-                    />
-                  </div>
+                {/* ISO, 수량, 컷수 (중형/대형은 컷수 선택 숨김, 110은 24컷/직접입력) */}
+                {(() => {
+                  const isMediumOrLarge = format === '120' || format === '220' || format === 'large_sheet';
+                  const is110 = format === '110';
 
-                  <div className="form-group">
-                    <label className="form-label">보유 수량 (롤/매)</label>
-                    <input
-                      className="form-input"
-                      type="number"
-                      min="1"
-                      value={quantity}
-                      onChange={(e) => setQuantity(Number(e.target.value))}
-                    />
-                  </div>
+                  return (
+                    <div className={isMediumOrLarge ? 'form-row' : 'form-row-3'}>
+                      <div className="form-group">
+                        <label className="form-label">감도 (ISO)</label>
+                        <input
+                          className="form-input"
+                          type="number"
+                          placeholder="예: 400"
+                          value={iso}
+                          onChange={(e) => setIso(Number(e.target.value))}
+                        />
+                      </div>
 
-                  <div className="form-group">
-                    <label className="form-label">롤당 컷수</label>
-                    <input
-                      className="form-input"
-                      type="number"
-                      value={framesPerRoll}
-                      onChange={(e) => setFramesPerRoll(Number(e.target.value))}
-                    />
-                  </div>
-                </div>
+                      <div className="form-group">
+                        <label className="form-label">
+                          {format === 'large_sheet' ? '보유 수량 (매/시트)' : '보유 수량 (롤)'}
+                        </label>
+                        <input
+                          className="form-input"
+                          type="number"
+                          min="1"
+                          value={quantity}
+                          onChange={(e) => setQuantity(Number(e.target.value))}
+                        />
+                      </div>
+
+                      {!isMediumOrLarge && (
+                        <div className="form-group">
+                          <label className="form-label">롤당 컷수 *</label>
+                          <div
+                            style={{
+                              display: 'grid',
+                              gridTemplateColumns: is110 ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
+                              gap: '6px',
+                            }}
+                          >
+                            {!is110 && (
+                              <button
+                                type="button"
+                                className={`btn btn-sm ${framesOption === '36' ? 'btn-primary' : 'btn-secondary'}`}
+                                style={{ padding: '7px 4px', fontSize: '0.8rem', justifyContent: 'center' }}
+                                onClick={() => {
+                                  setFramesOption('36');
+                                  setFramesPerRoll(36);
+                                }}
+                              >
+                                36컷
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              className={`btn btn-sm ${framesOption === '24' ? 'btn-primary' : 'btn-secondary'}`}
+                              style={{ padding: '7px 4px', fontSize: '0.8rem', justifyContent: 'center' }}
+                              onClick={() => {
+                                setFramesOption('24');
+                                setFramesPerRoll(24);
+                              }}
+                            >
+                              24컷
+                            </button>
+                            <button
+                              type="button"
+                              className={`btn btn-sm ${framesOption === 'custom' ? 'btn-primary' : 'btn-secondary'}`}
+                              style={{ padding: '7px 4px', fontSize: '0.8rem', justifyContent: 'center' }}
+                              onClick={() => {
+                                setFramesOption('custom');
+                                if (framesPerRoll === 36 || framesPerRoll === 24) {
+                                  setFramesPerRoll(12);
+                                }
+                              }}
+                            >
+                              ✏️ 직접입력
+                            </button>
+                          </div>
+
+                          {framesOption === 'custom' && (
+                            <input
+                              className="form-input"
+                              style={{ marginTop: '8px' }}
+                              type="number"
+                              min="1"
+                              placeholder={is110 ? '컷수 직접 입력 (예: 12, 18, 24)' : '컷수 직접 입력 (예: 12, 10, 72, 27)'}
+                              value={framesPerRoll || ''}
+                              onChange={(e) => setFramesPerRoll(e.target.value === '' ? ('' as any) : Number(e.target.value))}
+                              autoFocus
+                              required
+                            />
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 {/* 신선도 / 유통기한 옵션 (로리, 노괴, 틀딱) */}
                 <div className="form-group" style={{ marginBottom: '16px' }}>
@@ -1046,8 +1203,9 @@ export default function FilmVaultView({ films, onSaveFilm, onDeleteFilm }: FilmV
                       </div>
                     </div>
 
-                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>
-                      * 일자 없이 <strong>년도(YYYY)와 월(MM)</strong>만 순서대로 기록됩니다. 날짜를 모르면 위의 [로리/노괴/틀딱]을 누르세요.
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '4px', display: 'block', lineHeight: 1.45 }}>
+                      * 일자 없이 <strong>년도(YYYY)와 월(MM)</strong>만 순서대로 기록됩니다.<br />
+                      날짜를 모르면 위의 [로리/노괴/틀딱]을 누르세요.
                     </span>
                   </div>
 
@@ -1065,7 +1223,7 @@ export default function FilmVaultView({ films, onSaveFilm, onDeleteFilm }: FilmV
                   </div>
                 </div>
 
-                {/* 감은필름, 리브랜딩 체크박스 */}
+                {/* 감은 필름 체크박스 */}
                 <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', padding: '6px 0' }}>
                   <label className="form-checkbox-label">
                     <input
@@ -1074,35 +1232,9 @@ export default function FilmVaultView({ films, onSaveFilm, onDeleteFilm }: FilmV
                       checked={isBulkRolled}
                       onChange={(e) => setIsBulkRolled(e.target.checked)}
                     />
-                    <span>🎞️ 감은 필름 (벌크 로딩)</span>
-                  </label>
-
-                  <label className="form-checkbox-label">
-                    <input
-                      type="checkbox"
-                      className="form-checkbox"
-                      checked={isRebranded}
-                      onChange={(e) => setIsRebranded(e.target.checked)}
-                    />
-                    <span>🏷️ 껍데기만 바꾼 필름 (리브랜딩/OEM)</span>
+                    <span>🎞️ 감은 필름 (벌크 로딩 / 소분 롤)</span>
                   </label>
                 </div>
-
-                {/* 껍데기만 바꾼 필름 정보 입력란 */}
-                {isRebranded && (
-                  <div className="form-group" style={{ background: 'rgba(245, 158, 11, 0.08)', padding: '12px', borderRadius: '8px', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
-                    <label className="form-label" style={{ color: 'var(--text-highlight)' }}>
-                      ✨ 원본 필름 정보 및 내막 (예: 코닥 컬러플러스 200 껍데기)
-                    </label>
-                    <input
-                      className="form-input"
-                      type="text"
-                      placeholder="예: 아마존 후지 200은 사실 코닥 컬러플러스 200의 껍데기만 바꾼 것"
-                      value={originalFilmInfo}
-                      onChange={(e) => setOriginalFilmInfo(e.target.value)}
-                    />
-                  </div>
-                )}
 
                 {/* 메모 */}
                 <div className="form-group">

@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { CameraItem, LensItem, CameraFormat, EquipmentStatus, LensCategory } from '@/types';
 import { CAMERA_FORMAT_CONFIG, EQUIPMENT_STATUS_CONFIG } from '@/lib/constants';
-import { Camera, Aperture, Plus, Search, AlertCircle, Wrench, CheckCircle2, ShoppingBag, Bookmark, Edit2, Trash2 } from 'lucide-react';
+import { Camera, Aperture, Plus, Search, AlertCircle, Wrench, CheckCircle2, ShoppingBag, Bookmark, Edit2, Trash2, Upload } from 'lucide-react';
 
 interface GearViewProps {
   cameras: CameraItem[];
@@ -40,6 +40,7 @@ export default function GearView({
   const [editingCamera, setEditingCamera] = useState<CameraItem | null>(null);
   const [camBrand, setCamBrand] = useState('');
   const [camModel, setCamModel] = useState('');
+  const [camImage, setCamImage] = useState('');
   const [camFormat, setCamFormat] = useState<CameraFormat>('135_full');
   const [camLensType, setCamLensType] = useState<'interchangeable' | 'fixed'>('interchangeable');
   const [camFixedLensName, setCamFixedLensName] = useState('');
@@ -66,6 +67,7 @@ export default function GearView({
   const [editingLens, setEditingLens] = useState<LensItem | null>(null);
   const [lensBrand, setLensBrand] = useState('');
   const [lensName, setLensName] = useState('');
+  const [lensImage, setLensImage] = useState('');
   const [lensFormatCompat, setLensFormatCompat] = useState('135');
   const [lensCategory, setLensCategory] = useState<LensCategory>('prime');
   const [lensFocalMin, setLensFocalMin] = useState<number | ''>(50);
@@ -76,11 +78,45 @@ export default function GearView({
   const [lensSerial, setLensSerial] = useState('');
   const [lensNotes, setLensNotes] = useState('');
 
+  // Photo Upload Handlers
+  const handleCameraPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      alert('카메라 사진 파일 크기는 5MB 이하로 업로드해주세요.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        setCamImage(reader.result);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleLensPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      alert('렌즈 사진 파일 크기는 5MB 이하로 업로드해주세요.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        setLensImage(reader.result);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
   // Camera Modal Handlers
   const openAddCamera = () => {
     setEditingCamera(null);
     setCamBrand('');
     setCamModel('');
+    setCamImage('');
     setCamFormat('135_full');
     setCamLensType('interchangeable');
     setCamMount('Leica M');
@@ -97,6 +133,7 @@ export default function GearView({
     setEditingCamera(cam);
     setCamBrand(cam.brand);
     setCamModel(cam.model);
+    setCamImage(cam.image_url || '');
     setCamFormat(cam.format);
     setCamLensType(cam.lens_type);
     setCamMount(cam.mount || '');
@@ -128,7 +165,7 @@ export default function GearView({
       fixed_max_aperture: camLensType === 'fixed' && camFixedMaxAperture !== '' ? Number(camFixedMaxAperture) : undefined,
       status: camStatus,
       serial_number: camSerial.trim() || undefined,
-      image_url: editingCamera?.image_url,
+      image_url: camImage || undefined,
       notes: camNotes.trim() || undefined,
       created_at: editingCamera ? editingCamera.created_at : new Date().toISOString(),
     };
@@ -142,6 +179,7 @@ export default function GearView({
     setEditingLens(null);
     setLensBrand('');
     setLensName('');
+    setLensImage('');
     setLensFormatCompat('135');
     setLensMount(availableCameraMounts.length > 0 ? availableCameraMounts[0] : '');
     setLensCategory('prime');
@@ -158,6 +196,7 @@ export default function GearView({
     setEditingLens(lens);
     setLensBrand(lens.brand);
     setLensName(lens.name);
+    setLensImage(lens.image_url || '');
     setLensFormatCompat(lens.format_compatibility);
     setLensCategory(lens.lens_category);
     setLensFocalMin(lens.focal_length_min);
@@ -192,6 +231,7 @@ export default function GearView({
       mount: lensMount.trim() || undefined,
       status: lensStatus,
       serial_number: lensSerial.trim() || undefined,
+      image_url: lensImage || undefined,
       notes: lensNotes.trim() || undefined,
       created_at: editingLens ? editingLens.created_at : new Date().toISOString(),
     };
@@ -476,6 +516,13 @@ export default function GearView({
                       </div>
                     </div>
 
+                    {/* 실물 사진 썸네일 */}
+                    {cam.image_url && (
+                      <div style={{ width: '100%', height: '140px', borderRadius: '8px', overflow: 'hidden', margin: '8px 0 12px 0', background: 'rgba(0, 0, 0, 0.4)', border: '1px solid var(--border-subtle)' }}>
+                        <img src={cam.image_url} alt={`${cam.brand} ${cam.model}`} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                      </div>
+                    )}
+
                     {/* Notion Database Property Rows */}
                     <div className="notion-prop-table">
                       <div className="notion-prop-row">
@@ -614,6 +661,13 @@ export default function GearView({
                       </div>
                     </div>
 
+                    {/* 실물 사진 썸네일 */}
+                    {lens.image_url && (
+                      <div style={{ width: '100%', height: '140px', borderRadius: '8px', overflow: 'hidden', margin: '8px 0 12px 0', background: 'rgba(0, 0, 0, 0.4)', border: '1px solid var(--border-subtle)' }}>
+                        <img src={lens.image_url} alt={`${lens.brand} ${lens.name}`} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                      </div>
+                    )}
+
                     {/* Notion Database Property Rows */}
                     <div className="notion-prop-table">
                       <div className="notion-prop-row">
@@ -705,6 +759,44 @@ export default function GearView({
 
             <form onSubmit={handleCameraSubmit}>
               <div className="modal-body">
+                {/* 카메라 실물 사진 업로드 */}
+                <div className="form-group" style={{ marginBottom: '16px' }}>
+                  <label className="form-label">카메라 실물 사진 (내 기기 사진 업로드)</label>
+                  {camImage ? (
+                    <div style={{ position: 'relative', width: '100%', height: '160px', borderRadius: '8px', overflow: 'hidden', background: '#0a0b0e', border: '1px solid var(--border-normal)' }}>
+                      <img src={camImage} alt="카메라 미리보기" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                      <button
+                        type="button"
+                        className="btn btn-danger btn-sm"
+                        style={{ position: 'absolute', top: '8px', right: '8px', padding: '4px 8px' }}
+                        onClick={() => setCamImage('')}
+                      >
+                        <Trash2 size={13} /> 사진 삭제
+                      </button>
+                    </div>
+                  ) : (
+                    <label
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '18px',
+                        border: '1.5px dashed var(--border-normal)',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        background: 'rgba(255, 255, 255, 0.02)',
+                        transition: 'all 0.2s',
+                      }}
+                    >
+                      <Camera size={24} color="var(--accent-amber)" style={{ marginBottom: '6px' }} />
+                      <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>클릭하여 카메라 사진 파일 선택</span>
+                      <span style={{ fontSize: '0.74rem', color: 'var(--text-dim)', marginTop: '2px' }}>JPG, PNG, WEBP 등 지원 (최대 5MB)</span>
+                      <input type="file" accept="image/*" onChange={handleCameraPhotoUpload} style={{ display: 'none' }} />
+                    </label>
+                  )}
+                </div>
+
                 <div className="form-row">
                   <div className="form-group">
                     <label className="form-label">제조사 (브랜드) *</label>
@@ -883,6 +975,44 @@ export default function GearView({
 
             <form onSubmit={handleLensSubmit}>
               <div className="modal-body">
+                {/* 렌즈 실물 사진 업로드 */}
+                <div className="form-group" style={{ marginBottom: '16px' }}>
+                  <label className="form-label">렌즈 실물 사진 (내 렌즈 사진 업로드)</label>
+                  {lensImage ? (
+                    <div style={{ position: 'relative', width: '100%', height: '160px', borderRadius: '8px', overflow: 'hidden', background: '#0a0b0e', border: '1px solid var(--border-normal)' }}>
+                      <img src={lensImage} alt="렌즈 미리보기" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                      <button
+                        type="button"
+                        className="btn btn-danger btn-sm"
+                        style={{ position: 'absolute', top: '8px', right: '8px', padding: '4px 8px' }}
+                        onClick={() => setLensImage('')}
+                      >
+                        <Trash2 size={13} /> 사진 삭제
+                      </button>
+                    </div>
+                  ) : (
+                    <label
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '18px',
+                        border: '1.5px dashed var(--border-normal)',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        background: 'rgba(255, 255, 255, 0.02)',
+                        transition: 'all 0.2s',
+                      }}
+                    >
+                      <Aperture size={24} color="var(--accent-emerald)" style={{ marginBottom: '6px' }} />
+                      <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>클릭하여 렌즈 사진 파일 선택</span>
+                      <span style={{ fontSize: '0.74rem', color: 'var(--text-dim)', marginTop: '2px' }}>JPG, PNG, WEBP 등 지원 (최대 5MB)</span>
+                      <input type="file" accept="image/*" onChange={handleLensPhotoUpload} style={{ display: 'none' }} />
+                    </label>
+                  )}
+                </div>
+
                 <div className="form-row">
                   <div className="form-group">
                     <label className="form-label">브랜드 *</label>
@@ -924,13 +1054,16 @@ export default function GearView({
 
                   <div className="form-group">
                     <label className="form-label">지원 판형</label>
-                    <input
-                      className="form-input"
-                      type="text"
-                      placeholder="예: 135 (35mm), 120, 대형"
+                    <select
+                      className="form-select"
                       value={lensFormatCompat}
                       onChange={(e) => setLensFormatCompat(e.target.value)}
-                    />
+                    >
+                      <option value="135">35mm (135)</option>
+                      <option value="120">중형 (120)</option>
+                      <option value="large">대형</option>
+                      <option value="other">기타</option>
+                    </select>
                   </div>
                 </div>
 

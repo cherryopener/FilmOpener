@@ -3,8 +3,9 @@ export type FilmType =
   | 'bw_slide'          // 흑백슬라이드
   | 'color_negative'    // 컬러네가
   | 'color_slide'       // 컬러슬라이드
-  | 'cinema'            // 영화용 (ECN-2 with Remjet)
-  | 'cinema_ahu'        // 영화용AHU (렘젯 제거 / CineStill 스타일)
+  | 'cinema'            // 영화용 ECN-2 (렘젯)
+  | 'cinestill'         // 시네스틸 (렘젯 제거)
+  | 'cinema_ahu'        // 영화용 AHU (렘젯 없음)
   | 'other';            // 기타
 
 export type FilmFormat =
@@ -168,6 +169,7 @@ export interface ShootingRoll {
   stop_fix_wash_notes?: string;         // 정지/정착/수세/포토플로 등 메모
   is_external_roll?: boolean;           // 목록 외/외부 필름(남의 필름, 오래 묵힌 미등록 필름) 여부
   external_film_info?: string;          // 외부 필름 설명 (e.g. 지수 부탁 필름, 2018년 서랍 발견 필름)
+  external_film_type?: FilmType;        // 외부 필름 화학 종류 (bw_negative, color_negative, cinema 등)
   notes?: string;
   created_at: string;
   updated_at: string;

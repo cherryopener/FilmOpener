@@ -8,6 +8,7 @@ import {
   DevType,
   AgitationMethod,
   FilmFormat,
+  FilmType,
 } from '@/types';
 import {
   AGITATION_METHOD_CONFIG,
@@ -72,6 +73,7 @@ export default function DevelopmentView({
   // External Film Fields (남의 필름, 오래 묵힌 미등록 필름)
   const [externalTitle, setExternalTitle] = useState('');
   const [externalFilmName, setExternalFilmName] = useState('');
+  const [externalFilmType, setExternalFilmType] = useState<FilmType>('color_negative');
   const [externalFormat, setExternalFormat] = useState<FilmFormat>('135');
   const [externalIso, setExternalIso] = useState<number | ''>(400);
 
@@ -108,6 +110,110 @@ export default function DevelopmentView({
     return rolls.filter((r) => r.status === 'developed' || r.status === 'scanned');
   }, [rolls]);
 
+  // Determine currently active film type to auto-recommend matching chemistry
+  const currentActiveFilmType = useMemo((): FilmType => {
+    if (rollSelectionMode === 'external_roll') {
+      return externalFilmType;
+    }
+    const targetRollId = (editingRoll ? editingRoll.id : selectedPendingRollId) || pendingRolls[0]?.id;
+    const targetRoll = rolls.find((r) => r.id === targetRollId);
+    if (targetRoll?.external_film_type) return targetRoll.external_film_type;
+    if (targetRoll?.film_id) {
+      const f = films.find((film) => film.id === targetRoll.film_id);
+      if (f) return f.type;
+    }
+    if (targetRoll?.film_name_snapshot) {
+      const fn = targetRoll.film_name_snapshot.toLowerCase();
+      if (fn.includes('trix') || fn.includes('tri-x') || fn.includes('hp5') || fn.includes('흑백') || fn.includes('b&w') || fn.includes('delta') || fn.includes('acros') || fn.includes('pan') || fn.includes('fp4')) {
+        return 'bw_negative';
+      }
+      if (fn.includes('scala') || fn.includes('흑백슬라')) return 'bw_slide';
+      if (fn.includes('cinestill') || fn.includes('씨네스틸') || fn.includes('시네스틸')) return 'cinestill';
+      if (fn.includes('ahu')) return 'cinema_ahu';
+      if (fn.includes('500t') || fn.includes('250d') || fn.includes('50d') || fn.includes('영화') || fn.includes('ecn')) return 'cinema';
+      if (fn.includes('ektachrome') || fn.includes('provia') || fn.includes('velvia') || fn.includes('slide') || fn.includes('슬라이드')) return 'color_slide';
+    }
+    return 'color_negative';
+  }, [rollSelectionMode, externalFilmType, editingRoll, selectedPendingRollId, pendingRolls, rolls, films]);
+
+  // Recommended developers based on film chemistry
+  const recommendedDevelopers = useMemo(() => {
+    if (currentActiveFilmType === 'bw_negative' || currentActiveFilmType === 'bw_slide') {
+      return developers.filter((d) => d.type === 'bw');
+    }
+    if (currentActiveFilmType === 'cinema') {
+      return developers.filter((d) => d.type === 'cinema');
+    }
+    if (currentActiveFilmType === 'cinestill' || currentActiveFilmType === 'cinema_ahu') {
+      return developers.filter((d) => d.type === 'color' || d.type === 'cinema');
+    }
+    if (currentActiveFilmType === 'color_slide') {
+      const slideDevs = developers.filter((d) => d.type === 'slide');
+      return slideDevs.length > 0 ? slideDevs : developers.filter((d) => d.type === 'color');
+    }
+    // color_negative
+    return developers.filter((d) => d.type === 'color');
+  }, [currentActiveFilmType, developers]);
+
+  const devRecommendationHint = useMemo(() => {
+    switch (currentActiveFilmType) {
+      case 'bw_negative':
+      case 'bw_slide':
+        return {
+          title: '흑백 필름 (B&W)',
+          desc: '흑백 필름 감지: D-76, Rodinal, X-tol 등 흑백 전용 현상액이 자동 추천됩니다.',
+          color: '#a1a1aa',
+          badge: '🖤 흑백 B&W 추천',
+        };
+      case 'cinema':
+        return {
+          title: '영화용 ECN-2 (카본 렘젯)',
+          desc: '영화용 ECN-2 감지: 렘젯 카본층 처리 및 오염 방지를 위해 ECN-2 전용 현상액이 자동 추천됩니다.',
+          color: '#38bdf8',
+          badge: '🎬 ECN-2 전용 추천',
+        };
+      case 'cinestill':
+        return {
+          title: '시네스틸 (렘젯 사전 제거)',
+          desc: '시네스틸 감지: 렘젯층이 제거되어 C-41 컬러 현상액 또는 ECN-2 현상액 모두 사용 가능합니다.',
+          color: '#ef4444',
+          badge: '✨ C-41 / ECN-2 호환',
+        };
+      case 'cinema_ahu':
+        return {
+          title: '영화용 AHU (렘젯 없음)',
+          desc: '영화용 AHU 감지: 렘젯이 없는 신형 에멀전으로 C-41 컬러 현상액 또는 ECN-2 현상액이 호환 추천됩니다.',
+          color: '#eab308',
+          badge: '✨ C-41 / ECN-2 호환',
+        };
+      case 'color_slide':
+        return {
+          title: '컬러 슬라이드 (E-6)',
+          desc: '슬라이드 필름 감지: E-6 전용 슬라이드 현상액이 우선 추천됩니다.',
+          color: '#a855f7',
+          badge: '🌈 E-6 슬라이드 추천',
+        };
+      case 'color_negative':
+      default:
+        return {
+          title: '컬러 네가 (Color C-41)',
+          desc: '컬러 네거티브 감지: C-41 표준 컬러 현상액 키트가 자동 추천됩니다.',
+          color: '#f97316',
+          badge: '🎞️ C-41 컬러 추천',
+        };
+    }
+  }, [currentActiveFilmType]);
+
+  // Auto-switch to recommended developer when film type changes
+  useEffect(() => {
+    if (isModalOpen && devType === 'self' && recommendedDevelopers.length > 0) {
+      if (!recommendedDevelopers.some((d) => d.id === developerId)) {
+        setDeveloperId(recommendedDevelopers[0].id);
+        setCustomDeveloperName(recommendedDevelopers[0].name);
+      }
+    }
+  }, [currentActiveFilmType, isModalOpen, devType, recommendedDevelopers]);
+
   // Handle Initial Roll navigation from ShootingView or Dashboard
   useEffect(() => {
     if (initialRollId) {
@@ -121,12 +227,22 @@ export default function DevelopmentView({
 
   const openDevModalForRoll = (roll: ShootingRoll) => {
     setEditingRoll(roll);
-    setRollSelectionMode('pending_roll');
-    setSelectedPendingRollId(roll.id);
-    setExternalTitle('');
-    setExternalFilmName('');
-    setExternalFormat('135');
-    setExternalIso(400);
+    if (roll.is_external_roll) {
+      setRollSelectionMode('external_roll');
+      setExternalTitle(roll.title);
+      setExternalFilmName(roll.film_name_snapshot || '');
+      setExternalFilmType(roll.external_film_type || 'color_negative');
+      setExternalFormat('135');
+      setExternalIso(roll.iso_rated || 400);
+    } else {
+      setRollSelectionMode('pending_roll');
+      setSelectedPendingRollId(roll.id);
+      setExternalTitle('');
+      setExternalFilmName('');
+      setExternalFilmType('color_negative');
+      setExternalFormat('135');
+      setExternalIso(400);
+    }
 
     const today = new Date().toISOString().split('T')[0];
     setDevType(roll.dev_type !== 'none' ? roll.dev_type : 'self');
@@ -180,6 +296,7 @@ export default function DevelopmentView({
 
     setExternalTitle('');
     setExternalFilmName(films[0]?.name || 'Kodak Gold 200');
+    setExternalFilmType('color_negative');
     setExternalFormat('135');
     setExternalIso(400);
 
@@ -267,6 +384,7 @@ export default function DevelopmentView({
         id: editingRoll ? editingRoll.id : newRollId,
         title,
         is_external_roll: true,
+        external_film_type: externalFilmType,
         external_film_info: `${externalFilmName} (${externalFormat}, ISO ${externalIso})`,
         film_name_snapshot: externalFilmName || '외부 등록 필름',
         camera_name_snapshot: '외부 필름 (촬영 정보 미기록)',
@@ -779,19 +897,38 @@ export default function DevelopmentView({
                           </div>
 
                           <div className="form-group">
-                            <label className="form-label">필름 종류 / 이름 *</label>
+                            <label className="form-label">필름 종류 (화학 프로세스) *</label>
+                            <select
+                              className="form-select"
+                              value={externalFilmType}
+                              onChange={(e) => setExternalFilmType(e.target.value as FilmType)}
+                              required
+                            >
+                              <option value="color_negative">컬러네가 (Color Negative, C-41)</option>
+                              <option value="bw_negative">흑백네가 (B&W Negative)</option>
+                              <option value="cinema">영화용 ECN-2 (렘젯 있음)</option>
+                              <option value="cinestill">시네스틸 (렘젯 제거됨)</option>
+                              <option value="cinema_ahu">영화용 AHU (렘젯 없음)</option>
+                              <option value="color_slide">컬러슬라이드 (Color Slide, E-6)</option>
+                              <option value="bw_slide">흑백슬라이드 (B&W Slide)</option>
+                              <option value="other">기타</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <div className="form-row-3">
+                          <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                            <label className="form-label">필름 이름 / 모델명 *</label>
                             <input
                               className="form-input"
                               type="text"
-                              placeholder="예: Kodak Tri-X 400, Fuji C200"
+                              placeholder="예: Kodak Tri-X 400, Cinestill 800T, Fuji C200"
                               value={externalFilmName}
                               onChange={(e) => setExternalFilmName(e.target.value)}
                               required
                             />
                           </div>
-                        </div>
 
-                        <div className="form-row">
                           <div className="form-group">
                             <label className="form-label">필름 포맷</label>
                             <select
@@ -806,9 +943,11 @@ export default function DevelopmentView({
                               <option value="other">기타</option>
                             </select>
                           </div>
+                        </div>
 
+                        <div className="form-row">
                           <div className="form-group">
-                            <label className="form-label">기준 ISO (감도)</label>
+                            <label className="form-label">촬영 감도 (ISO)</label>
                             <input
                               className="form-input"
                               type="number"
@@ -878,6 +1017,43 @@ export default function DevelopmentView({
                       </span>
                     </div>
 
+                    {/* 스마트 현상액 자동 추천 안내 배너 */}
+                    <div
+                      style={{
+                        padding: '10px 14px',
+                        borderRadius: '8px',
+                        background: 'rgba(255, 255, 255, 0.03)',
+                        border: `1px solid ${devRecommendationHint.color}44`,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '12px',
+                        flexWrap: 'wrap',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span
+                          style={{
+                            padding: '3px 8px',
+                            fontSize: '0.74rem',
+                            fontWeight: 700,
+                            borderRadius: '4px',
+                            background: `${devRecommendationHint.color}22`,
+                            color: devRecommendationHint.color,
+                            letterSpacing: '0.02em',
+                          }}
+                        >
+                          {devRecommendationHint.badge}
+                        </span>
+                        <span style={{ fontSize: '0.8rem', color: 'var(--text-sub)' }}>
+                          {devRecommendationHint.desc}
+                        </span>
+                      </div>
+                      <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                        대상 유제: <strong>{devRecommendationHint.title}</strong>
+                      </span>
+                    </div>
+
                     <div className="form-row">
                       <div className="form-group">
                         <label className="form-label">사용한 현상액 *</label>
@@ -897,11 +1073,26 @@ export default function DevelopmentView({
                               }}
                               required
                             >
-                              {developers.map((d) => (
-                                <option key={d.id} value={d.id}>
-                                  {d.name} ({d.manufacturer}, {d.type}) - 누적 {d.total_rolls_processed}롤 사용됨
-                                </option>
-                              ))}
+                              {recommendedDevelopers.length > 0 && (
+                                <optgroup label="✨ 추천 현상액 (필름 유제 맞춤)">
+                                  {recommendedDevelopers.map((d) => (
+                                    <option key={d.id} value={d.id}>
+                                      ✨ {d.name} ({d.manufacturer}, {d.type.toUpperCase()}) - 누적 {d.total_rolls_processed}롤 사용됨
+                                    </option>
+                                  ))}
+                                </optgroup>
+                              )}
+                              {developers.filter((d) => !recommendedDevelopers.some((rd) => rd.id === d.id)).length > 0 && (
+                                <optgroup label="📦 기타 보유 현상액">
+                                  {developers
+                                    .filter((d) => !recommendedDevelopers.some((rd) => rd.id === d.id))
+                                    .map((d) => (
+                                      <option key={d.id} value={d.id}>
+                                        {d.name} ({d.manufacturer}, {d.type.toUpperCase()}) - 누적 {d.total_rolls_processed}롤 사용됨
+                                      </option>
+                                    ))}
+                                </optgroup>
+                              )}
                               <option value="__custom__">✏️ + 직접 입력 (목록 외 / 신규 현상액)</option>
                             </select>
 
