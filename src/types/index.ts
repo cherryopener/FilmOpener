@@ -235,7 +235,7 @@ export interface ScanLog {
   total_frames: number;                 // 총 나온 컷수 (e.g. 37컷, 12컷 등)
   folder_name: string;                  // 5-4. 저장 폴더명 (e.g. 2026-04_Jeju_Portra400)
   storage_path?: string;                // 저장 드라이브/클라우드 경로 또는 웹/클라우드 URL
-  folder_color?: string;                // 맥북 폴더 색상 (mac_blue, mac_gray, mac_glossy_black, mac_green, mac_yellow 등)
+  folder_color?: string;                // 폴더 색상 (mac_blue, mac_gray, mac_glossy_black, mac_green, mac_yellow 등)
   software_used?: string;               // 반전 소프트웨어 (Negative Lab Pro, VueScan 등)
   scan_date: string;                    // 스캔 날짜
   notes?: string;                       // 색감, 해상도, 보정 메모

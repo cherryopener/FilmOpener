@@ -127,10 +127,10 @@ export default function SettingsModal({
   };
 
   const handleResetDemoData = async () => {
-    if (confirm('현재 데이터를 초기 테스트용 샘플 데이터로 복원하시겠습니까? (기존 수정내용은 덮어씌워집니다)')) {
+    if (confirm('모든 데이터를 초기화하시겠습니까? (등록된 모든 데이터가 삭제되고 깨끗한 빈 상태로 초기화됩니다)')) {
       resetToInitialData();
       await onRefreshData();
-      alert('초기 테스트 데이터가 성공적으로 로드되었습니다.');
+      alert('모든 데이터가 깨끗하게 초기화되었습니다.');
       onClose();
     }
   };
@@ -328,7 +328,7 @@ export default function SettingsModal({
               </label>
 
               <button type="button" className="btn btn-secondary btn-sm" onClick={handleResetDemoData}>
-                <RotateCcw size={14} /> 샘플 데이터 복원
+                <RotateCcw size={14} /> 데이터 전체 초기화
               </button>
             </div>
           </div>

@@ -10,7 +10,7 @@ const STORAGE_KEYS = {
   SHOOTING_ROLLS: 'filmopener_shooting_rolls',
   SCANS: 'filmopener_scans',
   SCANNERS: 'filmopener_scanners',
-  INITIALIZED: 'filmopener_initialized_v6',
+  INITIALIZED: 'filmopener_production_ready_v1',
 };
 
 // Check and seed initial data if running locally

@@ -824,7 +824,7 @@ export default function CinematicScrollStudio({
       { id: 'section-shooting', num: '03', label: 'LOAD', title: '장전 & 출사 기록', icon: '☀️' },
       { id: 'section-development', num: '04', label: 'DEV', title: '암실 현상 레시피', icon: '🧪' },
       { id: 'section-scans', num: '05', label: 'SCAN', title: '디지타이징 & 스캔', icon: '🖨️' },
-      { id: 'mac-finder-desktop-vault', num: '06', label: 'VAULT', title: '맥북 마스터 보관소', icon: '📁' },
+      { id: 'mac-finder-desktop-vault', num: '06', label: 'VAULT', title: '마스터 보관소', icon: '📁' },
     ],
     []
   );
@@ -3096,7 +3096,7 @@ export default function CinematicScrollStudio({
             {/* Folder Color Selector (Default matched to film type) */}
             <div className="field-group" style={{ marginTop: '14px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                <label style={{ marginBottom: 0 }}>맥북 폴더 색상 지정</label>
+                <label style={{ marginBottom: 0 }}>폴더 색상 지정</label>
                 <span style={{ fontSize: '0.74rem', color: '#86868b' }}>
                   흑백(회색) • 흑백슬라(유광블랙) • 컬러네거(하늘색) • 슬라(초록) • 영화용(노랑)
                 </span>
@@ -3176,7 +3176,7 @@ export default function CinematicScrollStudio({
         </div>
 
         {/* ============================================================
-            macOS FINDER VAULT: 맥북 폴더 모양의 마스터 아카이브 갤러리
+            macOS FINDER VAULT: 폴더 모양의 마스터 아카이브 갤러리
             날짜순 정렬 (최신 폴더가 가장 위, 왼쪽에 착착 정렬!)
             ============================================================ */}
         <div
@@ -3215,7 +3215,7 @@ export default function CinematicScrollStudio({
             {/* macOS Finder Toolbar */}
             <div className="mac-finder-subbar">
               <span className="subbar-hint">
-                💡 맥북 폴더를 클릭하면 연결된 <strong>인터넷 클라우드(Google Drive/iCloud)</strong> 또는 <strong>로컬 외장하드</strong>로 바로 열립니다.
+                💡 폴더를 클릭하면 연결된 <strong>인터넷 클라우드(Google Drive/iCloud)</strong> 또는 <strong>로컬 외장하드</strong>로 바로 열립니다.
               </span>
               {copiedFolderUrl && (
                 <span className="copied-toast-badge">
@@ -3230,7 +3230,7 @@ export default function CinematicScrollStudio({
                 <div className="mac-finder-empty">
                   <FolderArchive size={48} strokeWidth={1} color="#6e6e73" />
                   <h4>저장된 스캔 폴더가 없습니다</h4>
-                  <p>위에서 스캔 정보를 작성하고 [영구 등록] 버튼을 누르면 맥북 폴더 모양으로 차곡차곡 정렬됩니다.</p>
+                  <p>위에서 스캔 정보를 작성하고 [영구 등록] 버튼을 누르면 폴더 모양으로 차곡차곡 정렬됩니다.</p>
                 </div>
               ) : (
                 sortedScans.map((scan, sIdx) => {
