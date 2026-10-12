@@ -1288,6 +1288,14 @@ html, body {
   gap: 16px;
 }
 
+.hud-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex: 1;
+}
+
 .hud-left {
   display: flex;
   align-items: center;
@@ -1303,6 +1311,9 @@ html, body {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: var(--radius-full);
+  white-space: nowrap !important;
+  word-break: keep-all !important;
+  flex-shrink: 0;
 }
 
 .hud-logo-icon {
@@ -1314,6 +1325,8 @@ html, body {
   font-weight: 700;
   letter-spacing: -0.02em;
   color: #ffffff;
+  white-space: nowrap !important;
+  word-break: keep-all !important;
 }
 
 .hud-mode-tag {
@@ -1323,6 +1336,8 @@ html, body {
   border-radius: var(--radius-full);
   background: rgba(245, 158, 11, 0.15);
   color: #fbbf24;
+  white-space: nowrap !important;
+  word-break: keep-all !important;
 }
 
 .hud-stage-badges {
@@ -1344,6 +1359,15 @@ html, body {
   border: 1px solid transparent;
   background: rgba(255, 255, 255, 0.06);
   color: #e5e5ea;
+  white-space: nowrap !important;
+  word-break: keep-all !important;
+  flex-shrink: 0;
+}
+
+.stage-jump-btn span,
+.stage-jump-btn strong {
+  white-space: nowrap !important;
+  word-break: keep-all !important;
 }
 
 .stage-jump-btn.amber {
@@ -1399,6 +1423,14 @@ html, body {
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
+  white-space: nowrap !important;
+  word-break: keep-all !important;
+  flex-shrink: 0;
+}
+
+.hud-mode-switch-btn span {
+  white-space: nowrap !important;
+  word-break: keep-all !important;
 }
 
 .hud-mode-switch-btn:hover {
@@ -3879,6 +3911,308 @@ html, body {
 }
 
 @media (max-width: 768px) {
+  /* TOP FIXED GLASS HUD ON MOBILE */
+  .apple-top-hud {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 8px 12px;
+    gap: 8px;
+  }
+
+  .hud-top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: 8px;
+  }
+
+  .hud-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .hud-brand-pill {
+    padding: 5px 10px;
+    gap: 6px;
+    white-space: nowrap !important;
+    word-break: keep-all !important;
+  }
+
+  .hud-brand-title {
+    font-size: 0.88rem;
+    white-space: nowrap !important;
+    word-break: keep-all !important;
+  }
+
+  .hud-mode-tag {
+    display: none; /* Hide Studio Flow tag on mobile header to conserve space */
+  }
+
+  .hud-right {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .hud-mode-switch-btn {
+    padding: 5px 10px;
+    font-size: 0.74rem;
+    gap: 4px;
+    white-space: nowrap !important;
+    word-break: keep-all !important;
+    flex-shrink: 0;
+  }
+
+  .hud-mode-switch-btn span {
+    white-space: nowrap !important;
+    word-break: keep-all !important;
+  }
+
+  .hud-icon-btn {
+    width: 30px;
+    height: 30px;
+    flex-shrink: 0;
+  }
+
+  .hud-user-pill {
+    display: none; /* Hide long email address pill from narrow mobile top header */
+  }
+
+  .hud-stage-badges {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+  }
+
+  .hud-stage-badges::-webkit-scrollbar {
+    display: none;
+  }
+
+  .stage-jump-btn {
+    flex: 1;
+    min-width: max-content;
+    justify-content: center;
+    padding: 6px 10px;
+    font-size: 0.74rem;
+    gap: 5px;
+    white-space: nowrap !important;
+    word-break: keep-all !important;
+    flex-shrink: 0;
+  }
+
+  .stage-jump-btn span,
+  .stage-jump-btn strong {
+    white-space: nowrap !important;
+    word-break: keep-all !important;
+  }
+
+  /* BUTTONS & BADGES PREVENT BROKEN KOREAN WORDS */
+  button,
+  .apple-btn,
+  .apple-primary-btn,
+  .apple-secondary-btn,
+  .stage-jump-btn,
+  .hud-mode-switch-btn,
+  .apple-mini-add-btn,
+  .apple-reorder-btn,
+  .shelf-sort-current-pill,
+  .tray-next-btn,
+  .mount-btn,
+  .queue-chip,
+  .glass-btn-accent,
+  .preset-pill {
+    word-break: keep-all !important;
+  }
+
+  /* CHAPTER HEADERS & CONTROLS MOBILE */
+  .chapter-header {
+    margin-bottom: 24px;
+  }
+
+  .chapter-title {
+    font-size: 1.6rem !important;
+    word-break: keep-all !important;
+  }
+
+  .chapter-desc {
+    font-size: 0.92rem !important;
+    word-break: keep-all !important;
+  }
+
+  /* SHELF CONTROL BAR MOBILE */
+  .shelf-control-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 16px;
+  }
+
+  .shelf-sort-badge-group {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    gap: 8px;
+  }
+
+  .shelf-sort-label {
+    white-space: nowrap !important;
+    word-break: keep-all !important;
+  }
+
+  .shelf-sort-current-pill {
+    white-space: nowrap !important;
+    word-break: keep-all !important;
+    font-size: 0.76rem;
+    padding: 3px 10px;
+  }
+
+  .shelf-reorder-actions {
+    width: 100%;
+  }
+
+  .apple-reorder-btn {
+    width: 100%;
+    justify-content: center;
+    white-space: nowrap !important;
+    word-break: keep-all !important;
+    font-size: 0.78rem;
+    padding: 8px 14px;
+  }
+
+  /* SELECTION TRAY BANNER MOBILE */
+  .selection-tray-banner {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 14px 16px;
+    margin-top: 18px;
+  }
+
+  .tray-title {
+    font-size: 1.05rem;
+    word-break: keep-all;
+  }
+
+  .tray-sub {
+    font-size: 0.78rem;
+    word-break: keep-all;
+  }
+
+  .tray-next-btn {
+    width: 100%;
+    justify-content: center;
+    white-space: nowrap !important;
+    word-break: keep-all !important;
+    padding: 10px 16px;
+    font-size: 0.85rem;
+  }
+
+  /* HERO ACTIONS ON MOBILE */
+  .hero-action-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    width: 100%;
+  }
+
+  .hero-action-row .apple-primary-btn {
+    width: 100%;
+    justify-content: center;
+    white-space: nowrap !important;
+    word-break: keep-all !important;
+  }
+
+  .hero-stats-strip {
+    display: flex;
+    justify-content: center;
+    white-space: nowrap !important;
+    word-break: keep-all !important;
+    font-size: 0.78rem;
+    gap: 8px;
+  }
+
+  /* GEAR RIG BUTTONS ON MOBILE */
+  .column-title-row {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 8px;
+  }
+
+  .column-title-row .apple-mini-add-btn {
+    width: 100%;
+    justify-content: center;
+    white-space: nowrap !important;
+    word-break: keep-all !important;
+  }
+
+  /* DARKROOM DEVELOPMENT MOBILE */
+  .queue-title-row {
+    flex-direction: column;
+    align-items: stretch !important;
+    gap: 10px !important;
+  }
+
+  .queue-title-row button {
+    width: 100%;
+    justify-content: center;
+    white-space: nowrap !important;
+    word-break: keep-all !important;
+  }
+
+  .queue-chips-row {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+    gap: 8px;
+  }
+
+  .queue-chip {
+    white-space: nowrap !important;
+    word-break: keep-all !important;
+    flex-shrink: 0;
+  }
+
+  .queue-chip .chip-name,
+  .queue-chip .chip-film {
+    white-space: nowrap !important;
+    word-break: keep-all !important;
+  }
+
+  .chem-filter-banner {
+    flex-direction: column;
+    gap: 10px;
+    padding: 14px 16px;
+  }
+
+  .chem-filter-banner .banner-text {
+    word-break: keep-all !important;
+  }
+
+  .darkroom-action-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .darkroom-action-row button {
+    width: 100%;
+    justify-content: center;
+    white-space: nowrap !important;
+    word-break: keep-all !important;
+  }
+
+  /* BOTTOM DOCK ON MOBILE */
   .apple-bottom-dock {
     bottom: 16px;
     padding: 6px 8px;

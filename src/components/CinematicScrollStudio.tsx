@@ -257,7 +257,7 @@ export default function CinematicScrollStudio({
   const [loadedDate, setLoadedDate] = useState<string>(
     new Date().toISOString().split('T')[0]
   );
-  const [isoRated, setIsoRated] = useState<number>(200);
+  const [isoRated, setIsoRated] = useState<number | ''>(200);
   const [outings, setOutings] = useState<
     { id: string; date: string; weather: WeatherType; location: string; shots: number; notes: string }[]
   >([
@@ -314,9 +314,9 @@ export default function CinematicScrollStudio({
   const [newLensName, setNewLensName] = useState<string>('');
   const [newLensMount, setNewLensMount] = useState<string>('Leica M');
   const [newLensCategory, setNewLensCategory] = useState<'prime' | 'zoom'>('prime');
-  const [newLensFocalMin, setNewLensFocalMin] = useState<number>(50);
-  const [newLensFocalMax, setNewLensFocalMax] = useState<number>(50);
-  const [newLensMaxAperture, setNewLensMaxAperture] = useState<number>(2.0);
+  const [newLensFocalMin, setNewLensFocalMin] = useState<number | ''>(50);
+  const [newLensFocalMax, setNewLensFocalMax] = useState<number | ''>(50);
+  const [newLensMaxAperture, setNewLensMaxAperture] = useState<number | ''>(2.0);
   const [newLensFormat, setNewLensFormat] = useState<string>('135');
   const [newLensStatus, setNewLensStatus] = useState<EquipmentStatus>('active');
   const [newLensSerial, setNewLensSerial] = useState<string>('');
@@ -409,7 +409,7 @@ export default function CinematicScrollStudio({
     }
   };
   const [dilutionRatio, setDilutionRatio] = useState<string>('1:1');
-  const [devTemp, setDevTemp] = useState<number>(20.0);
+  const [devTemp, setDevTemp] = useState<number | ''>(20.0);
   const [devTime, setDevTime] = useState<string>('');
   const [agitationMethod, setAgitationMethod] = useState<AgitationMethod>('rotary');
   const [agitationNotes, setAgitationNotes] = useState<string>('');
@@ -434,7 +434,7 @@ export default function CinematicScrollStudio({
   const [folderName, setFolderName] = useState<string>('');
   const [folderUrl, setFolderUrl] = useState<string>('');
   const [folderColor, setFolderColor] = useState<MacFolderColorKey>('mac_sky_blue');
-  const [scanFrames, setScanFrames] = useState<number>(36);
+  const [scanFrames, setScanFrames] = useState<number | ''>(36);
   const [scanSoftware, setScanSoftware] = useState<string>('');
   const [scanNotes, setScanNotes] = useState<string>('');
   const [isCopiedFolder, setIsCopiedFolder] = useState<boolean>(false);
@@ -460,15 +460,15 @@ export default function CinematicScrollStudio({
   const [newFilmType, setNewFilmType] = useState<FilmType>('color_negative');
   const [newFilmFormat, setNewFilmFormat] = useState<FilmFormat>('135');
   const [newFilmFramesOption, setNewFilmFramesOption] = useState<'36' | '24' | 'custom'>('36');
-  const [newFilmFramesPerRoll, setNewFilmFramesPerRoll] = useState<number>(36);
-  const [newFilmIso, setNewFilmIso] = useState<number>(200);
+  const [newFilmFramesPerRoll, setNewFilmFramesPerRoll] = useState<number | ''>(36);
+  const [newFilmIso, setNewFilmIso] = useState<number | ''>(200);
   const [newFilmExpiry, setNewFilmExpiry] = useState<string>('');
   const [newFilmExpiryYear, setNewFilmExpiryYear] = useState<string>('');
   const [newFilmExpiryMonth, setNewFilmExpiryMonth] = useState<string>('');
   const [newFilmFreshness, setNewFilmFreshness] = useState<FreshnessStatus>('fresh');
   const [newFilmStorage, setNewFilmStorage] = useState<StorageMethod>('room_temp');
   const [newFilmExpired, setNewFilmExpired] = useState<boolean>(false);
-  const [newFilmQuantity, setNewFilmQuantity] = useState<number>(1);
+  const [newFilmQuantity, setNewFilmQuantity] = useState<number | ''>(1);
   const [newFilmBulkRolled, setNewFilmBulkRolled] = useState<boolean>(false);
   const [newFilmNotes, setNewFilmNotes] = useState<string>('');
 
@@ -1436,7 +1436,7 @@ export default function CinematicScrollStudio({
           shots_taken: Number(s.shots) || 0,
           notes: s.notes,
         })),
-        iso_rated: isoRated,
+        iso_rated: isoRated ? Number(isoRated) : 200,
         total_shots: totalShotsCount,
         dev_type: existingRoll?.dev_type || 'none',
         dev_quantity_rolls: existingRoll?.dev_quantity_rolls || 1,
@@ -1498,7 +1498,7 @@ export default function CinematicScrollStudio({
         shots_taken: Number(s.shots) || 0,
         notes: s.notes,
       })),
-      iso_rated: isoRated,
+      iso_rated: isoRated ? Number(isoRated) : 200,
       total_shots: totalShotsCount,
       dev_type: 'none',
       dev_quantity_rolls: 1,
@@ -1546,7 +1546,7 @@ export default function CinematicScrollStudio({
           ? `${selectedChem.manufacturer} ${selectedChem.name}`
           : undefined,
       dilution_ratio: devType === 'self' ? dilutionRatio : undefined,
-      dev_temp_celsius: devType === 'self' ? devTemp : undefined,
+      dev_temp_celsius: devType === 'self' ? (devTemp !== '' ? Number(devTemp) : 20.0) : undefined,
       dev_time: devType === 'self' ? (devTime.trim() || '9분 30초') : undefined,
       dev_method: devType === 'self' ? agitationMethod : undefined,
       agitation_details: devType === 'self' ? (agitationNotes.trim() || undefined) : undefined,
@@ -1664,65 +1664,67 @@ export default function CinematicScrollStudio({
           TOP FIXED GLASS HEADER HUD
           ============================================================ */}
       <header className="apple-top-hud">
-        <div className="hud-left">
-          <div className="hud-brand-pill">
-            <span className="hud-logo-icon">🎞️</span>
-            <span className="hud-brand-title">FilmOpener</span>
-            <span className="hud-mode-tag">Studio Flow</span>
+        <div className="hud-top-bar">
+          <div className="hud-left">
+            <div className="hud-brand-pill">
+              <span className="hud-logo-icon">🎞️</span>
+              <span className="hud-brand-title">FilmOpener</span>
+              <span className="hud-mode-tag">Studio Flow</span>
+            </div>
           </div>
 
-          {/* Direct Stage Badges (Click to Jump Directly!) */}
-          <div className="hud-stage-badges">
+          <div className="hud-right">
+            {/* Switch to Full Table View */}
             <button
-              className={`stage-jump-btn amber ${pendingDevRolls.length > 0 ? 'pulse' : ''}`}
-              onClick={() => scrollToChapter('section-development')}
-              title="현상 대기 중인 필름으로 스크롤 이동"
+              className="hud-mode-switch-btn"
+              onClick={onSwitchToTableView}
+              title="스튜디오 데이터 관리 테이블 모드로 전환"
             >
-              <FlaskConical size={14} />
-              <span>현상 대기: <strong>{pendingDevRolls.length}롤</strong></span>
-              <ArrowRight size={12} />
+              <Sliders size={14} />
+              <span>테이블 인벤토리 모드</span>
             </button>
 
-            <button
-              className={`stage-jump-btn emerald ${pendingScanRolls.length > 0 ? 'pulse' : ''}`}
-              onClick={() => scrollToChapter('section-scans')}
-              title="스캔 대기 중인 필름으로 스크롤 이동"
-            >
-              <FolderArchive size={14} />
-              <span>스캔 대기: <strong>{pendingScanRolls.length}롤</strong></span>
-              <ArrowRight size={12} />
+            {/* Settings Modal Button */}
+            <button className="hud-icon-btn" onClick={onOpenSettings} title="환경설정">
+              <Settings size={16} />
             </button>
+
+            {/* Auth Email & Logout */}
+            {userEmail && (
+              <div className="hud-user-pill">
+                <span className="hud-user-dot" />
+                <span className="hud-user-email">{userEmail}</span>
+                {onLogout && (
+                  <button className="hud-logout-btn" onClick={onLogout} title="로그아웃">
+                    <LogOut size={13} />
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
-        <div className="hud-right">
-          {/* Switch to Full Table View */}
+        {/* Direct Stage Badges (Click to Jump Directly!) */}
+        <div className="hud-stage-badges">
           <button
-            className="hud-mode-switch-btn"
-            onClick={onSwitchToTableView}
-            title="스튜디오 데이터 관리 테이블 모드로 전환"
+            className={`stage-jump-btn amber ${pendingDevRolls.length > 0 ? 'pulse' : ''}`}
+            onClick={() => scrollToChapter('section-development')}
+            title="현상 대기 중인 필름으로 스크롤 이동"
           >
-            <Sliders size={14} />
-            <span>테이블 인벤토리 모드</span>
+            <FlaskConical size={14} />
+            <span>현상 대기: <strong>{pendingDevRolls.length}롤</strong></span>
+            <ArrowRight size={12} />
           </button>
 
-          {/* Settings Modal Button */}
-          <button className="hud-icon-btn" onClick={onOpenSettings} title="환경설정">
-            <Settings size={16} />
+          <button
+            className={`stage-jump-btn emerald ${pendingScanRolls.length > 0 ? 'pulse' : ''}`}
+            onClick={() => scrollToChapter('section-scans')}
+            title="스캔 대기 중인 필름으로 스크롤 이동"
+          >
+            <FolderArchive size={14} />
+            <span>스캔 대기: <strong>{pendingScanRolls.length}롤</strong></span>
+            <ArrowRight size={12} />
           </button>
-
-          {/* Auth Email & Logout */}
-          {userEmail && (
-            <div className="hud-user-pill">
-              <span className="hud-user-dot" />
-              <span className="hud-user-email">{userEmail}</span>
-              {onLogout && (
-                <button className="hud-logout-btn" onClick={onLogout} title="로그아웃">
-                  <LogOut size={13} />
-                </button>
-              )}
-            </div>
-          )}
         </div>
       </header>
 
@@ -2249,7 +2251,7 @@ export default function CinematicScrollStudio({
                 <input
                   type="number"
                   value={isoRated}
-                  onChange={(e) => setIsoRated(Number(e.target.value))}
+                  onChange={(e) => setIsoRated(e.target.value === '' ? '' : Number(e.target.value))}
                   onFocus={(e) => e.target.select()}
                   className="apple-input"
                   style={{ width: '100px' }}
@@ -2331,7 +2333,7 @@ export default function CinematicScrollStudio({
                               handleUpdateOuting(
                                 session.id,
                                 'shots',
-                                Number(e.target.value)
+                                e.target.value === '' ? ('' as any) : Number(e.target.value)
                               )
                             }
                             onFocus={(e) => e.target.select()}
@@ -2852,7 +2854,7 @@ export default function CinematicScrollStudio({
                     type="number"
                     step="0.1"
                     value={devTemp}
-                    onChange={(e) => setDevTemp(Number(e.target.value))}
+                    onChange={(e) => setDevTemp(e.target.value === '' ? '' : Number(e.target.value))}
                     onFocus={(e) => e.target.select()}
                     className="apple-input"
                   />
@@ -3317,7 +3319,7 @@ export default function CinematicScrollStudio({
                 <input
                   type="number"
                   value={scanFrames}
-                  onChange={(e) => setScanFrames(Number(e.target.value))}
+                  onChange={(e) => setScanFrames(e.target.value === '' ? '' : Number(e.target.value))}
                   onFocus={(e) => e.target.select()}
                   className="apple-input"
                 />
@@ -3857,7 +3859,7 @@ export default function CinematicScrollStudio({
                     <input
                       type="number"
                       value={newFilmIso}
-                      onChange={(e) => setNewFilmIso(Number(e.target.value))}
+                      onChange={(e) => setNewFilmIso(e.target.value === '' ? '' : Number(e.target.value))}
                       className="apple-input"
                     />
                   </div>
@@ -4112,7 +4114,7 @@ export default function CinematicScrollStudio({
                           type="number"
                           min="1"
                           value={newFilmQuantity}
-                          onChange={(e) => setNewFilmQuantity(Number(e.target.value))}
+                          onChange={(e) => setNewFilmQuantity(e.target.value === '' ? '' : Number(e.target.value))}
                           onFocus={(e) => e.target.select()}
                           className="apple-input"
                         />
@@ -4142,7 +4144,7 @@ export default function CinematicScrollStudio({
                           type="number"
                           min="1"
                           value={newFilmQuantity}
-                          onChange={(e) => setNewFilmQuantity(Number(e.target.value))}
+                          onChange={(e) => setNewFilmQuantity(e.target.value === '' ? '' : Number(e.target.value))}
                           onFocus={(e) => e.target.select()}
                           className="apple-input"
                         />
@@ -4193,7 +4195,7 @@ export default function CinematicScrollStudio({
                           min="1"
                           placeholder="컷수 입력"
                           value={newFilmFramesPerRoll}
-                          onChange={(e) => setNewFilmFramesPerRoll(Number(e.target.value))}
+                          onChange={(e) => setNewFilmFramesPerRoll(e.target.value === '' ? '' : Number(e.target.value))}
                           className="apple-input"
                           style={{ marginTop: '6px', padding: '6px 8px', fontSize: '12px' }}
                           autoFocus
@@ -4636,7 +4638,7 @@ export default function CinematicScrollStudio({
                     <input
                       type="number"
                       value={newLensFocalMin}
-                      onChange={(e) => setNewLensFocalMin(Number(e.target.value))}
+                      onChange={(e) => setNewLensFocalMin(e.target.value === '' ? '' : Number(e.target.value))}
                       placeholder="50"
                       className="apple-input"
                       required
@@ -4649,7 +4651,7 @@ export default function CinematicScrollStudio({
                       <input
                         type="number"
                         value={newLensFocalMin}
-                        onChange={(e) => setNewLensFocalMin(Number(e.target.value))}
+                        onChange={(e) => setNewLensFocalMin(e.target.value === '' ? '' : Number(e.target.value))}
                         placeholder="최소 35"
                         className="apple-input flex-1"
                         required
@@ -4658,7 +4660,7 @@ export default function CinematicScrollStudio({
                       <input
                         type="number"
                         value={newLensFocalMax}
-                        onChange={(e) => setNewLensFocalMax(Number(e.target.value))}
+                        onChange={(e) => setNewLensFocalMax(e.target.value === '' ? '' : Number(e.target.value))}
                         placeholder="최대 70"
                         className="apple-input flex-1"
                         required
@@ -4672,7 +4674,7 @@ export default function CinematicScrollStudio({
                     type="number"
                     step="0.1"
                     value={newLensMaxAperture}
-                    onChange={(e) => setNewLensMaxAperture(Number(e.target.value))}
+                    onChange={(e) => setNewLensMaxAperture(e.target.value === '' ? '' : Number(e.target.value))}
                     placeholder="1.4"
                     className="apple-input"
                     required

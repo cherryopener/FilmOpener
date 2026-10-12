@@ -85,7 +85,7 @@ export default function DevelopmentView({
   // Self Development Details
   const [developerId, setDeveloperId] = useState('');
   const [customDeveloperName, setCustomDeveloperName] = useState('');
-  const [devQuantityRolls, setDevQuantityRolls] = useState<number>(1);
+  const [devQuantityRolls, setDevQuantityRolls] = useState<number | ''>(1);
   const [devMethod, setDevMethod] = useState<AgitationMethod>('inversion');
   const [dilutionRatio, setDilutionRatio] = useState('Stock');
   const [customDilution, setCustomDilution] = useState('');
@@ -1135,7 +1135,7 @@ export default function DevelopmentView({
                           type="number"
                           min="1"
                           value={devQuantityRolls}
-                          onChange={(e) => setDevQuantityRolls(Number(e.target.value))}
+                          onChange={(e) => setDevQuantityRolls(e.target.value === '' ? '' : Number(e.target.value))}
                           required
                         />
                         <span style={{ fontSize: '0.72rem', color: 'var(--text-dim)' }}>

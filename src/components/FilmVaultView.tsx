@@ -30,7 +30,7 @@ export default function FilmVaultView({ films, onSaveFilm, onDeleteFilm }: FilmV
   const [brandSelectMode, setBrandSelectMode] = useState<string>('');
   const [type, setType] = useState<FilmType>('color_negative');
   const [format, setFormat] = useState<FilmFormat>('135');
-  const [iso, setIso] = useState<number>(400);
+  const [iso, setIso] = useState<number | ''>(400);
   const [expiryDate, setExpiryDate] = useState('');
   const [expiryYear, setExpiryYear] = useState('');
   const [expiryMonth, setExpiryMonth] = useState('');
@@ -38,8 +38,8 @@ export default function FilmVaultView({ films, onSaveFilm, onDeleteFilm }: FilmV
   const [storageMethod, setStorageMethod] = useState<StorageMethod>('room_temp');
   const [isBulkRolled, setIsBulkRolled] = useState(false);
   const [isExpired, setIsExpired] = useState(false);
-  const [quantity, setQuantity] = useState<number>(1);
-  const [framesPerRoll, setFramesPerRoll] = useState<number>(36);
+  const [quantity, setQuantity] = useState<number | ''>(1);
+  const [framesPerRoll, setFramesPerRoll] = useState<number | ''>(36);
   const [framesOption, setFramesOption] = useState<'36' | '24' | 'custom'>('36');
   const [notes, setNotes] = useState('');
 
@@ -898,7 +898,7 @@ export default function FilmVaultView({ films, onSaveFilm, onDeleteFilm }: FilmV
                           type="number"
                           placeholder="예: 400"
                           value={iso}
-                          onChange={(e) => setIso(Number(e.target.value))}
+                          onChange={(e) => setIso(e.target.value === '' ? '' : Number(e.target.value))}
                         />
                       </div>
 
@@ -911,7 +911,7 @@ export default function FilmVaultView({ films, onSaveFilm, onDeleteFilm }: FilmV
                           type="number"
                           min="1"
                           value={quantity}
-                          onChange={(e) => setQuantity(Number(e.target.value))}
+                          onChange={(e) => setQuantity(e.target.value === '' ? '' : Number(e.target.value))}
                         />
                       </div>
 
