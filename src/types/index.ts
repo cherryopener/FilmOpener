@@ -20,6 +20,11 @@ export type StorageMethod =
   | 'refrigerated'      // 냉장 보관
   | 'frozen';           // 냉동 보관
 
+export type FreshnessStatus =
+  | 'fresh'             // 싱싱함 (로리)
+  | 'expired'           // 썩필 (노괴)
+  | 'deep_expired';     // 푹썩은 썩필 (틀딱 - 몹시 썩어 상이 거의 안맺힘)
+
 export interface FilmItem {
   id: string;
   name: string;                         // 필름 이름 (e.g. 후지 200, 포트라 400, HP5 Plus)
@@ -27,10 +32,11 @@ export interface FilmItem {
   type: FilmType;                       // 필름 종류
   format: FilmFormat;                   // 판형/포맷
   iso: number;                          // 감도 (ISO)
-  expiry_date: string;                  // 유통기한 (YYYY-MM-DD 또는 YYYY-MM)
+  expiry_date: string;                  // 유통기한 (YYYY-MM-DD 또는 YYYY-MM, 미상 시 상태 문구)
   storage_method: StorageMethod;        // 보관 방법 (상온/냉장/냉동)
   is_bulk_rolled: boolean;              // 감은 필름(벌크 로딩) 여부
   is_expired: boolean;                  // 썩필 (유통기한 만료) 여부
+  freshness_status?: FreshnessStatus;   // 신선도 상태 (로리: 싱싱 / 노괴: 썩필 / 틀딱: 푹썩필)
   is_rebranded: boolean;                // 껍데기만 바꾼 필름 여부 (리브랜딩/OEM)
   original_film_info?: string;          // 원본 필름 정보 (예: 코닥 컬러플러스 200 껍데기만 바꾼 것)
   quantity: number;                     // 보유 롤/매 수
@@ -70,6 +76,7 @@ export interface CameraItem {
   fixed_max_aperture?: number;          // 일체형 최대개방 f값
   status: EquipmentStatus;              // 상태
   serial_number?: string;               // 시리얼 번호
+  mount?: string;                       // 교환식 렌즈 마운트 (예: M, Leica M, Nikon F, M42 등 사용자 입력)
   image_url?: string;                   // 사용자 업로드 카메라 사진 (Base64 / URL)
   notes?: string;
   created_at: string;
@@ -89,6 +96,7 @@ export interface LensItem {
   mount?: string;                       // 마운트 (Leica M, Nikon F, etc.)
   status: EquipmentStatus;              // 장비 상태
   serial_number?: string;
+  image_url?: string;                   // 사용자 업로드 렌즈 사진 (Base64 / URL)
   notes?: string;
   created_at: string;
 }
@@ -191,11 +199,27 @@ export interface DeveloperChemical {
 }
 
 export type ScanMethod =
+  | 'digitizing'        // 디지타이징 (카메라/미러리스/센서 스캔)
+  | 'dslr'              // 기존 호환용 (디지타이징)
   | 'flatbed'           // 평판 스캐너 (Epson V600, V850 등)
-  | 'dslr'              // DSLR / 미러리스 디지타이징
   | 'dedicated'         // 전용 필름 스캐너 (Plustek, Nikon Coolscan 등)
   | 'lab'               // 현상소 스캔 (Noritsu, Frontier 등)
   | 'other';
+
+export type ScannerCategory = 'digitizing' | 'flatbed' | 'dedicated' | 'other';
+
+export interface ScannerItem {
+  id: string;
+  name: string;               // 장비명/모델명 (예: Sony A7R IV + 90mm Macro, Epson V850 Pro, Plustek OpticFilm 8200i)
+  category: ScannerCategory;  // 'digitizing' (디지타이징) | 'flatbed' (평판) | 'dedicated' (필름 전용) | 'other' (기타)
+  brand?: string;             // 제조사/브랜드 (예: Sony, Epson, Plustek, Nikon)
+  sensor_or_light?: string;   // 광원 / 센서 (디지타이징: CS-LITE, Raleno LED 등)
+  holder_type?: string;       // 필름 홀더 (Valoi, Essential Film Holder 등)
+  notes?: string;             // 해상도(DPI) 설정, 프로필 등 메모
+  created_at: string;
+}
+
+export type LabScanResolution = 'standard' | 'high'; // 'standard': 일반화질, 'high': 고화질
 
 export interface ScanLog {
   id: string;
@@ -204,12 +228,17 @@ export interface ScanLog {
   film_title: string;                   // 스캔한 필름 제목/이름
   camera_lens_info?: string;            // 카메라/렌즈 정보
   scan_method: ScanMethod;              // 스캔 방식
+  scanner_id?: string;                  // 보유 스캐너 장비 연동 ID (ScannerItem ID)
   scanner_model?: string;               // 스캐너 기종 또는 카메라/매크로렌즈
+  lab_scanner?: string;                 // 현상소 스캐너 기종 (노리츠, 후지 프론티어, 코닥 HR, 이마콘 등)
+  lab_resolution?: LabScanResolution;   // 현상소 스캔 화질 ('standard': 일반화질, 'high': 고화질)
   total_frames: number;                 // 총 나온 컷수 (e.g. 37컷, 12컷 등)
   folder_name: string;                  // 5-4. 저장 폴더명 (e.g. 2026-04_Jeju_Portra400)
-  storage_path?: string;                // 저장 드라이브/클라우드 경로
+  storage_path?: string;                // 저장 드라이브/클라우드 경로 또는 웹/클라우드 URL
+  folder_color?: string;                // 맥북 폴더 색상 (mac_blue, mac_gray, mac_glossy_black, mac_green, mac_yellow 등)
   software_used?: string;               // 반전 소프트웨어 (Negative Lab Pro, VueScan 등)
   scan_date: string;                    // 스캔 날짜
   notes?: string;                       // 색감, 해상도, 보정 메모
   created_at: string;
 }
+

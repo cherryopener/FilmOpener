@@ -153,8 +153,19 @@ export default function FilmCanister3D({
 
             {/* Expired Film Badge Overlay on Canister Body */}
             {film.is_expired && (
-              <div className="canister-expired-tape">
-                <span>⚠️ 썩필 (만료)</span>
+              <div
+                className="canister-expired-tape"
+                style={{
+                  background:
+                    film.freshness_status === 'deep_expired'
+                      ? 'linear-gradient(135deg, rgba(127, 29, 29, 0.95), rgba(69, 10, 10, 0.95))'
+                      : undefined,
+                  borderColor: film.freshness_status === 'deep_expired' ? '#ef4444' : undefined,
+                }}
+              >
+                <span>
+                  {film.freshness_status === 'deep_expired' ? '💀 틀딱 (푹썩필)' : '⚠️ 썩필 (노괴)'}
+                </span>
               </div>
             )}
 
@@ -171,7 +182,21 @@ export default function FilmCanister3D({
               <div className="label-brand-row">
                 <span className="brand-wordmark">{film.brand.toUpperCase()}</span>
                 <div style={{ display: 'flex', gap: '3px' }}>
-                  {film.is_expired && <span className="bulk-badge" style={{ background: '#d97706' }}>썩필</span>}
+                  {film.is_expired && (
+                    <span
+                      className="bulk-badge"
+                      style={{
+                        background: film.freshness_status === 'deep_expired' ? '#b91c1c' : '#d97706',
+                      }}
+                    >
+                      {film.freshness_status === 'deep_expired' ? '틀딱' : '썩필'}
+                    </span>
+                  )}
+                  {film.freshness_status === 'fresh' && (
+                    <span className="bulk-badge" style={{ background: '#059669' }}>
+                      로리
+                    </span>
+                  )}
                   {film.is_bulk_rolled && <span className="bulk-badge">BULK</span>}
                 </div>
               </div>
@@ -247,8 +272,23 @@ export default function FilmCanister3D({
           </div>
 
           <div className="plaque-bottom-row">
-            <span className={`plaque-expiry ${film.is_expired ? 'expired' : ''}`} title={film.is_expired ? '유통기한 만료 썩필' : '정상 유통기한'}>
-              {film.is_expired ? '⚠️ 썩필 ' : 'EXP '}
+            <span
+              className={`plaque-expiry ${film.is_expired ? 'expired' : ''}`}
+              title={
+                film.freshness_status === 'deep_expired'
+                  ? '몹시 썩어 상이 거의 안맺히는 틀딱 푹썩필'
+                  : film.is_expired
+                  ? '유통기한 만료 썩필 (노괴)'
+                  : '싱싱한 정상 필름 (로리)'
+              }
+            >
+              {film.freshness_status === 'deep_expired'
+                ? '💀 틀딱 '
+                : film.is_expired
+                ? '⚠️ 썩필 '
+                : film.freshness_status === 'fresh'
+                ? '🌸 로리 '
+                : 'EXP '}
               {formattedExpiry}
             </span>
             <span className="plaque-storage">{storageIcon}</span>

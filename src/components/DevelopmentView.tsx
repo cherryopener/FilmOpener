@@ -84,7 +84,7 @@ export default function DevelopmentView({
   const [developerId, setDeveloperId] = useState('');
   const [devQuantityRolls, setDevQuantityRolls] = useState<number>(1);
   const [devMethod, setDevMethod] = useState<AgitationMethod>('inversion');
-  const [dilutionRatio, setDilutionRatio] = useState('Stock (원액)');
+  const [dilutionRatio, setDilutionRatio] = useState('Stock');
   const [customDilution, setCustomDilution] = useState('');
   const [chemicalVolumeMl, setChemicalVolumeMl] = useState<number | ''>(300);
   const [dilutionLiquidVolumeMl, setDilutionLiquidVolumeMl] = useState<number | ''>('');
@@ -136,12 +136,13 @@ export default function DevelopmentView({
     setDevQuantityRolls(roll.dev_quantity_rolls || 1);
     setDevMethod(roll.dev_method || 'inversion');
 
-    const isCustom = roll.dilution_ratio && !COMMON_DILUTIONS.includes(roll.dilution_ratio);
+    const normalizedRatio = roll.dilution_ratio === 'Stock (원액)' ? 'Stock' : roll.dilution_ratio;
+    const isCustom = normalizedRatio && !COMMON_DILUTIONS.includes(normalizedRatio);
     if (isCustom) {
       setDilutionRatio('기타 직접입력');
-      setCustomDilution(roll.dilution_ratio || '');
+      setCustomDilution(normalizedRatio || '');
     } else {
-      setDilutionRatio(roll.dilution_ratio || 'Stock (원액)');
+      setDilutionRatio(normalizedRatio || 'Stock');
       setCustomDilution('');
     }
 
@@ -149,8 +150,8 @@ export default function DevelopmentView({
     setDilutionLiquidVolumeMl(roll.dilution_liquid_volume_ml ?? '');
     setDevTempCelsius(roll.dev_temp_celsius ?? 20);
     setDevTime(roll.dev_time || '');
-    setAgitationDetails(roll.agitation_details || '초기 30초 연속 교반, 매 1분마다 10초간 4회 반전 교반');
-    setStopFixWashNotes(roll.stop_fix_wash_notes || '물정지 1분 -> 래피드픽서 1:4 5분 -> 일포드 수세법 -> 포토플로');
+    setAgitationDetails(roll.agitation_details || '');
+    setStopFixWashNotes(roll.stop_fix_wash_notes || '');
     setNotes(roll.notes || '');
 
     setIsModalOpen(true);
@@ -179,14 +180,14 @@ export default function DevelopmentView({
     setDeveloperId(developers[0]?.id || '');
     setDevQuantityRolls(1);
     setDevMethod('inversion');
-    setDilutionRatio('Stock (원액)');
+    setDilutionRatio('Stock');
     setCustomDilution('');
     setChemicalVolumeMl(300);
     setDilutionLiquidVolumeMl('');
     setDevTempCelsius(20);
-    setDevTime('9분 30초');
-    setAgitationDetails('초기 30초 연속 교반, 매 1분마다 10초간 4회 반전 교반');
-    setStopFixWashNotes('물정지 1분 -> 래피드픽서 1:4 5분 -> 일포드 수세법 -> 포토플로');
+    setDevTime('');
+    setAgitationDetails('');
+    setStopFixWashNotes('');
     setNotes('');
 
     setIsModalOpen(true);
@@ -935,19 +936,20 @@ export default function DevelopmentView({
                           step="0.5"
                           placeholder="20"
                           value={devTempCelsius}
+                          onFocus={(e) => e.target.select()}
                           onChange={(e) => setDevTempCelsius(e.target.value === '' ? '' : Number(e.target.value))}
                         />
                       </div>
 
                       <div className="form-group">
-                        <label className="form-label">현상 시간 (교반 시간) *</label>
+                        <label className="form-label">현상 시간 (교반 시간)</label>
                         <input
                           className="form-input"
                           type="text"
                           placeholder="예: 9분 30초, 10분"
                           value={devTime}
+                          onFocus={(e) => e.target.select()}
                           onChange={(e) => setDevTime(e.target.value)}
-                          required
                         />
                       </div>
 
@@ -958,6 +960,7 @@ export default function DevelopmentView({
                           type="number"
                           placeholder="300"
                           value={chemicalVolumeMl}
+                          onFocus={(e) => e.target.select()}
                           onChange={(e) => setChemicalVolumeMl(e.target.value === '' ? '' : Number(e.target.value))}
                         />
                       </div>
@@ -1001,6 +1004,7 @@ export default function DevelopmentView({
                         type="text"
                         placeholder="예: 초기 30초 연속 교반, 매 1분마다 10초간 4회 반전 교반"
                         value={agitationDetails}
+                        onFocus={(e) => e.target.select()}
                         onChange={(e) => setAgitationDetails(e.target.value)}
                       />
                     </div>
@@ -1035,6 +1039,7 @@ export default function DevelopmentView({
                         type="text"
                         placeholder="예: 물정지 1분 -> 래피드픽서 1:4 5분 -> 일포드 수세법 -> 포토플로"
                         value={stopFixWashNotes}
+                        onFocus={(e) => e.target.select()}
                         onChange={(e) => setStopFixWashNotes(e.target.value)}
                       />
                     </div>

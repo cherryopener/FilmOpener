@@ -1,4 +1,37 @@
-import { FilmItem, CameraItem, LensItem, DeveloperChemical, ShootingRoll, ScanLog } from '@/types';
+import { FilmItem, CameraItem, LensItem, DeveloperChemical, ShootingRoll, ScanLog, ScannerItem } from '@/types';
+
+export const INITIAL_SCANNERS: ScannerItem[] = [
+  {
+    id: 'scanner-1',
+    name: 'Sony A7R IV + 90mm Macro (디지타이징 리그)',
+    category: 'digitizing',
+    brand: 'Sony',
+    sensor_or_light: 'Cinestill CS-LITE (95+ CRI 고연색성 LED)',
+    holder_type: 'Valoi 360 필름 홀더 가이드',
+    notes: '6,100만 화소 무압축 RAW 16bit 캡처. 중형/35mm 모두 대응.',
+    created_at: '2026-01-10T10:00:00Z',
+  },
+  {
+    id: 'scanner-2',
+    name: 'Epson Perfection V850 Pro',
+    category: 'flatbed',
+    brand: 'Epson',
+    sensor_or_light: '듀얼 렌즈 시스템 (광학 6400 DPI)',
+    holder_type: '정품 유리 고정 필름 홀더 (안티 뉴턴 링)',
+    notes: '4x5 대형 필름 및 120 중형 스트립 스캔용. SilverFast 9 연동.',
+    created_at: '2026-01-12T11:00:00Z',
+  },
+  {
+    id: 'scanner-3',
+    name: 'Plustek OpticFilm 8200i Ai',
+    category: 'dedicated',
+    brand: 'Plustek',
+    sensor_or_light: '7200 DPI CCD 센서 + 적외선(iSRD) 채널',
+    holder_type: '35mm 전용 슬라이드/스트립 홀더',
+    notes: '35mm 흑백/컬러 하이엔드 전용 스캐너. 먼지/스크래치 자동 제거.',
+    created_at: '2026-01-15T12:00:00Z',
+  },
+];
 
 export const INITIAL_FILMS: FilmItem[] = [
   {
@@ -159,6 +192,7 @@ export const INITIAL_CAMERAS: CameraItem[] = [
     model: 'M6 Classic (Black Chrome)',
     format: '135_full',
     lens_type: 'interchangeable',
+    mount: 'Leica M',
     status: 'active',
     serial_number: '1784920',
     notes: '0.72파인더, TTL 측광 정상, 주력 RF 바디',
@@ -170,6 +204,7 @@ export const INITIAL_CAMERAS: CameraItem[] = [
     model: 'F3 HP',
     format: '135_full',
     lens_type: 'interchangeable',
+    mount: 'Nikon F',
     status: 'active',
     serial_number: '1892041',
     notes: 'DE-3 하이아이포인트 파인더, 조리개 우선 AE 완벽 작동',
@@ -181,6 +216,7 @@ export const INITIAL_CAMERAS: CameraItem[] = [
     model: '500C/M',
     format: '120_66',
     lens_type: 'interchangeable',
+    mount: 'Hasselblad V',
     status: 'active',
     serial_number: 'UT124801',
     notes: 'A12 매거진 2개 보유, 아큐트매트 D 스크린 장착 중형 SLR',
@@ -206,6 +242,7 @@ export const INITIAL_CAMERAS: CameraItem[] = [
     model: 'OM-1 MD',
     format: '135_full',
     lens_type: 'interchangeable',
+    mount: 'Olympus OM',
     status: 'needs_repair', // 수리 필요(고장) - 사용 카메라 목록에서 제외되어야 함
     serial_number: '502931',
     notes: '저속 셔터 끈적임 현상 및 셔터막 늘어짐. 종로 세운상가 수리점 방문 예정 (사용불가)',
@@ -217,6 +254,7 @@ export const INITIAL_CAMERAS: CameraItem[] = [
     model: '67 II',
     format: '120_67',
     lens_type: 'interchangeable',
+    mount: 'Pentax 67',
     status: 'in_repair', // 수리중 - 사용 카메라 목록에서 제외되어야 함
     serial_number: '928410',
     notes: '미러 쇼크 댐퍼 및 셔터 다이얼 충무로 제일카메라 수리 입고 중 (2주 소요 예정)',
@@ -501,15 +539,51 @@ export const INITIAL_SCANS: ScanLog[] = [
     is_legacy_archive: false,
     film_title: '코닥 포트라 400 - 제주 종달리 & 성산 (#2026-01)',
     camera_lens_info: 'Leica M6 Classic + Summicron 35mm f/2 ASPH',
-    scan_method: 'dslr',
+    scan_method: 'digitizing',
+    scanner_id: 'scanner-1',
     scanner_model: 'Sony A7R IV + Sony 90mm f/2.8 Macro (Cinestill CS-LITE 광원)',
     total_frames: 37,
     folder_name: '2026-03-Jeju_Portra400_M6',
-    storage_path: '외장SSD T7 / Photo_Archive / 2026 / Roll_01',
+    storage_path: 'https://drive.google.com/drive/folders/film_archive_2026_jeju',
+    folder_color: 'mac_sky_blue', // 컬러네거티브 기본 (하늘색)
     software_used: 'Lightroom Classic + Negative Lab Pro v3.0 (Frontier Tone)',
     scan_date: '2026-03-24',
     notes: '해상도 6000만 화소 16bit DNG 캡처. 입자감까지 생생하게 복원됨.',
     created_at: '2026-03-24T15:00:00Z',
+  },
+  {
+    id: 'scan-3',
+    is_legacy_archive: true,
+    film_title: '시네스틸 800T - 을지로 세운상가 야경 골목',
+    camera_lens_info: 'Nikon F3 HP + Nikkor 50mm f/1.4',
+    scan_method: 'lab',
+    lab_scanner: 'frontier',
+    lab_resolution: 'high',
+    scanner_model: '후지 프론티어 (Fuji SP-3000) - 고화질 TIFF',
+    total_frames: 36,
+    folder_name: '2026-03-Euljiro_CineStill800T',
+    storage_path: 'https://www.dropbox.com/sh/euljiro_night_cinestill_2026',
+    folder_color: 'mac_yellow', // 영화용 (노란색)
+    software_used: 'Frontier SP-3000 Hi-Res TIFF',
+    scan_date: '2026-03-20',
+    notes: '할레이션 붉은 글로우 매력적. 노이즈 적고 텅스텐 광원 밸런스 탁월.',
+    created_at: '2026-03-20T19:00:00Z',
+  },
+  {
+    id: 'scan-4',
+    is_legacy_archive: false,
+    film_title: '후지 벨비아 50 - 설악산 비선대 가을 단풍',
+    camera_lens_info: 'Pentax 67 + Takumar 105mm f/2.4',
+    scan_method: 'dedicated',
+    scanner_model: 'Plustek OpticFilm 120 Pro',
+    total_frames: 10,
+    folder_name: '2026-03-Seorak_Velvia50_Slide',
+    storage_path: 'https://photos.google.com/share/seoraksan_slide_autumn',
+    folder_color: 'mac_green', // 슬라이드 (초록색)
+    software_used: 'SilverFast 9 HDR Studio (Velvia Profile)',
+    scan_date: '2026-03-10',
+    notes: 'E-6 슬라이드 고유의 짙은 채도와 투명한 그린/레드 발색 극대화.',
+    created_at: '2026-03-10T14:30:00Z',
   },
   {
     id: 'scan-2',
@@ -520,10 +594,27 @@ export const INITIAL_SCANS: ScanLog[] = [
     scanner_model: 'Epson Perfection V850 Pro (SilverFast SE Plus)',
     total_frames: 12,
     folder_name: '2018-Autumn_Kyoto_Hasselblad_TriX',
-    storage_path: 'Synology NAS / Film_Vault / 2018_Japan',
+    storage_path: '/Volumes/LaCie_SSD/Film_Vault/2018_Kyoto_TriX',
+    folder_color: 'mac_gray', // 흑백네거티브 (회색)
     software_used: 'SilverFast 9 + Photoshop 16bit Gray',
     scan_date: '2026-02-14',
     notes: '2018년도에 현상해둔 중형 120 흑백 네거티브 아카이브 디지털화 작업.',
     created_at: '2026-02-14T17:00:00Z',
+  },
+  {
+    id: 'scan-5',
+    is_legacy_archive: true,
+    film_title: '아그파 스칼라 200X - 파리 센강 모노크롬 슬라이드',
+    camera_lens_info: 'Leica M3 + Summicron 50mm f/2 Rigid',
+    scan_method: 'dslr',
+    scanner_model: 'Sony A7R IV + 90mm Macro',
+    total_frames: 36,
+    folder_name: '2025-Paris_Scala200X_Glossy',
+    storage_path: '/Volumes/Photo_Archive_HDD/Paris_Scala_BW_Slide',
+    folder_color: 'mac_glossy_black', // 흑백슬라이드 (유광 검은색)
+    software_used: 'Negative Lab Pro (B&W Positive Inversion)',
+    scan_date: '2026-01-08',
+    notes: '은염 흑백 슬라이드 원판의 깊은 D-max 블랙 계조를 고광택 프로파일로 추출.',
+    created_at: '2026-01-08T12:00:00Z',
   }
 ];

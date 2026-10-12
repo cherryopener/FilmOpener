@@ -38,6 +38,7 @@ CREATE TABLE IF NOT EXISTS cameras (
   fixed_max_aperture NUMERIC(4, 2),
   status VARCHAR(50) NOT NULL DEFAULT 'active', -- active, needs_repair, in_repair, for_sale, collection
   serial_number VARCHAR(100),
+  mount VARCHAR(100), -- interchangeable lens mount (e.g. M, Leica M, Nikon F, etc.)
   image_url TEXT,
   notes TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -117,19 +118,36 @@ CREATE TABLE IF NOT EXISTS shooting_rolls (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- 6. Scan Logs Table (필름 스캔 관리)
+-- 6. Scanner Devices Table (보유 스캐너 및 디지타이징 장비)
+CREATE TABLE IF NOT EXISTS scanners (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  name VARCHAR(255) NOT NULL,
+  category VARCHAR(50) NOT NULL DEFAULT 'digitizing', -- digitizing, flatbed, dedicated, other
+  brand VARCHAR(100),
+  sensor_or_light VARCHAR(255),
+  holder_type VARCHAR(255),
+  notes TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 7. Scan Logs Table (필름 스캔 관리)
 CREATE TABLE IF NOT EXISTS scan_logs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
   roll_id UUID REFERENCES shooting_rolls(id) ON DELETE SET NULL,
+  scanner_id UUID REFERENCES scanners(id) ON DELETE SET NULL,
   is_legacy_archive BOOLEAN NOT NULL DEFAULT FALSE,
   film_title VARCHAR(255) NOT NULL,
   camera_lens_info VARCHAR(255),
-  scan_method VARCHAR(50) NOT NULL, -- flatbed, dslr, dedicated, lab, other
+  scan_method VARCHAR(50) NOT NULL, -- digitizing, dslr, flatbed, dedicated, lab, other
   scanner_model VARCHAR(255),
+  lab_scanner VARCHAR(100), -- noritsu, frontier, kodak_hr, imacon, other
+  lab_resolution VARCHAR(50) DEFAULT 'standard', -- standard, high
   total_frames INTEGER NOT NULL DEFAULT 36,
   folder_name VARCHAR(255) NOT NULL,
   storage_path TEXT,
+  folder_color VARCHAR(50),
   software_used VARCHAR(255),
   scan_date VARCHAR(20) NOT NULL,
   notes TEXT,
@@ -146,18 +164,51 @@ CREATE INDEX IF NOT EXISTS idx_lenses_focal ON lenses(focal_length_min);
 CREATE INDEX IF NOT EXISTS idx_shooting_rolls_status ON shooting_rolls(status);
 CREATE INDEX IF NOT EXISTS idx_scan_logs_date ON scan_logs(scan_date);
 
--- Enable Row Level Security (RLS)
+-- Enable Row Level Security (RLS) on all user data tables
 ALTER TABLE films ENABLE ROW LEVEL SECURITY;
 ALTER TABLE cameras ENABLE ROW LEVEL SECURITY;
 ALTER TABLE lenses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE developer_chemicals ENABLE ROW LEVEL SECURITY;
 ALTER TABLE shooting_rolls ENABLE ROW LEVEL SECURITY;
+ALTER TABLE scanners ENABLE ROW LEVEL SECURITY;
 ALTER TABLE scan_logs ENABLE ROW LEVEL SECURITY;
 
--- Default permissive policy for authenticated users, with fallback for public access if needed
-CREATE POLICY "Allow public all for films" ON films FOR ALL USING (true);
-CREATE POLICY "Allow public all for cameras" ON cameras FOR ALL USING (true);
-CREATE POLICY "Allow public all for lenses" ON lenses FOR ALL USING (true);
-CREATE POLICY "Allow public all for developer_chemicals" ON developer_chemicals FOR ALL USING (true);
-CREATE POLICY "Allow public all for shooting_rolls" ON shooting_rolls FOR ALL USING (true);
-CREATE POLICY "Allow public all for scan_logs" ON scan_logs FOR ALL USING (true);
+-- Remove any legacy public policies if they exist
+DROP POLICY IF EXISTS "Allow public all for films" ON films;
+DROP POLICY IF EXISTS "Allow public all for cameras" ON cameras;
+DROP POLICY IF EXISTS "Allow public all for lenses" ON lenses;
+DROP POLICY IF EXISTS "Allow public all for developer_chemicals" ON developer_chemicals;
+DROP POLICY IF EXISTS "Allow public all for shooting_rolls" ON shooting_rolls;
+DROP POLICY IF EXISTS "Allow public all for scanners" ON scanners;
+DROP POLICY IF EXISTS "Allow public all for scan_logs" ON scan_logs;
+
+-- Strict User Isolation Policies:
+-- Each user can only read, insert, update, and delete their own private data.
+-- No other user or anonymous visitor can access or tamper with your records.
+DROP POLICY IF EXISTS "Users can manage their own films" ON films;
+CREATE POLICY "Users can manage their own films" ON films
+  FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can manage their own cameras" ON cameras;
+CREATE POLICY "Users can manage their own cameras" ON cameras
+  FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can manage their own lenses" ON lenses;
+CREATE POLICY "Users can manage their own lenses" ON lenses
+  FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can manage their own developer_chemicals" ON developer_chemicals;
+CREATE POLICY "Users can manage their own developer_chemicals" ON developer_chemicals
+  FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can manage their own shooting_rolls" ON shooting_rolls;
+CREATE POLICY "Users can manage their own shooting_rolls" ON shooting_rolls
+  FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can manage their own scanners" ON scanners;
+CREATE POLICY "Users can manage their own scanners" ON scanners
+  FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can manage their own scan_logs" ON scan_logs;
+CREATE POLICY "Users can manage their own scan_logs" ON scan_logs
+  FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);

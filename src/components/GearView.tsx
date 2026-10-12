@@ -47,7 +47,19 @@ export default function GearView({
   const [camFixedMaxAperture, setCamFixedMaxAperture] = useState<number | ''>('');
   const [camStatus, setCamStatus] = useState<EquipmentStatus>('active');
   const [camSerial, setCamSerial] = useState('');
+  const [camMount, setCamMount] = useState('Leica M');
   const [camNotes, setCamNotes] = useState('');
+
+  // Mounts of all owned interchangeable cameras
+  const availableCameraMounts = useMemo(() => {
+    const mountSet = new Set<string>();
+    cameras.forEach((c) => {
+      if (c.lens_type !== 'fixed' && c.mount && c.mount.trim()) {
+        mountSet.add(c.mount.trim());
+      }
+    });
+    return Array.from(mountSet);
+  }, [cameras]);
 
   // Lens Modal State
   const [isLensModalOpen, setIsLensModalOpen] = useState(false);
@@ -71,6 +83,7 @@ export default function GearView({
     setCamModel('');
     setCamFormat('135_full');
     setCamLensType('interchangeable');
+    setCamMount('Leica M');
     setCamFixedLensName('');
     setCamFixedFocalLength('');
     setCamFixedMaxAperture('');
@@ -86,6 +99,7 @@ export default function GearView({
     setCamModel(cam.model);
     setCamFormat(cam.format);
     setCamLensType(cam.lens_type);
+    setCamMount(cam.mount || '');
     setCamFixedLensName(cam.fixed_lens_name || '');
     setCamFixedFocalLength(cam.fixed_focal_length ?? '');
     setCamFixedMaxAperture(cam.fixed_max_aperture ?? '');
@@ -108,6 +122,7 @@ export default function GearView({
       model: camModel.trim(),
       format: camFormat,
       lens_type: camLensType,
+      mount: camLensType === 'interchangeable' && camMount.trim() ? camMount.trim() : undefined,
       fixed_lens_name: camLensType === 'fixed' ? camFixedLensName.trim() : undefined,
       fixed_focal_length: camLensType === 'fixed' && camFixedFocalLength !== '' ? Number(camFixedFocalLength) : undefined,
       fixed_max_aperture: camLensType === 'fixed' && camFixedMaxAperture !== '' ? Number(camFixedMaxAperture) : undefined,
@@ -128,11 +143,11 @@ export default function GearView({
     setLensBrand('');
     setLensName('');
     setLensFormatCompat('135');
+    setLensMount(availableCameraMounts.length > 0 ? availableCameraMounts[0] : '');
     setLensCategory('prime');
     setLensFocalMin(50);
     setLensFocalMax(50);
     setLensMaxAperture(1.4);
-    setLensMount('');
     setLensStatus('active');
     setLensSerial('');
     setLensNotes('');
@@ -749,6 +764,27 @@ export default function GearView({
                   </div>
                 </div>
 
+                {/* 교환식일 때 마운트 정보 */}
+                {camLensType === 'interchangeable' && (
+                  <div className="form-group" style={{ background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '8px' }}>
+                    <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span>카메라 렌즈 마운트 (자유 입력)</span>
+                      <span style={{ fontSize: '0.75rem', color: '#fbbf24' }}>★ 렌즈 추가 드롭다운과 자동 연동</span>
+                    </label>
+                    <input
+                      className="form-input"
+                      type="text"
+                      placeholder="예: M 또는 Leica M, Nikon F, M42, Hasselblad V 등"
+                      value={camMount}
+                      onChange={(e) => setCamMount(e.target.value)}
+                      required
+                    />
+                    <span style={{ fontSize: '0.72rem', color: '#888', marginTop: '4px', display: 'block' }}>
+                      💡 라이카의 경우 M 한 글자만 적거나 Leica M 처럼 원하는 방식으로 적으세요. 렌즈 등록 시 이 마운트가 드롭다운에 뜹니다.
+                    </span>
+                  </div>
+                )}
+
                 {/* 일체형일 때 렌즈 정보 */}
                 {camLensType === 'fixed' && (
                   <div className="form-row-3" style={{ background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '8px' }}>
@@ -944,14 +980,41 @@ export default function GearView({
 
                 <div className="form-row">
                   <div className="form-group">
-                    <label className="form-label">마운트</label>
-                    <input
-                      className="form-input"
-                      type="text"
-                      placeholder="예: Leica M, Nikon F, Canon FD, Hasselblad V"
-                      value={lensMount}
-                      onChange={(e) => setLensMount(e.target.value)}
-                    />
+                    <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span>마운트</span>
+                      <span style={{ fontSize: '0.72rem', color: '#10b981', fontWeight: 500 }}>
+                        보유 카메라 마운트 연동
+                      </span>
+                    </label>
+                    {availableCameraMounts.length > 0 ? (
+                      <select
+                        className="form-select"
+                        value={lensMount}
+                        onChange={(e) => setLensMount(e.target.value)}
+                        required
+                      >
+                        <option value="">-- 마운트 선택 ({availableCameraMounts.length}개 보유) --</option>
+                        {availableCameraMounts.map((m) => (
+                          <option key={m} value={m}>
+                            {m} 마운트
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <>
+                        <input
+                          className="form-input"
+                          type="text"
+                          placeholder="예: Leica M 또는 M"
+                          value={lensMount}
+                          onChange={(e) => setLensMount(e.target.value)}
+                          required
+                        />
+                        <span style={{ fontSize: '0.75rem', color: '#f59e0b', marginTop: '4px', display: 'block' }}>
+                          ⚠️ 등록된 교환식 카메라가 없습니다. 카메라 바디에 마운트를 먼저 등록해주세요.
+                        </span>
+                      </>
+                    )}
                   </div>
 
                   <div className="form-group">

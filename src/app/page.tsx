@@ -8,6 +8,7 @@ import {
   DeveloperChemical,
   ShootingRoll,
   ScanLog,
+  ScannerItem,
 } from '@/types';
 import {
   getFilms,
@@ -28,6 +29,9 @@ import {
   getScans,
   saveScan,
   deleteScan,
+  getScanners,
+  saveScanner,
+  deleteScanner,
   initLocalStorageIfEmpty,
 } from '@/lib/storageService';
 
@@ -40,8 +44,10 @@ import ScanVaultView from '@/components/ScanVaultView';
 import DashboardOverview from '@/components/DashboardOverview';
 import SettingsModal from '@/components/SettingsModal';
 import AuthView from '@/components/AuthView';
-import AppleScrollStudio from '@/components/AppleScrollStudio';
+import CinematicScrollStudio from '@/components/CinematicScrollStudio';
+import MasterPinLockModal from '@/components/MasterPinLockModal';
 import { isSupabaseConfigured, getSupabaseClient, signOutUser } from '@/lib/supabase';
+import { isAppUnlocked, lockAppNow } from '@/lib/securityService';
 import { User } from '@supabase/supabase-js';
 
 import {
@@ -63,10 +69,10 @@ import {
 
 type TabType = 'dashboard' | 'films' | 'gear' | 'shooting' | 'development' | 'developers' | 'scans';
 type ThemeMode = 'system' | 'light' | 'dark';
-type ViewMode = 'apple_flow' | 'table_inventory';
+type ViewMode = 'cinematic_flow' | 'table_inventory';
 
 export default function Home() {
-  const [viewMode, setViewMode] = useState<ViewMode>('apple_flow');
+  const [viewMode, setViewMode] = useState<ViewMode>('cinematic_flow');
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
   const [selectedDevRollId, setSelectedDevRollId] = useState<string | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -76,6 +82,15 @@ export default function Home() {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthChecking, setIsAuthChecking] = useState<boolean>(true);
   const [isGuestMode, setIsGuestMode] = useState<boolean>(false);
+
+  // Master PIN Screen Lock State
+  const [isScreenLocked, setIsScreenLocked] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setIsScreenLocked(!isAppUnlocked());
+    }
+  }, []);
 
   // Theme Management (Light / Dark / System Auto)
   const [theme, setTheme] = useState<ThemeMode>('system');
@@ -87,6 +102,7 @@ export default function Home() {
   const [developers, setDevelopers] = useState<DeveloperChemical[]>([]);
   const [rolls, setRolls] = useState<ShootingRoll[]>([]);
   const [scans, setScans] = useState<ScanLog[]>([]);
+  const [scanners, setScanners] = useState<ScannerItem[]>([]);
 
   // Apply Theme Function
   const applyTheme = (selectedTheme: ThemeMode) => {
@@ -141,13 +157,14 @@ export default function Home() {
     setIsLoading(true);
     try {
       initLocalStorageIfEmpty();
-      const [f, c, l, d, r, s] = await Promise.all([
+      const [f, c, l, d, r, s, sc] = await Promise.all([
         getFilms(),
         getCameras(),
         getLenses(),
         getDevelopers(),
         getShootingRolls(),
         getScans(),
+        getScanners(),
       ]);
       setFilms(f);
       setCameras(c);
@@ -155,6 +172,7 @@ export default function Home() {
       setDevelopers(d);
       setRolls(r);
       setScans(s);
+      setScanners(sc);
     } catch (e) {
       console.error('Failed to load initial data:', e);
     } finally {
@@ -259,6 +277,16 @@ export default function Home() {
     setScans(updated);
   };
 
+  // Handlers for Scanners
+  const handleSaveScanner = async (scanner: ScannerItem) => {
+    const updated = await saveScanner(scanner);
+    setScanners(updated);
+  };
+  const handleDeleteScanner = async (id: string) => {
+    const updated = await deleteScanner(id);
+    setScanners(updated);
+  };
+
   const developedRolls = rolls.filter((r) => r.status === 'developed' || r.status === 'scanned');
   const pendingDevRollsCount = rolls.filter((r) => r.status === 'unloaded').length;
 
@@ -272,6 +300,11 @@ export default function Home() {
     developers: '현상액 라이브러리 (Developer Chemistry)',
     scans: '필름 스캔 관리 (Scan Archive)',
   };
+
+  // 0. Master PIN Screen Lock Guard (Private Instance Lock)
+  if (isScreenLocked) {
+    return <MasterPinLockModal onUnlocked={() => setIsScreenLocked(false)} />;
+  }
 
   // 1. Supabase Auth Session Checking
   if (isSupabaseConfigured() && isAuthChecking) {
@@ -300,23 +333,25 @@ export default function Home() {
     );
   }
 
-  // 3. Apple Cinematic Scroll Mode (Default flagship experience)
-  if (viewMode === 'apple_flow') {
+  // 3. Cinematic Scroll Mode (Default flagship experience)
+  if (viewMode === 'cinematic_flow') {
     return (
       <>
-        <AppleScrollStudio
+        <CinematicScrollStudio
           films={films}
           cameras={cameras}
           lenses={lenses}
           developers={developers}
           rolls={rolls}
           scans={scans}
+          scanners={scanners}
           onSaveFilm={handleSaveFilm}
           onSaveCamera={handleSaveCamera}
           onSaveLens={handleSaveLens}
           onSaveDeveloper={handleSaveDeveloper}
           onSaveRoll={handleSaveRoll}
           onSaveScan={handleSaveScan}
+          onSaveScanner={handleSaveScanner}
           onOpenSettings={() => setIsSettingsOpen(true)}
           onSwitchToTableView={() => setViewMode('table_inventory')}
           userEmail={user?.email}
@@ -354,7 +389,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Switch back to Apple Cinematic Flow Button */}
+        {/* Switch back to Cinematic Flow Button */}
         <div style={{ padding: '0 16px 12px' }}>
           <button
             className="btn btn-primary btn-sm"
@@ -368,9 +403,9 @@ export default function Home() {
               justifyContent: 'center',
               gap: '6px',
             }}
-            onClick={() => setViewMode('apple_flow')}
+            onClick={() => setViewMode('cinematic_flow')}
           >
-            <Sparkles size={14} /> Apple 시네마틱 스크롤
+            <Sparkles size={14} /> 시네마틱 스크롤
           </button>
         </div>
 
@@ -500,12 +535,12 @@ export default function Home() {
               </div>
             )}
 
-            {/* Switch to Apple Cinematic Scroll */}
+            {/* Switch to Cinematic Scroll */}
             <button
               className="btn btn-secondary btn-sm"
-              onClick={() => setViewMode('apple_flow')}
+              onClick={() => setViewMode('cinematic_flow')}
               style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
-              title="Apple 시네마틱 스크롤 모드로 전환"
+              title="시네마틱 스크롤 모드로 전환"
             >
               <Sparkles size={14} color="#f59e0b" />
               <span>시네마틱 스크롤</span>
@@ -622,8 +657,11 @@ export default function Home() {
               <ScanVaultView
                 scans={scans}
                 developedRolls={developedRolls}
+                scanners={scanners}
                 onSaveScan={handleSaveScan}
                 onDeleteScan={handleDeleteScan}
+                onSaveScanner={handleSaveScanner}
+                onDeleteScanner={handleDeleteScanner}
               />
             )}
           </>

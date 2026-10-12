@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { FilmItem, FilmType, FilmFormat, StorageMethod } from '@/types';
+import { FilmItem, FilmType, FilmFormat, StorageMethod, FreshnessStatus } from '@/types';
 import { FILM_TYPE_CONFIG, FILM_FORMAT_CONFIG, STORAGE_METHOD_CONFIG } from '@/lib/constants';
 import { getBrandTheme } from '@/lib/brandConfig';
 import { Plus, Search, Layers, Snowflake, AlertTriangle, Tag, Sparkles, Edit2, Trash2 } from 'lucide-react';
@@ -29,7 +29,8 @@ export default function FilmVaultView({ films, onSaveFilm, onDeleteFilm }: FilmV
   const [type, setType] = useState<FilmType>('color_negative');
   const [format, setFormat] = useState<FilmFormat>('135');
   const [iso, setIso] = useState<number>(400);
-  const [expiryDate, setExpiryDate] = useState('2026-12-31');
+  const [expiryDate, setExpiryDate] = useState('');
+  const [freshnessStatus, setFreshnessStatus] = useState<FreshnessStatus>('fresh');
   const [storageMethod, setStorageMethod] = useState<StorageMethod>('room_temp');
   const [isBulkRolled, setIsBulkRolled] = useState(false);
   const [isExpired, setIsExpired] = useState(false);
@@ -46,7 +47,8 @@ export default function FilmVaultView({ films, onSaveFilm, onDeleteFilm }: FilmV
     setType('color_negative');
     setFormat('135');
     setIso(400);
-    setExpiryDate(new Date(Date.now() + 365 * 24 * 3600 * 1000).toISOString().split('T')[0]);
+    setExpiryDate('');
+    setFreshnessStatus('fresh');
     setStorageMethod('room_temp');
     setIsBulkRolled(false);
     setIsExpired(false);
@@ -65,7 +67,11 @@ export default function FilmVaultView({ films, onSaveFilm, onDeleteFilm }: FilmV
     setType(film.type);
     setFormat(film.format);
     setIso(film.iso);
-    setExpiryDate(film.expiry_date);
+    setExpiryDate(film.expiry_date || '');
+    setFreshnessStatus(
+      film.freshness_status ||
+      (film.expiry_date?.includes('틀딱') ? 'deep_expired' : film.is_expired ? 'expired' : 'fresh')
+    );
     setStorageMethod(film.storage_method);
     setIsBulkRolled(film.is_bulk_rolled);
     setIsExpired(film.is_expired);
@@ -85,7 +91,19 @@ export default function FilmVaultView({ films, onSaveFilm, onDeleteFilm }: FilmV
     }
 
     const todayStr = new Date().toISOString().split('T')[0];
-    const autoExpired = isExpired || (expiryDate ? expiryDate < todayStr : false);
+    const autoExpired =
+      freshnessStatus === 'fresh'
+        ? false
+        : freshnessStatus === 'deep_expired' || freshnessStatus === 'expired'
+        ? true
+        : isExpired || (expiryDate ? expiryDate < todayStr : false);
+
+    let finalExpiry = expiryDate.trim();
+    if (!finalExpiry) {
+      if (freshnessStatus === 'fresh') finalExpiry = '유통기한 미상 (로리/싱싱)';
+      else if (freshnessStatus === 'deep_expired') finalExpiry = '유통기한 미상 (틀딱/푹썩필)';
+      else finalExpiry = '유통기한 미상 (노괴/썩필)';
+    }
 
     const newFilm: FilmItem = {
       id: editingFilm ? editingFilm.id : `film-${Date.now()}`,
@@ -94,10 +112,11 @@ export default function FilmVaultView({ films, onSaveFilm, onDeleteFilm }: FilmV
       type,
       format,
       iso: Number(iso) || 400,
-      expiry_date: expiryDate,
+      expiry_date: finalExpiry,
       storage_method: storageMethod,
       is_bulk_rolled: isBulkRolled,
       is_expired: autoExpired,
+      freshness_status: freshnessStatus,
       is_rebranded: isRebranded,
       original_film_info: isRebranded ? originalFilmInfo.trim() : undefined,
       quantity: Number(quantity) || 1,
@@ -337,7 +356,18 @@ export default function FilmVaultView({ films, onSaveFilm, onDeleteFilm }: FilmV
             const storageConfig = STORAGE_METHOD_CONFIG[film.storage_method] || STORAGE_METHOD_CONFIG.room_temp;
             const brandTheme = getBrandTheme(film.brand, film.name);
 
-            const isExpiredDate = film.expiry_date && film.expiry_date < new Date().toISOString().split('T')[0];
+            const isDeepExpired =
+              film.freshness_status === 'deep_expired' ||
+              (film.expiry_date ? film.expiry_date.includes('틀딱') : false);
+            const isRotten =
+              !isDeepExpired &&
+              (film.freshness_status === 'expired' ||
+                (film.expiry_date ? film.expiry_date.includes('노괴') : false) ||
+                film.is_expired ||
+                (Boolean(film.expiry_date) &&
+                  /^\d{4}-\d{2}-\d{2}$/.test(film.expiry_date) &&
+                  film.expiry_date < new Date().toISOString().split('T')[0]));
+            const isFresh = !isDeepExpired && !isRotten;
 
             return (
               <div
@@ -459,18 +489,63 @@ export default function FilmVaultView({ films, onSaveFilm, onDeleteFilm }: FilmV
                   </div>
 
                   <div className="notion-prop-row">
-                    <span className="notion-prop-key">📅 유통기한</span>
+                    <span className="notion-prop-key">📅 신선도 / 유통기한</span>
                     <span className="notion-prop-val">
                       <span
                         style={{
                           fontFamily: 'var(--font-mono)',
                           fontSize: '0.78rem',
-                          color: isExpiredDate || film.is_expired ? 'var(--accent-red)' : 'var(--text-main)',
-                          fontWeight: isExpiredDate || film.is_expired ? '700' : '500',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          flexWrap: 'wrap',
                         }}
                       >
-                        {film.expiry_date || '-'}
-                        {(isExpiredDate || film.is_expired) && ' (만료)'}
+                        {isDeepExpired ? (
+                          <span
+                            className="notion-tag"
+                            style={{
+                              background: 'rgba(239, 68, 68, 0.16)',
+                              color: '#f87171',
+                              border: '1px solid rgba(239, 68, 68, 0.3)',
+                              fontWeight: 700,
+                            }}
+                          >
+                            💀 틀딱 (푹썩필)
+                          </span>
+                        ) : isRotten ? (
+                          <span
+                            className="notion-tag"
+                            style={{
+                              background: 'rgba(245, 158, 11, 0.16)',
+                              color: '#fbbf24',
+                              border: '1px solid rgba(245, 158, 11, 0.3)',
+                              fontWeight: 700,
+                            }}
+                          >
+                            ⚠️ 노괴 (썩필)
+                          </span>
+                        ) : (
+                          <span
+                            className="notion-tag"
+                            style={{
+                              background: 'rgba(16, 185, 129, 0.16)',
+                              color: '#34d399',
+                              border: '1px solid rgba(16, 185, 129, 0.3)',
+                              fontWeight: 700,
+                            }}
+                          >
+                            🌸 로리 (싱싱)
+                          </span>
+                        )}
+                        <span
+                          style={{
+                            color: isDeepExpired ? '#f87171' : isRotten ? '#fbbf24' : 'var(--text-main)',
+                            fontWeight: isDeepExpired || isRotten ? 600 : 500,
+                          }}
+                        >
+                          {film.expiry_date || '유통기한 미기재'}
+                        </span>
                       </span>
                     </span>
                   </div>
@@ -657,16 +732,170 @@ export default function FilmVaultView({ films, onSaveFilm, onDeleteFilm }: FilmV
                   </div>
                 </div>
 
+                {/* 신선도 / 유통기한 옵션 (로리, 노괴, 틀딱) */}
+                <div className="form-group" style={{ marginBottom: '16px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <label className="form-label" style={{ margin: 0, fontWeight: 700 }}>
+                      ⚡ 신선도 상태 (유통기한 모를 때 선택)
+                    </label>
+                    <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                      날짜를 몰라도 버튼만 누르면 자동 간주됩니다
+                    </span>
+                  </div>
+
+                  {/* 3단 선택 버튼: 로리 / 노괴 / 틀딱 */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+                    {/* 1. 로리 버튼 (싱싱한 경우) */}
+                    <button
+                      type="button"
+                      className={`dilution-btn ${freshnessStatus === 'fresh' ? 'active' : ''}`}
+                      style={{
+                        padding: '10px 8px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '4px',
+                        height: 'auto',
+                        cursor: 'pointer',
+                        borderRadius: '8px',
+                        border: freshnessStatus === 'fresh' ? '1.5px solid #10b981' : '1px solid var(--border-color)',
+                        background: freshnessStatus === 'fresh' ? 'rgba(16, 185, 129, 0.16)' : 'var(--bg-secondary)',
+                        color: freshnessStatus === 'fresh' ? '#10b981' : 'var(--text-muted)',
+                      }}
+                      onClick={() => {
+                        setFreshnessStatus('fresh');
+                        setIsExpired(false);
+                        if (!expiryDate || expiryDate.includes('유통기한 미상')) {
+                          setExpiryDate('유통기한 미상 (로리/싱싱)');
+                        }
+                      }}
+                    >
+                      <span style={{ fontWeight: 800, fontSize: '0.94rem' }}>🌸 로리</span>
+                      <span style={{ fontSize: '0.72rem', opacity: 0.9 }}>싱싱함 (정상 만료 전)</span>
+                    </button>
+
+                    {/* 2. 노괴 버튼 (썩었을 경우) */}
+                    <button
+                      type="button"
+                      className={`dilution-btn ${freshnessStatus === 'expired' ? 'active' : ''}`}
+                      style={{
+                        padding: '10px 8px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '4px',
+                        height: 'auto',
+                        cursor: 'pointer',
+                        borderRadius: '8px',
+                        border: freshnessStatus === 'expired' ? '1.5px solid #f59e0b' : '1px solid var(--border-color)',
+                        background: freshnessStatus === 'expired' ? 'rgba(245, 158, 11, 0.16)' : 'var(--bg-secondary)',
+                        color: freshnessStatus === 'expired' ? '#f59e0b' : 'var(--text-muted)',
+                      }}
+                      onClick={() => {
+                        setFreshnessStatus('expired');
+                        setIsExpired(true);
+                        if (!expiryDate || expiryDate.includes('유통기한 미상')) {
+                          setExpiryDate('유통기한 미상 (노괴/썩필)');
+                        }
+                      }}
+                    >
+                      <span style={{ fontWeight: 800, fontSize: '0.94rem' }}>⚠️ 노괴</span>
+                      <span style={{ fontSize: '0.72rem', opacity: 0.9 }}>썩필 (유통기한 만료)</span>
+                    </button>
+
+                    {/* 3. 틀딱 버튼 (몹시 썩어서 상이 거의 안맺힐 경우) */}
+                    <button
+                      type="button"
+                      className={`dilution-btn ${freshnessStatus === 'deep_expired' ? 'active' : ''}`}
+                      style={{
+                        padding: '10px 8px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '4px',
+                        height: 'auto',
+                        cursor: 'pointer',
+                        borderRadius: '8px',
+                        border: freshnessStatus === 'deep_expired' ? '1.5px solid #ef4444' : '1px solid var(--border-color)',
+                        background: freshnessStatus === 'deep_expired' ? 'rgba(239, 68, 68, 0.18)' : 'var(--bg-secondary)',
+                        color: freshnessStatus === 'deep_expired' ? '#ef4444' : 'var(--text-muted)',
+                      }}
+                      onClick={() => {
+                        setFreshnessStatus('deep_expired');
+                        setIsExpired(true);
+                        if (!expiryDate || expiryDate.includes('유통기한 미상')) {
+                          setExpiryDate('유통기한 미상 (틀딱/푹썩필)');
+                        }
+                      }}
+                    >
+                      <span style={{ fontWeight: 800, fontSize: '0.94rem' }}>💀 틀딱</span>
+                      <span style={{ fontSize: '0.72rem', opacity: 0.9 }}>푹썩필 (상 거의 안맺힘)</span>
+                    </button>
+                  </div>
+
+                  {/* 상태 해설 문구 */}
+                  <div
+                    style={{
+                      marginTop: '8px',
+                      fontSize: '0.78rem',
+                      lineHeight: 1.4,
+                      color:
+                        freshnessStatus === 'fresh'
+                          ? '#10b981'
+                          : freshnessStatus === 'deep_expired'
+                          ? '#ef4444'
+                          : '#f59e0b',
+                      background: 'rgba(0,0,0,0.15)',
+                      padding: '8px 12px',
+                      borderRadius: '6px',
+                      borderLeft: `3px solid ${
+                        freshnessStatus === 'fresh'
+                          ? '#10b981'
+                          : freshnessStatus === 'deep_expired'
+                          ? '#ef4444'
+                          : '#f59e0b'
+                      }`,
+                    }}
+                  >
+                    {freshnessStatus === 'fresh' && '✨ 싱싱한 상태로 간주합니다. (기준 감도로 촬영)'}
+                    {freshnessStatus === 'expired' && '⚠️ 썩필(노괴)로 간주합니다. (+1스탑 오버노출 촬영 권장)'}
+                    {freshnessStatus === 'deep_expired' && '💀 몹시 썩어 상이 거의 안 맺힐 수 있는 푹썩필(틀딱)로 간주합니다. (+2~3스탑 이상 듬뿍 노출 권장)'}
+                  </div>
+                </div>
+
                 {/* 유통기한 & 보관방법 */}
                 <div className="form-row">
                   <div className="form-group">
-                    <label className="form-label">유통기한 (Expiry Date)</label>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <label className="form-label">정확한 유통기한 (선택 사항)</label>
+                      {expiryDate && (
+                        <button
+                          type="button"
+                          onClick={() => setExpiryDate('')}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            fontSize: '0.7rem',
+                            color: 'var(--text-muted)',
+                            cursor: 'pointer',
+                            textDecoration: 'underline',
+                            padding: 0,
+                          }}
+                        >
+                          초기화
+                        </button>
+                      )}
+                    </div>
                     <input
                       className="form-input"
-                      type="date"
+                      type="text"
+                      placeholder="YYYY-MM-DD 또는 버튼 선택값"
                       value={expiryDate}
                       onChange={(e) => setExpiryDate(e.target.value)}
                     />
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>
+                      * 날짜를 모르면 비워두시거나 위의 [로리 / 노괴 / 틀딱] 버튼을 누르시면 됩니다.
+                    </span>
                   </div>
 
                   <div className="form-group">
@@ -683,7 +912,7 @@ export default function FilmVaultView({ films, onSaveFilm, onDeleteFilm }: FilmV
                   </div>
                 </div>
 
-                {/* 감은필름, 썩필, 리브랜딩 체크박스 */}
+                {/* 감은필름, 리브랜딩 체크박스 */}
                 <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', padding: '6px 0' }}>
                   <label className="form-checkbox-label">
                     <input
@@ -693,16 +922,6 @@ export default function FilmVaultView({ films, onSaveFilm, onDeleteFilm }: FilmV
                       onChange={(e) => setIsBulkRolled(e.target.checked)}
                     />
                     <span>🎞️ 감은 필름 (벌크 로딩)</span>
-                  </label>
-
-                  <label className="form-checkbox-label">
-                    <input
-                      type="checkbox"
-                      className="form-checkbox"
-                      checked={isExpired}
-                      onChange={(e) => setIsExpired(e.target.checked)}
-                    />
-                    <span>⚠️ 썩필 (유통기한 만료 필름)</span>
                   </label>
 
                   <label className="form-checkbox-label">

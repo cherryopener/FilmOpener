@@ -1,5 +1,5 @@
-import { FilmItem, CameraItem, LensItem, DeveloperChemical, ShootingRoll, ScanLog } from '@/types';
-import { INITIAL_FILMS, INITIAL_CAMERAS, INITIAL_LENSES, INITIAL_DEVELOPERS, INITIAL_SHOOTING_ROLLS, INITIAL_SCANS } from '@/data/seedData';
+import { FilmItem, CameraItem, LensItem, DeveloperChemical, ShootingRoll, ScanLog, ScannerItem } from '@/types';
+import { INITIAL_FILMS, INITIAL_CAMERAS, INITIAL_LENSES, INITIAL_DEVELOPERS, INITIAL_SHOOTING_ROLLS, INITIAL_SCANS, INITIAL_SCANNERS } from '@/data/seedData';
 import { getSupabaseClient, isSupabaseConfigured } from './supabase';
 
 const STORAGE_KEYS = {
@@ -9,7 +9,8 @@ const STORAGE_KEYS = {
   DEVELOPERS: 'filmopener_developers',
   SHOOTING_ROLLS: 'filmopener_shooting_rolls',
   SCANS: 'filmopener_scans',
-  INITIALIZED: 'filmopener_initialized_v3',
+  SCANNERS: 'filmopener_scanners',
+  INITIALIZED: 'filmopener_initialized_v6',
 };
 
 // Check and seed initial data if running locally
@@ -18,24 +19,13 @@ export const initLocalStorageIfEmpty = () => {
 
   const initialized = localStorage.getItem(STORAGE_KEYS.INITIALIZED);
   if (!initialized) {
-    if (!localStorage.getItem(STORAGE_KEYS.FILMS)) {
-      localStorage.setItem(STORAGE_KEYS.FILMS, JSON.stringify(INITIAL_FILMS));
-    }
-    if (!localStorage.getItem(STORAGE_KEYS.CAMERAS)) {
-      localStorage.setItem(STORAGE_KEYS.CAMERAS, JSON.stringify(INITIAL_CAMERAS));
-    }
-    if (!localStorage.getItem(STORAGE_KEYS.LENSES)) {
-      localStorage.setItem(STORAGE_KEYS.LENSES, JSON.stringify(INITIAL_LENSES));
-    }
-    if (!localStorage.getItem(STORAGE_KEYS.DEVELOPERS)) {
-      localStorage.setItem(STORAGE_KEYS.DEVELOPERS, JSON.stringify(INITIAL_DEVELOPERS));
-    }
-    if (!localStorage.getItem(STORAGE_KEYS.SHOOTING_ROLLS)) {
-      localStorage.setItem(STORAGE_KEYS.SHOOTING_ROLLS, JSON.stringify(INITIAL_SHOOTING_ROLLS));
-    }
-    if (!localStorage.getItem(STORAGE_KEYS.SCANS)) {
-      localStorage.setItem(STORAGE_KEYS.SCANS, JSON.stringify(INITIAL_SCANS));
-    }
+    localStorage.setItem(STORAGE_KEYS.FILMS, JSON.stringify(INITIAL_FILMS));
+    localStorage.setItem(STORAGE_KEYS.CAMERAS, JSON.stringify(INITIAL_CAMERAS));
+    localStorage.setItem(STORAGE_KEYS.LENSES, JSON.stringify(INITIAL_LENSES));
+    localStorage.setItem(STORAGE_KEYS.DEVELOPERS, JSON.stringify(INITIAL_DEVELOPERS));
+    localStorage.setItem(STORAGE_KEYS.SHOOTING_ROLLS, JSON.stringify(INITIAL_SHOOTING_ROLLS));
+    localStorage.setItem(STORAGE_KEYS.SCANS, JSON.stringify(INITIAL_SCANS));
+    localStorage.setItem(STORAGE_KEYS.SCANNERS, JSON.stringify(INITIAL_SCANNERS));
     localStorage.setItem(STORAGE_KEYS.INITIALIZED, 'true');
   }
 };
@@ -48,6 +38,7 @@ export const resetToInitialData = () => {
   localStorage.setItem(STORAGE_KEYS.DEVELOPERS, JSON.stringify(INITIAL_DEVELOPERS));
   localStorage.setItem(STORAGE_KEYS.SHOOTING_ROLLS, JSON.stringify(INITIAL_SHOOTING_ROLLS));
   localStorage.setItem(STORAGE_KEYS.SCANS, JSON.stringify(INITIAL_SCANS));
+  localStorage.setItem(STORAGE_KEYS.SCANNERS, JSON.stringify(INITIAL_SCANNERS));
   localStorage.setItem(STORAGE_KEYS.INITIALIZED, 'true');
 };
 
@@ -646,6 +637,82 @@ export const deleteScan = async (id: string): Promise<ScanLog[]> => {
 };
 
 // ==========================================
+// SCANNERS (보유 스캐너 및 디지타이징 장비)
+// ==========================================
+export const getScanners = async (): Promise<ScannerItem[]> => {
+  if (isSupabaseConfigured()) {
+    const supabase = getSupabaseClient();
+    if (supabase) {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          const { data, error } = await supabase.from('scanners').select('*').order('created_at', { ascending: false });
+          if (!error && data) return data as ScannerItem[];
+        }
+      } catch (err) {
+        console.warn('Supabase fetch scanners failed, falling back to local storage', err);
+      }
+    }
+  }
+
+  initLocalStorageIfEmpty();
+  const raw = localStorage.getItem(STORAGE_KEYS.SCANNERS);
+  return raw ? JSON.parse(raw) : INITIAL_SCANNERS;
+};
+
+export const saveScanner = async (scanner: ScannerItem): Promise<ScannerItem[]> => {
+  initLocalStorageIfEmpty();
+  const raw = localStorage.getItem(STORAGE_KEYS.SCANNERS);
+  let list: ScannerItem[] = raw ? JSON.parse(raw) : [...INITIAL_SCANNERS];
+
+  const index = list.findIndex((s) => s.id === scanner.id);
+  if (index >= 0) {
+    list[index] = { ...scanner };
+  } else {
+    list.unshift({ ...scanner, created_at: scanner.created_at || new Date().toISOString() });
+  }
+
+  localStorage.setItem(STORAGE_KEYS.SCANNERS, JSON.stringify(list));
+
+  if (isSupabaseConfigured()) {
+    const supabase = getSupabaseClient();
+    if (supabase) {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await supabase.from('scanners').upsert({ ...scanner, user_id: user.id });
+        }
+      } catch (e) {
+        console.error('Supabase save scanner error:', e);
+      }
+    }
+  }
+
+  return list;
+};
+
+export const deleteScanner = async (id: string): Promise<ScannerItem[]> => {
+  initLocalStorageIfEmpty();
+  const raw = localStorage.getItem(STORAGE_KEYS.SCANNERS);
+  let list: ScannerItem[] = raw ? JSON.parse(raw) : [];
+  list = list.filter((s) => s.id !== id);
+  localStorage.setItem(STORAGE_KEYS.SCANNERS, JSON.stringify(list));
+
+  if (isSupabaseConfigured()) {
+    const supabase = getSupabaseClient();
+    if (supabase) {
+      try {
+        await supabase.from('scanners').delete().eq('id', id);
+      } catch (e) {
+        console.error('Supabase delete scanner error:', e);
+      }
+    }
+  }
+
+  return list;
+};
+
+// ==========================================
 // SYNC LOCAL TO CLOUD SUPABASE
 // ==========================================
 export const syncLocalDataToSupabase = async (): Promise<{ success: boolean; count: number; error?: string }> => {
@@ -668,6 +735,7 @@ export const syncLocalDataToSupabase = async (): Promise<{ success: boolean; cou
     const devs: DeveloperChemical[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.DEVELOPERS) || '[]');
     const rolls: ShootingRoll[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.SHOOTING_ROLLS) || '[]');
     const scans: ScanLog[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.SCANS) || '[]');
+    const scanners: ScannerItem[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.SCANNERS) || '[]');
 
     if (films.length > 0) {
       await supabase.from('films').upsert(films.map((f) => ({ ...f, user_id: uid })));
@@ -693,6 +761,10 @@ export const syncLocalDataToSupabase = async (): Promise<{ success: boolean; cou
       await supabase.from('scan_logs').upsert(scans.map((s) => ({ ...s, user_id: uid })));
       totalSynced += scans.length;
     }
+    if (scanners.length > 0) {
+      await supabase.from('scanners').upsert(scanners.map((s) => ({ ...s, user_id: uid })));
+      totalSynced += scanners.length;
+    }
 
     return { success: true, count: totalSynced };
   } catch (err: any) {
@@ -715,6 +787,7 @@ export const exportFullBackup = () => {
     developers: JSON.parse(localStorage.getItem(STORAGE_KEYS.DEVELOPERS) || '[]'),
     shooting_rolls: JSON.parse(localStorage.getItem(STORAGE_KEYS.SHOOTING_ROLLS) || '[]'),
     scans: JSON.parse(localStorage.getItem(STORAGE_KEYS.SCANS) || '[]'),
+    scanners: JSON.parse(localStorage.getItem(STORAGE_KEYS.SCANNERS) || '[]'),
   };
   return JSON.stringify(backup, null, 2);
 };
@@ -728,6 +801,7 @@ export const importFullBackup = (jsonStr: string): boolean => {
     if (data.developers) localStorage.setItem(STORAGE_KEYS.DEVELOPERS, JSON.stringify(data.developers));
     if (data.shooting_rolls) localStorage.setItem(STORAGE_KEYS.SHOOTING_ROLLS, JSON.stringify(data.shooting_rolls));
     if (data.scans) localStorage.setItem(STORAGE_KEYS.SCANS, JSON.stringify(data.scans));
+    if (data.scanners) localStorage.setItem(STORAGE_KEYS.SCANNERS, JSON.stringify(data.scanners));
     localStorage.setItem(STORAGE_KEYS.INITIALIZED, 'true');
     return true;
   } catch (e) {
@@ -735,3 +809,4 @@ export const importFullBackup = (jsonStr: string): boolean => {
     return false;
   }
 };
+

@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { exportFullBackup, importFullBackup, resetToInitialData, syncLocalDataToSupabase } from '@/lib/storageService';
 import { isSupabaseConfigured } from '@/lib/supabase';
-import { Sun, Moon, Monitor, Download, Upload, RotateCcw, CheckCircle2, ShieldCheck, GitBranch, Cloud, CloudUpload } from 'lucide-react';
+import { isPinSet, setMasterPin, removeMasterPin, lockAppNow } from '@/lib/securityService';
+import { Sun, Moon, Monitor, Download, Upload, RotateCcw, CheckCircle2, ShieldCheck, GitBranch, Cloud, CloudUpload, Lock, KeyRound, Unlock, Trash2 } from 'lucide-react';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -23,6 +24,57 @@ export default function SettingsModal({
   const [statusMsg, setStatusMsg] = useState('');
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState('');
+
+  // Master PIN Security State
+  const [hasPin, setHasPin] = useState(false);
+  const [pinInput, setPinInput] = useState('');
+  const [pinConfirmInput, setPinConfirmInput] = useState('');
+  const [pinMsg, setPinMsg] = useState('');
+
+  useEffect(() => {
+    if (isOpen) {
+      setHasPin(isPinSet());
+      setPinInput('');
+      setPinConfirmInput('');
+      setPinMsg('');
+    }
+  }, [isOpen]);
+
+  const handleSavePin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pinInput.trim()) {
+      setPinMsg('PIN 번호를 입력해주세요.');
+      return;
+    }
+    if (pinInput.length < 4) {
+      setPinMsg('PIN 번호는 최소 4자리 이상이어야 합니다.');
+      return;
+    }
+    if (pinInput !== pinConfirmInput) {
+      setPinMsg('PIN 번호 확인이 일치하지 않습니다.');
+      return;
+    }
+
+    await setMasterPin(pinInput);
+    setHasPin(true);
+    setPinInput('');
+    setPinConfirmInput('');
+    setPinMsg('✅ 마스터 보안 PIN이 성공적으로 설정되었습니다. 이제 혼자만 안전하게 접근할 수 있습니다.');
+  };
+
+  const handleRemovePin = () => {
+    if (confirm('보안 PIN 잠금을 해제하시겠습니까? 해제 시 누구나 사이트에 바로 접속할 수 있게 됩니다.')) {
+      removeMasterPin();
+      setHasPin(false);
+      setPinMsg('보안 PIN이 제거되었습니다.');
+    }
+  };
+
+  const handleInstantLock = () => {
+    lockAppNow();
+    onClose();
+    window.location.reload();
+  };
 
   const handleSyncCloud = async () => {
     setIsSyncing(true);
@@ -172,6 +224,84 @@ export default function SettingsModal({
                     {syncResult}
                   </div>
                 )}
+              </div>
+            )}
+          </div>
+
+          {/* 1인 전용 마스터 PIN 보안 잠금 */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', border: '1px solid var(--border-subtle)', padding: '16px', borderRadius: '10px', background: 'var(--bg-card-subtle)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h4 style={{ fontSize: '0.9rem', fontWeight: '700', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '6px', margin: 0 }}>
+                <Lock size={15} color="var(--accent-amber)" />
+                1인 전용 마스터 PIN 보안 잠금 (Private Screen Lock)
+              </h4>
+              {hasPin && (
+                <span className="notion-tag" style={{ background: 'rgba(52, 211, 153, 0.15)', color: 'var(--accent-emerald)', fontSize: '0.74rem' }}>
+                  🔒 보안 잠금 활성화됨
+                </span>
+              )}
+            </div>
+
+            <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: '1.45', margin: 0 }}>
+              온라인(Vercel 등)에 사이트를 배포했거나 공용 기기에서 사용할 때, 4~8자리 마스터 PIN을 설정하면 본인 외의 방문자가 내 소중한 필름 기록을 열람하거나 조작하는 것을 완벽하게 차단합니다.
+            </p>
+
+            {hasPin ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '4px' }}>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    className="btn btn-primary btn-sm"
+                    style={{ background: 'var(--accent-amber)', borderColor: 'var(--accent-amber)', color: '#000000', fontWeight: 700 }}
+                    onClick={handleInstantLock}
+                    title="지금 즉시 앱을 잠금 상태로 전환합니다"
+                  >
+                    <Lock size={13} /> 지금 즉시 화면 잠그기
+                  </button>
+
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-sm"
+                    style={{ color: 'var(--accent-red)' }}
+                    onClick={handleRemovePin}
+                  >
+                    <Unlock size={13} /> PIN 잠금 해제 (삭제)
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <form onSubmit={handleSavePin} style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '4px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                  <input
+                    type="password"
+                    placeholder="새 마스터 PIN (4~8자리)"
+                    value={pinInput}
+                    onChange={(e) => setPinInput(e.target.value)}
+                    className="apple-input"
+                    style={{ fontSize: '0.82rem', padding: '8px 12px' }}
+                  />
+                  <input
+                    type="password"
+                    placeholder="PIN 번호 다시 입력"
+                    value={pinConfirmInput}
+                    onChange={(e) => setPinConfirmInput(e.target.value)}
+                    className="apple-input"
+                    style={{ fontSize: '0.82rem', padding: '8px 12px' }}
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="btn btn-primary btn-sm"
+                  style={{ alignSelf: 'flex-start', background: 'var(--accent-amber)', borderColor: 'var(--accent-amber)', color: '#000000', fontWeight: 700 }}
+                >
+                  <KeyRound size={13} /> 마스터 PIN 등록하기
+                </button>
+              </form>
+            )}
+
+            {pinMsg && (
+              <div style={{ fontSize: '0.78rem', color: pinMsg.startsWith('✅') ? 'var(--accent-emerald)' : 'var(--accent-red)' }}>
+                {pinMsg}
               </div>
             )}
           </div>

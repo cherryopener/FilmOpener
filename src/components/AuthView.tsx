@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { signInWithEmail, signUpWithEmail } from '@/lib/supabase';
+import { signInWithEmail, signUpWithEmail, isOfflineModeDisabled } from '@/lib/supabase';
 import { Film, Lock, Mail, Eye, EyeOff, ShieldCheck, ArrowRight, Sparkles, CheckCircle2, AlertCircle } from 'lucide-react';
 import { User } from '@supabase/supabase-js';
 
@@ -310,8 +310,8 @@ export default function AuthView({ onAuthSuccess, onContinueOffline }: AuthViewP
           </p>
         </div>
 
-        {/* Offline fallback button */}
-        {onContinueOffline && (
+        {/* Offline fallback button (Hidden when strict private mode is enabled) */}
+        {onContinueOffline && !isOfflineModeDisabled() && (
           <button
             type="button"
             className="btn btn-subtle btn-sm"

@@ -88,24 +88,45 @@ export const DEVELOPER_TYPE_CONFIG: Record<DeveloperType, { label: string; color
 };
 
 export const SCAN_METHOD_CONFIG: Record<ScanMethod, { label: string; icon: string }> = {
-  dslr: { label: 'DSLR / 미러리스 디지타이징', icon: '📸' },
+  digitizing: { label: '디지타이징', icon: '📸' },
+  dslr: { label: '디지타이징', icon: '📸' },
   flatbed: { label: '평판 스캐너', icon: '🖨️' },
-  dedicated: { label: '전용 필름 스캐너', icon: '🎞️' },
+  dedicated: { label: '필름 전용 스캐너', icon: '🎞️' },
   lab: { label: '현상소 스캔', icon: '🏬' },
   other: { label: '기타 스캔', icon: '⚙️' },
 };
 
-export const COMMON_DILUTIONS = [
-  'Stock (원액)',
+export const LAB_SCANNERS = [
+  { id: 'noritsu', name: '노리츠 (Noritsu)', model: 'Noritsu HS-1800', desc: '자연스러운 피부톤, 샤프하고 따뜻한 색감 (대중적 표준)' },
+  { id: 'frontier', name: '후지 프론티어 (Frontier)', model: 'Fuji Frontier SP-3000', desc: '부드러운 하이라이트, 청량한 녹색과 몽환적인 파스텔 톤' },
+  { id: 'kodak_hr', name: '코닥 HR (Kodak Lab)', model: 'Kodak HR-500 / Pakon F135', desc: '진득한 발색, 아날로그 질감과 강렬한 필름 룩' },
+  { id: 'imacon', name: '이마콘 (Imacon Flextight)', model: 'Hasselblad Flextight X5', desc: '가상 드럼 스캐너, 초고해상도 파인아트 및 대형 인화용' },
+  { id: 'other', name: '기타 현상소 스캐너', model: '기타 기종', desc: '직접 입력' },
+];
+
+export const LAB_SCAN_RESOLUTIONS: Record<string, { label: string; desc: string; badge: string }> = {
+  standard: { label: '일반화질', desc: '약 2,000~3,000px (SNS, 웹 업로드 및 일반 감상용)', badge: '일반화질' },
+  high: { label: '고화질', desc: '약 5,000~6,000px+ (정밀 보정, 대형 인화 및 마스터 소장용)', badge: '고화질 (High-Res)' },
+};
+
+
+export const RECIPE_DILUTIONS = [
+  'Stock',
   '1:1',
-  '1:2',
-  '1:3',
   '1:9',
-  '1:15',
-  '1:19',
+  '1:15(A)',
+  '1:19(C)',
   '1:25',
-  '1:31',
+  '1:31(B)',
+  '1:39(D)',
+  '1:47(E)',
   '1:50',
+  '1:63(H)',
+  '1:79(F)',
   '1:100',
-  '기타 직접입력'
+];
+
+export const COMMON_DILUTIONS = [
+  ...RECIPE_DILUTIONS,
+  '기타 직접입력',
 ];

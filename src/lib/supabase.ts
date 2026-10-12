@@ -37,17 +37,50 @@ export const getSupabaseClient = (): SupabaseClient | null => {
   return supabaseInstance;
 };
 
+// Check if an email is in the allowed whitelist (if configured via NEXT_PUBLIC_ALLOWED_EMAILS)
+export const isEmailAllowed = (email: string): boolean => {
+  const allowed = process.env.NEXT_PUBLIC_ALLOWED_EMAILS;
+  if (!allowed || !allowed.trim()) return true; // No whitelist configured: allow all
+
+  const allowedList = allowed
+    .split(',')
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+
+  if (allowedList.length === 0) return true;
+
+  return allowedList.includes(email.trim().toLowerCase());
+};
+
+// Check if guest/offline mode is explicitly disabled in production
+export const isOfflineModeDisabled = (): boolean => {
+  return (
+    process.env.NEXT_PUBLIC_HIDE_OFFLINE_MODE === 'true' ||
+    process.env.NEXT_PUBLIC_REQUIRE_AUTH === 'true'
+  );
+};
+
 // Auth Helper Methods
 export const signInWithEmail = async (email: string, password: string) => {
+  const cleanEmail = email.trim().toLowerCase();
+  if (!isEmailAllowed(cleanEmail)) {
+    throw new Error('이 사이트는 1인 비공개 개인 인스턴스입니다. 승인되지 않은 이메일 계정은 접근할 수 없습니다.');
+  }
+
   const client = getSupabaseClient();
   if (!client) throw new Error('Supabase가 설정되지 않았습니다.');
-  return await client.auth.signInWithPassword({ email, password });
+  return await client.auth.signInWithPassword({ email: cleanEmail, password });
 };
 
 export const signUpWithEmail = async (email: string, password: string) => {
+  const cleanEmail = email.trim().toLowerCase();
+  if (!isEmailAllowed(cleanEmail)) {
+    throw new Error('이 사이트는 1인 비공개 개인 인스턴스입니다. 승인되지 않은 이메일 계정은 가입할 수 없습니다.');
+  }
+
   const client = getSupabaseClient();
   if (!client) throw new Error('Supabase가 설정되지 않았습니다.');
-  return await client.auth.signUp({ email, password });
+  return await client.auth.signUp({ email: cleanEmail, password });
 };
 
 export const signOutUser = async () => {
