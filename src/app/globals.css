@@ -363,6 +363,7 @@ html, body {
   display: flex;
   align-items: center;
   gap: 12px;
+  min-width: 0;
 }
 
 .page-title {
@@ -370,12 +371,79 @@ html, body {
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--text-main);
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  white-space: nowrap !important;
+  word-break: keep-all !important;
+}
+
+.page-title-main {
+  font-weight: 700;
+  white-space: nowrap !important;
+}
+
+.page-title-sub {
+  font-size: 0.82rem;
+  font-weight: 400;
+  color: var(--text-dim);
+  white-space: nowrap !important;
 }
 
 .header-right {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-shrink: 0;
+}
+
+.header-user-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.header-settings-btn {
+  flex-shrink: 0 !important;
+}
+
+@media (max-width: 768px) {
+  .top-header {
+    padding: 10px 14px !important;
+    gap: 8px !important;
+  }
+
+  .header-left {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .page-title {
+    font-size: 1.05rem !important;
+  }
+
+  .page-title-sub {
+    display: none !important;
+  }
+
+  .header-right {
+    gap: 6px !important;
+  }
+
+  .header-user-badge {
+    display: none !important;
+  }
+
+  .btn-label-desktop {
+    display: none !important;
+  }
+
+  .header-mode-btn,
+  .header-theme-btn,
+  .header-settings-btn {
+    padding: 6px 8px !important;
+  }
 }
 
 /* Theme Toggle Control */

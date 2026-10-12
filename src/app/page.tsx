@@ -360,15 +360,15 @@ export default function Home() {
   const developedRolls = rolls.filter((r) => r.status === 'developed' || r.status === 'scanned');
   const pendingDevRollsCount = rolls.filter((r) => r.status === 'unloaded').length;
 
-  // Page titles without task number prefixes
-  const pageTitles: Record<TabType, string> = {
-    dashboard: '대시보드 (Studio Hub)',
-    films: '보유 필름 보관소 (Film Inventory)',
-    gear: '카메라 & 렌즈 장비함 (Gear Vault)',
-    shooting: '촬영 관리 (Shooting Logs)',
-    development: '현상 관리 (Development & Lab)',
-    developers: '현상액 라이브러리 (Developer Chemistry)',
-    scans: '필름 스캔 관리 (Scan Archive)',
+  // Page titles with separate title and subtitle for responsive design
+  const pageTitles: Record<TabType, { title: string; subtitle: string }> = {
+    dashboard: { title: '대시보드', subtitle: 'Studio Hub' },
+    films: { title: '필름 보관함', subtitle: 'Film Inventory' },
+    gear: { title: '장비함', subtitle: 'Gear Vault' },
+    shooting: { title: '촬영 로그', subtitle: 'Shooting Logs' },
+    development: { title: '현상 관리', subtitle: 'Development & Lab' },
+    developers: { title: '현상액', subtitle: 'Developer Chemistry' },
+    scans: { title: '스캔 아카이브', subtitle: 'Scan Archive' },
   };
 
   // 0. Master PIN Screen Lock Guard (Private Instance Lock)
@@ -578,21 +578,25 @@ export default function Home() {
         {/* Sticky Top Header */}
         <header className="top-header">
           <div className="header-left">
-            <h1 className="page-title">{pageTitles[activeTab]}</h1>
+            <h1 className="page-title">
+              <span className="page-title-main">{pageTitles[activeTab].title}</span>
+              <span className="page-title-sub">({pageTitles[activeTab].subtitle})</span>
+            </h1>
           </div>
 
           <div className="header-right">
             {user && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <div className="header-user-badge" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <span
-                  className="notion-tag"
+                  className="notion-tag header-user-pill"
                   style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}
                   title={user.email}
                 >
-                  <UserIcon size={12} /> {user.email?.split('@')[0]}
+                  <UserIcon size={12} />
+                  <span className="header-user-email">{user.email?.split('@')[0]}</span>
                 </span>
                 <button
-                  className="btn btn-secondary btn-sm"
+                  className="btn btn-secondary btn-sm header-logout-btn"
                   onClick={async () => {
                     await signOutUser();
                     setUser(null);
@@ -607,38 +611,38 @@ export default function Home() {
 
             {/* Switch to Cinematic Scroll */}
             <button
-              className="btn btn-secondary btn-sm"
+              className="btn btn-secondary btn-sm header-mode-btn"
               onClick={() => setViewMode('cinematic_flow')}
               style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
               title="시네마틱 스크롤 모드로 전환"
             >
               <Sparkles size={14} color="#f59e0b" />
-              <span>시네마틱 스크롤</span>
+              <span className="btn-label-desktop">시네마틱</span>
             </button>
 
             {/* Quick Theme Switcher Button */}
             <button
-              className="theme-toggle-btn"
+              className="theme-toggle-btn header-theme-btn"
               onClick={toggleTheme}
               title={`현재 테마: ${theme === 'system' ? '시스템 자동' : theme === 'light' ? '라이트 모드' : '다크 모드'} (클릭 시 전환)`}
             >
               {theme === 'light' ? (
                 <>
-                  <Sun size={15} color="#d97706" /> <span>라이트</span>
+                  <Sun size={15} color="#d97706" /> <span className="btn-label-desktop">라이트</span>
                 </>
               ) : theme === 'dark' ? (
                 <>
-                  <Moon size={15} color="#fbbf24" /> <span>다크</span>
+                  <Moon size={15} color="#fbbf24" /> <span className="btn-label-desktop">다크</span>
                 </>
               ) : (
                 <>
-                  <Monitor size={15} /> <span>자동</span>
+                  <Monitor size={15} /> <span className="btn-label-desktop">자동</span>
                 </>
               )}
             </button>
 
             <button
-              className="btn btn-secondary btn-sm"
+              className="btn btn-secondary btn-sm header-settings-btn"
               onClick={() => setIsSettingsOpen(true)}
               title="환경 설정"
             >
