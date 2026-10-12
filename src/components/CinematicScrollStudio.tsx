@@ -3751,20 +3751,20 @@ export default function CinematicScrollStudio({
             </p>
 
             <form onSubmit={handleQuickAddFilm} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <div className="field-group flex-1">
-                  <label>필름 이름</label>
+              <div className="apple-form-row">
+                <div className="field-group">
+                  <label>필름 이름 *</label>
                   <input
                     type="text"
                     value={newFilmName}
                     onChange={(e) => setNewFilmName(e.target.value)}
-                    placeholder="예: 코닥 골드 200"
+                    placeholder="예: 코닥 골드 200, 후지 C200"
                     className="apple-input"
                     required
                   />
                 </div>
-                <div className="field-group" style={{ minWidth: '170px', flex: 1 }}>
-                  <label>제조사 브랜드</label>
+                <div className="field-group">
+                  <label>제조사 브랜드 *</label>
                   <select
                     value={newFilmBrandMode}
                     onChange={(e) => {
@@ -3809,7 +3809,7 @@ export default function CinematicScrollStudio({
                 const matched = FILM_BRAND_PRESETS.find((p) => p.name === newFilmBrandMode);
                 if (!matched?.logoUrl) return null;
                 return (
-                  <div style={{ marginTop: '-6px', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', color: '#8e8e93' }}>
+                  <div style={{ marginTop: '-6px', marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', color: '#8e8e93' }}>
                     <div style={{ height: '20px', padding: '2px 6px', background: 'rgba(255,255,255,0.06)', borderRadius: '4px', display: 'flex', alignItems: 'center' }}>
                       <img src={matched.logoUrl} alt={matched.name} style={{ maxHeight: '14px', maxWidth: '48px', objectFit: 'contain' }} />
                     </div>
@@ -3818,8 +3818,8 @@ export default function CinematicScrollStudio({
                 );
               })()}
 
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <div className="field-group flex-1">
+              <div className="apple-form-film-specs">
+                <div className="field-group">
                   <label>필름 종류</label>
                   <select
                     value={newFilmType}
@@ -3836,29 +3836,31 @@ export default function CinematicScrollStudio({
                     <option value="other">기타</option>
                   </select>
                 </div>
-                <div className="field-group" style={{ width: '135px' }}>
-                  <label>판형 (포맷)</label>
-                  <select
-                    value={newFilmFormat}
-                    onChange={(e) => handleCinematicFormatChange(e.target.value as FilmFormat)}
-                    className="apple-input"
-                  >
-                    <option value="135">135 (35mm)</option>
-                    <option value="120">120 (중형)</option>
-                    <option value="220">220 (중형)</option>
-                    <option value="large_sheet">대형 (시트)</option>
-                    <option value="110">110</option>
-                    <option value="other">기타 포맷</option>
-                  </select>
-                </div>
-                <div className="field-group" style={{ width: '90px' }}>
-                  <label>감도 (ISO)</label>
-                  <input
-                    type="number"
-                    value={newFilmIso}
-                    onChange={(e) => setNewFilmIso(Number(e.target.value))}
-                    className="apple-input"
-                  />
+                <div className="apple-form-film-sub">
+                  <div className="field-group">
+                    <label>판형 (포맷)</label>
+                    <select
+                      value={newFilmFormat}
+                      onChange={(e) => handleCinematicFormatChange(e.target.value as FilmFormat)}
+                      className="apple-input"
+                    >
+                      <option value="135">135 (35mm)</option>
+                      <option value="120">120 (중형)</option>
+                      <option value="220">220 (중형)</option>
+                      <option value="large_sheet">대형 (시트)</option>
+                      <option value="110">110</option>
+                      <option value="other">기타 포맷</option>
+                    </select>
+                  </div>
+                  <div className="field-group">
+                    <label>감도 (ISO)</label>
+                    <input
+                      type="number"
+                      value={newFilmIso}
+                      onChange={(e) => setNewFilmIso(Number(e.target.value))}
+                      className="apple-input"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -3866,20 +3868,20 @@ export default function CinematicScrollStudio({
               <div
                 style={{
                   background: 'rgba(255, 255, 255, 0.03)',
-                  padding: '14px 16px',
-                  borderRadius: '12px',
+                  padding: '14px',
+                  borderRadius: '14px',
                   border: '1px solid rgba(255, 255, 255, 0.08)',
                   display: 'flex',
                   flexDirection: 'column',
                   gap: '10px',
                 }}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '4px' }}>
                   <label style={{ margin: 0, fontWeight: 700, fontSize: '0.86rem', color: '#f5f5f7' }}>
                     유통기한 & 필름 신선도 간주 설정 *
                   </label>
                   <span style={{ fontSize: '0.74rem', color: '#86868b' }}>
-                    유통기한 미상 시 아래 버튼으로 즉시 선택
+                    날짜 미상 시 아래 버튼으로 즉시 선택
                   </span>
                 </div>
 
@@ -3890,12 +3892,14 @@ export default function CinematicScrollStudio({
                     type="button"
                     className={`dilution-btn ${newFilmFreshness === 'fresh' ? 'active' : ''}`}
                     style={{
-                      padding: '12px 8px',
+                      padding: '10px 4px',
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
+                      justifyContent: 'center',
                       gap: '4px',
                       height: 'auto',
+                      minHeight: '52px',
                       borderColor: newFilmFreshness === 'fresh' ? '#10b981' : undefined,
                       background: newFilmFreshness === 'fresh' ? 'rgba(16, 185, 129, 0.16)' : undefined,
                       color: newFilmFreshness === 'fresh' ? '#34d399' : '#d1d1d6',
@@ -3908,8 +3912,8 @@ export default function CinematicScrollStudio({
                       }
                     }}
                   >
-                    <span style={{ fontWeight: 800, fontSize: '0.94rem' }}>🌸 로리</span>
-                    <span style={{ fontSize: '0.72rem', opacity: 0.9 }}>싱싱함 (정상 만료 전)</span>
+                    <span style={{ fontWeight: 800, fontSize: '0.92rem' }}>🌸 로리</span>
+                    <span style={{ fontSize: '0.72rem', opacity: 0.9 }}>싱싱함</span>
                   </button>
 
                   {/* 2. 노괴 버튼 (썩었을 경우) */}
@@ -3917,12 +3921,14 @@ export default function CinematicScrollStudio({
                     type="button"
                     className={`dilution-btn ${newFilmFreshness === 'expired' ? 'active' : ''}`}
                     style={{
-                      padding: '12px 8px',
+                      padding: '10px 4px',
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
+                      justifyContent: 'center',
                       gap: '4px',
                       height: 'auto',
+                      minHeight: '52px',
                       borderColor: newFilmFreshness === 'expired' ? '#f59e0b' : undefined,
                       background: newFilmFreshness === 'expired' ? 'rgba(245, 158, 11, 0.16)' : undefined,
                       color: newFilmFreshness === 'expired' ? '#fbbf24' : '#d1d1d6',
@@ -3935,8 +3941,8 @@ export default function CinematicScrollStudio({
                       }
                     }}
                   >
-                    <span style={{ fontWeight: 800, fontSize: '0.94rem' }}>⚠️ 노괴</span>
-                    <span style={{ fontSize: '0.72rem', opacity: 0.9 }}>썩필 (유통기한 만료)</span>
+                    <span style={{ fontWeight: 800, fontSize: '0.92rem' }}>⚠️ 노괴</span>
+                    <span style={{ fontSize: '0.72rem', opacity: 0.9 }}>만료됨</span>
                   </button>
 
                   {/* 3. 틀딱 버튼 (몹시 썩어서 상이 거의 안맺힐 경우) */}
@@ -3944,12 +3950,14 @@ export default function CinematicScrollStudio({
                     type="button"
                     className={`dilution-btn ${newFilmFreshness === 'deep_expired' ? 'active' : ''}`}
                     style={{
-                      padding: '12px 8px',
+                      padding: '10px 4px',
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
+                      justifyContent: 'center',
                       gap: '4px',
                       height: 'auto',
+                      minHeight: '52px',
                       borderColor: newFilmFreshness === 'deep_expired' ? '#ef4444' : undefined,
                       background: newFilmFreshness === 'deep_expired' ? 'rgba(239, 68, 68, 0.2)' : undefined,
                       color: newFilmFreshness === 'deep_expired' ? '#f87171' : '#d1d1d6',
@@ -3962,8 +3970,8 @@ export default function CinematicScrollStudio({
                       }
                     }}
                   >
-                    <span style={{ fontWeight: 800, fontSize: '0.94rem' }}>💀 틀딱</span>
-                    <span style={{ fontSize: '0.72rem', opacity: 0.9 }}>푹썩필 (상 거의 안맺힘)</span>
+                    <span style={{ fontWeight: 800, fontSize: '0.92rem' }}>💀 틀딱</span>
+                    <span style={{ fontSize: '0.72rem', opacity: 0.9 }}>푹썩필</span>
                   </button>
                 </div>
 
@@ -3971,7 +3979,7 @@ export default function CinematicScrollStudio({
                 <div
                   style={{
                     fontSize: '0.78rem',
-                    lineHeight: 1.4,
+                    lineHeight: 1.45,
                     color:
                       newFilmFreshness === 'fresh'
                         ? '#34d399'
@@ -4012,72 +4020,69 @@ export default function CinematicScrollStudio({
                     )}
                   </div>
 
-                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                    <div style={{ flex: 1 }}>
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        maxLength={4}
-                        placeholder="YYYY 년도 (예: 2026)"
-                        value={newFilmExpiryYear}
-                        onChange={(e) => {
-                          let y = e.target.value.replace(/\D/g, '');
-                          if (y.length > 4) y = y.slice(0, 4); // 6자리 방지!
-                          setNewFilmExpiryYear(y);
-                          if (y && newFilmExpiryMonth) {
-                            const ym = `${y}-${newFilmExpiryMonth}`;
-                            setNewFilmExpiry(ym);
-                            const currentYM = new Date().toISOString().slice(0, 7);
-                            if (ym < currentYM) {
-                              setNewFilmFreshness('expired');
-                              setNewFilmExpired(true);
-                            } else {
-                              setNewFilmFreshness('fresh');
-                              setNewFilmExpired(false);
-                            }
-                          } else if (!y && !newFilmExpiryMonth) {
-                            if (!newFilmExpiry.startsWith('유통기한')) setNewFilmExpiry('');
+                  <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '8px' }}>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={4}
+                      placeholder="YYYY 년도 (예: 2026)"
+                      value={newFilmExpiryYear}
+                      onChange={(e) => {
+                        let y = e.target.value.replace(/\D/g, '');
+                        if (y.length > 4) y = y.slice(0, 4); // 6자리 방지!
+                        setNewFilmExpiryYear(y);
+                        if (y && newFilmExpiryMonth) {
+                          const ym = `${y}-${newFilmExpiryMonth}`;
+                          setNewFilmExpiry(ym);
+                          const currentYM = new Date().toISOString().slice(0, 7);
+                          if (ym < currentYM) {
+                            setNewFilmFreshness('expired');
+                            setNewFilmExpired(true);
+                          } else {
+                            setNewFilmFreshness('fresh');
+                            setNewFilmExpired(false);
                           }
-                        }}
-                        className="apple-input"
-                        style={{ padding: '7px 10px', fontSize: '0.82rem' }}
-                      />
-                    </div>
-                    <div style={{ width: '120px' }}>
-                      <select
-                        value={newFilmExpiryMonth}
-                        onChange={(e) => {
-                          const m = e.target.value;
-                          setNewFilmExpiryMonth(m);
-                          if (newFilmExpiryYear && m) {
-                            const ym = `${newFilmExpiryYear}-${m}`;
-                            setNewFilmExpiry(ym);
-                            const currentYM = new Date().toISOString().slice(0, 7);
-                            if (ym < currentYM) {
-                              setNewFilmFreshness('expired');
-                              setNewFilmExpired(true);
-                            } else {
-                              setNewFilmFreshness('fresh');
-                              setNewFilmExpired(false);
-                            }
-                          } else if (!newFilmExpiryYear && !m) {
-                            if (!newFilmExpiry.startsWith('유통기한')) setNewFilmExpiry('');
+                        } else if (!y && !newFilmExpiryMonth) {
+                          if (!newFilmExpiry.startsWith('유통기한')) setNewFilmExpiry('');
+                        }
+                      }}
+                      className="apple-input"
+                      style={{ padding: '8px 10px', fontSize: '0.84rem' }}
+                    />
+                    <select
+                      value={newFilmExpiryMonth}
+                      onChange={(e) => {
+                        const m = e.target.value;
+                        setNewFilmExpiryMonth(m);
+                        if (newFilmExpiryYear && m) {
+                          const ym = `${newFilmExpiryYear}-${m}`;
+                          setNewFilmExpiry(ym);
+                          const currentYM = new Date().toISOString().slice(0, 7);
+                          if (ym < currentYM) {
+                            setNewFilmFreshness('expired');
+                            setNewFilmExpired(true);
+                          } else {
+                            setNewFilmFreshness('fresh');
+                            setNewFilmExpired(false);
                           }
-                        }}
-                        className="apple-input"
-                        style={{ padding: '7px 10px', fontSize: '0.82rem' }}
-                      >
-                        <option value="">월 선택 (MM)</option>
-                        {Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0')).map((m) => (
-                          <option key={m} value={m}>{m}월</option>
-                        ))}
-                      </select>
-                    </div>
-                    <span style={{ fontSize: '11px', color: '#8e8e93', marginTop: '6px', display: 'block', lineHeight: 1.45 }}>
-                      * 일자 없이 <strong>년도(YYYY)와 월(MM)</strong>만 순서대로 기록됩니다.<br />
-                      날짜를 모르면 위의 [로리/노괴/틀딱]을 누르세요.
-                    </span>
+                        } else if (!newFilmExpiryYear && !m) {
+                          if (!newFilmExpiry.startsWith('유통기한')) setNewFilmExpiry('');
+                        }
+                      }}
+                      className="apple-input"
+                      style={{ padding: '8px 10px', fontSize: '0.84rem' }}
+                    >
+                      <option value="">월 선택 (MM)</option>
+                      {Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0')).map((m) => (
+                        <option key={m} value={m}>{m}월</option>
+                      ))}
+                    </select>
                   </div>
+
+                  <span style={{ fontSize: '11px', color: '#8e8e93', marginTop: '2px', display: 'block', lineHeight: 1.45 }}>
+                    * 일자 없이 <strong>년도(YYYY)와 월(MM)</strong>만 순서대로 기록됩니다.<br />
+                    날짜를 모르면 위의 [로리/노괴/틀딱]을 누르세요.
+                  </span>
                 </div>
               </div>
 
@@ -4086,90 +4091,120 @@ export default function CinematicScrollStudio({
                 const isMediumOrLarge = newFilmFormat === '120' || newFilmFormat === '220' || newFilmFormat === 'large_sheet';
                 const is110 = newFilmFormat === '110';
 
-                return (
-                  <div style={{ display: 'flex', gap: '12px' }}>
-                    <div className="field-group flex-1">
-                      <label>보관 방법</label>
-                      <select
-                        value={newFilmStorage}
-                        onChange={(e) => setNewFilmStorage(e.target.value as StorageMethod)}
-                        className="apple-input"
-                      >
-                        <option value="room_temp">🌡️ 상온 보관</option>
-                        <option value="refrigerated">🧊 냉장 보관</option>
-                        <option value="frozen">❄️ 냉동 보관</option>
-                      </select>
-                    </div>
-                    <div className="field-group" style={{ width: isMediumOrLarge ? '140px' : '100px' }}>
-                      <label>{newFilmFormat === 'large_sheet' ? '보유 수량 (매)' : '보유 수량'}</label>
-                      <input
-                        type="number"
-                        min="1"
-                        value={newFilmQuantity}
-                        onChange={(e) => setNewFilmQuantity(Number(e.target.value))}
-                        onFocus={(e) => e.target.select()}
-                        className="apple-input"
-                      />
-                    </div>
-                    {!isMediumOrLarge && (
-                      <div className="field-group" style={{ minWidth: is110 ? '120px' : '155px' }}>
-                        <label>롤당 컷수</label>
-                        <div style={{ display: 'flex', gap: '4px' }}>
-                          {!is110 && (
-                            <button
-                              type="button"
-                              className={`preset-pill ${newFilmFramesOption === '36' ? 'active' : ''}`}
-                              style={{ padding: '6px 8px', fontSize: '11px', flex: 1, justifyContent: 'center' }}
-                              onClick={() => {
-                                setNewFilmFramesOption('36');
-                                setNewFilmFramesPerRoll(36);
-                              }}
-                            >
-                              36컷
-                            </button>
-                          )}
-                          <button
-                            type="button"
-                            className={`preset-pill ${newFilmFramesOption === '24' ? 'active' : ''}`}
-                            style={{ padding: '6px 8px', fontSize: '11px', flex: 1, justifyContent: 'center' }}
-                            onClick={() => {
-                              setNewFilmFramesOption('24');
-                              setNewFilmFramesPerRoll(24);
-                            }}
-                          >
-                            24컷
-                          </button>
-                          <button
-                            type="button"
-                            className={`preset-pill ${newFilmFramesOption === 'custom' ? 'active' : ''}`}
-                            style={{ padding: '6px 8px', fontSize: '11px', flex: 1, justifyContent: 'center' }}
-                            onClick={() => {
-                              setNewFilmFramesOption('custom');
-                              if (newFilmFramesPerRoll === 36 || newFilmFramesPerRoll === 24) setNewFilmFramesPerRoll(12);
-                            }}
-                          >
-                            직접
-                          </button>
-                        </div>
-                        {newFilmFramesOption === 'custom' && (
-                          <input
-                            type="number"
-                            min="1"
-                            placeholder="컷수 입력"
-                            value={newFilmFramesPerRoll}
-                            onChange={(e) => setNewFilmFramesPerRoll(Number(e.target.value))}
-                            className="apple-input"
-                            style={{ marginTop: '6px', padding: '6px 8px', fontSize: '12px' }}
-                            autoFocus
-                          />
-                        )}
+                if (isMediumOrLarge) {
+                  return (
+                    <div className="apple-form-row">
+                      <div className="field-group">
+                        <label>보관 방법</label>
+                        <select
+                          value={newFilmStorage}
+                          onChange={(e) => setNewFilmStorage(e.target.value as StorageMethod)}
+                          className="apple-input"
+                        >
+                          <option value="room_temp">🌡️ 상온 보관</option>
+                          <option value="refrigerated">🧊 냉장 보관</option>
+                          <option value="frozen">❄️ 냉동 보관</option>
+                        </select>
                       </div>
-                    )}
+                      <div className="field-group">
+                        <label>{newFilmFormat === 'large_sheet' ? '보유 수량 (매)' : '보유 수량'}</label>
+                        <input
+                          type="number"
+                          min="1"
+                          value={newFilmQuantity}
+                          onChange={(e) => setNewFilmQuantity(Number(e.target.value))}
+                          onFocus={(e) => e.target.select()}
+                          className="apple-input"
+                        />
+                      </div>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="apple-form-storage-row">
+                    <div className="apple-form-storage-sub">
+                      <div className="field-group">
+                        <label>보관 방법</label>
+                        <select
+                          value={newFilmStorage}
+                          onChange={(e) => setNewFilmStorage(e.target.value as StorageMethod)}
+                          className="apple-input"
+                        >
+                          <option value="room_temp">🌡️ 상온 보관</option>
+                          <option value="refrigerated">🧊 냉장 보관</option>
+                          <option value="frozen">❄️ 냉동 보관</option>
+                        </select>
+                      </div>
+                      <div className="field-group">
+                        <label>보유 수량</label>
+                        <input
+                          type="number"
+                          min="1"
+                          value={newFilmQuantity}
+                          onChange={(e) => setNewFilmQuantity(Number(e.target.value))}
+                          onFocus={(e) => e.target.select()}
+                          className="apple-input"
+                        />
+                      </div>
+                    </div>
+                    <div className="field-group">
+                      <label>롤당 컷수</label>
+                      <div style={{ display: 'flex', gap: '6px' }}>
+                        {!is110 && (
+                          <button
+                            type="button"
+                            className={`preset-pill ${newFilmFramesOption === '36' ? 'active' : ''}`}
+                            style={{ padding: '7px 8px', fontSize: '11px', flex: 1, justifyContent: 'center' }}
+                            onClick={() => {
+                              setNewFilmFramesOption('36');
+                              setNewFilmFramesPerRoll(36);
+                            }}
+                          >
+                            36컷
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          className={`preset-pill ${newFilmFramesOption === '24' ? 'active' : ''}`}
+                          style={{ padding: '7px 8px', fontSize: '11px', flex: 1, justifyContent: 'center' }}
+                          onClick={() => {
+                            setNewFilmFramesOption('24');
+                            setNewFilmFramesPerRoll(24);
+                          }}
+                        >
+                          24컷
+                        </button>
+                        <button
+                          type="button"
+                          className={`preset-pill ${newFilmFramesOption === 'custom' ? 'active' : ''}`}
+                          style={{ padding: '7px 8px', fontSize: '11px', flex: 1, justifyContent: 'center' }}
+                          onClick={() => {
+                            setNewFilmFramesOption('custom');
+                            if (newFilmFramesPerRoll === 36 || newFilmFramesPerRoll === 24) setNewFilmFramesPerRoll(12);
+                          }}
+                        >
+                          직접
+                        </button>
+                      </div>
+                      {newFilmFramesOption === 'custom' && (
+                        <input
+                          type="number"
+                          min="1"
+                          placeholder="컷수 입력"
+                          value={newFilmFramesPerRoll}
+                          onChange={(e) => setNewFilmFramesPerRoll(Number(e.target.value))}
+                          className="apple-input"
+                          style={{ marginTop: '6px', padding: '6px 8px', fontSize: '12px' }}
+                          autoFocus
+                        />
+                      )}
+                    </div>
                   </div>
                 );
               })()}
 
-              <div style={{ display: 'flex', gap: '20px', margin: '2px 0 4px 0' }}>
+              <div style={{ display: 'flex', gap: '20px', margin: '2px 0 2px 0' }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.84rem', color: '#e5e5ea' }}>
                   <input
                     type="checkbox"
@@ -4270,8 +4305,8 @@ export default function CinematicScrollStudio({
               </div>
 
               {/* Brand & Model */}
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <div className="field-group" style={{ width: '150px' }}>
+              <div className="apple-form-row">
+                <div className="field-group">
                   <label>제조사 (Brand)</label>
                   <input
                     type="text"
@@ -4283,7 +4318,7 @@ export default function CinematicScrollStudio({
                     required
                   />
                 </div>
-                <div className="field-group flex-1">
+                <div className="field-group">
                   <label>모델명 (Model)</label>
                   <input
                     type="text"
@@ -4298,8 +4333,8 @@ export default function CinematicScrollStudio({
               </div>
 
               {/* Format & Lens Type */}
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <div className="field-group flex-1">
+              <div className="apple-form-row">
+                <div className="field-group">
                   <label>판형 (Format)</label>
                   <select
                     value={newCamFormat}
@@ -4318,7 +4353,7 @@ export default function CinematicScrollStudio({
                     <option value="other">기타</option>
                   </select>
                 </div>
-                <div className="field-group flex-1">
+                <div className="field-group">
                   <label>렌즈 유형</label>
                   <select
                     value={newCamLensType}
@@ -4332,8 +4367,8 @@ export default function CinematicScrollStudio({
               </div>
 
               {/* Status & Serial */}
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <div className="field-group flex-1">
+              <div className="apple-form-row">
+                <div className="field-group">
                   <label>작동 상태</label>
                   <select
                     value={newCamStatus}
@@ -4347,7 +4382,7 @@ export default function CinematicScrollStudio({
                     <option value="collection">소장 / 보관</option>
                   </select>
                 </div>
-                <div className="field-group flex-1">
+                <div className="field-group">
                   <label>시리얼 번호 (선택사항)</label>
                   <input
                     type="text"
@@ -4514,8 +4549,8 @@ export default function CinematicScrollStudio({
               </div>
 
               {/* Brand & Name */}
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <div className="field-group" style={{ width: '150px' }}>
+              <div className="apple-form-row">
+                <div className="field-group">
                   <label>제조사 (Brand)</label>
                   <input
                     type="text"
@@ -4527,7 +4562,7 @@ export default function CinematicScrollStudio({
                     required
                   />
                 </div>
-                <div className="field-group flex-1">
+                <div className="field-group">
                   <label>렌즈명 (Lens Model)</label>
                   <input
                     type="text"
@@ -4542,8 +4577,8 @@ export default function CinematicScrollStudio({
               </div>
 
               {/* Mount & Category */}
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <div className="field-group flex-1">
+              <div className="apple-form-row">
+                <div className="field-group">
                   <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span>렌즈 마운트</span>
                     <span style={{ fontSize: '0.7rem', color: '#34d399' }}>
@@ -4580,7 +4615,7 @@ export default function CinematicScrollStudio({
                     </div>
                   )}
                 </div>
-                <div className="field-group flex-1">
+                <div className="field-group">
                   <label>렌즈 구분</label>
                   <select
                     value={newLensCategory}
@@ -4594,9 +4629,9 @@ export default function CinematicScrollStudio({
               </div>
 
               {/* Focal Lengths & Aperture */}
-              <div style={{ display: 'flex', gap: '12px' }}>
+              <div className="apple-form-row">
                 {newLensCategory === 'prime' ? (
-                  <div className="field-group flex-1">
+                  <div className="field-group">
                     <label>초점거리 (mm)</label>
                     <input
                       type="number"
@@ -4608,7 +4643,7 @@ export default function CinematicScrollStudio({
                     />
                   </div>
                 ) : (
-                  <div className="field-group flex-1">
+                  <div className="field-group">
                     <label>초점거리 범위 (mm)</label>
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                       <input
@@ -4631,7 +4666,7 @@ export default function CinematicScrollStudio({
                     </div>
                   </div>
                 )}
-                <div className="field-group flex-1">
+                <div className="field-group">
                   <label>최대개방 f값 (조리개)</label>
                   <input
                     type="number"
@@ -4646,8 +4681,8 @@ export default function CinematicScrollStudio({
               </div>
 
               {/* Format & Status */}
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <div className="field-group flex-1">
+              <div className="apple-form-row">
+                <div className="field-group">
                   <label>호환 판형</label>
                   <select
                     value={newLensFormat}
@@ -4660,7 +4695,7 @@ export default function CinematicScrollStudio({
                     <option value="other">기타</option>
                   </select>
                 </div>
-                <div className="field-group flex-1">
+                <div className="field-group">
                   <label>작동 상태</label>
                   <select
                     value={newLensStatus}
@@ -4677,8 +4712,8 @@ export default function CinematicScrollStudio({
               </div>
 
               {/* Serial & Notes */}
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <div className="field-group flex-1">
+              <div className="apple-form-row">
+                <div className="field-group">
                   <label>시리얼 번호 (선택사항)</label>
                   <input
                     type="text"
@@ -4760,8 +4795,8 @@ export default function CinematicScrollStudio({
                 />
               </div>
 
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <div className="field-group flex-1">
+              <div className="apple-form-row">
+                <div className="field-group">
                   <label>장비 분류</label>
                   <select
                     value={newScannerCategory}
@@ -4775,7 +4810,7 @@ export default function CinematicScrollStudio({
                   </select>
                 </div>
 
-                <div className="field-group flex-1">
+                <div className="field-group">
                   <label>제조사 / 브랜드 (선택)</label>
                   <input
                     type="text"
@@ -4788,8 +4823,8 @@ export default function CinematicScrollStudio({
                 </div>
               </div>
 
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <div className="field-group flex-1">
+              <div className="apple-form-row">
+                <div className="field-group">
                   <label>광원 / 백라이트 규격</label>
                   <input
                     type="text"
@@ -4801,7 +4836,7 @@ export default function CinematicScrollStudio({
                   />
                 </div>
 
-                <div className="field-group flex-1">
+                <div className="field-group">
                   <label>필름 캐리어 / 홀더 종류</label>
                   <input
                     type="text"
@@ -4874,8 +4909,8 @@ export default function CinematicScrollStudio({
             </p>
 
             <form onSubmit={handleQuickAddExternalRoll} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <div className="field-group flex-1">
+              <div className="apple-form-row">
+                <div className="field-group">
                   <label>식별명 / 제목</label>
                   <input
                     type="text"
@@ -4885,7 +4920,7 @@ export default function CinematicScrollStudio({
                     className="apple-input"
                   />
                 </div>
-                <div className="field-group flex-1">
+                <div className="field-group">
                   <label>필름 종류 (화학 프로세스) *</label>
                   <select
                     value={extRollFilmType}
@@ -4905,8 +4940,8 @@ export default function CinematicScrollStudio({
                 </div>
               </div>
 
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <div className="field-group flex-1">
+              <div className="apple-form-film-specs">
+                <div className="field-group">
                   <label>필름 이름 / 세부 모델 *</label>
                   <input
                     type="text"
@@ -4918,30 +4953,32 @@ export default function CinematicScrollStudio({
                     required
                   />
                 </div>
-                <div className="field-group" style={{ width: '130px' }}>
-                  <label>판형 (포맷)</label>
-                  <select
-                    value={extRollFormat}
-                    onChange={(e) => setExtRollFormat(e.target.value as FilmFormat)}
-                    className="apple-input"
-                  >
-                    <option value="135">135 (35mm)</option>
-                    <option value="120">120 (중형)</option>
-                    <option value="220">220 (중형)</option>
-                    <option value="large_sheet">대형 (시트)</option>
-                    <option value="110">110</option>
-                    <option value="other">기타</option>
-                  </select>
-                </div>
-                <div className="field-group" style={{ width: '110px' }}>
-                  <label>촬영 감도 (ISO)</label>
-                  <input
-                    type="number"
-                    value={extRollIso}
-                    onChange={(e) => setExtRollIso(e.target.value === '' ? '' : Number(e.target.value))}
-                    placeholder="400"
-                    className="apple-input"
-                  />
+                <div className="apple-form-film-sub">
+                  <div className="field-group">
+                    <label>판형 (포맷)</label>
+                    <select
+                      value={extRollFormat}
+                      onChange={(e) => setExtRollFormat(e.target.value as FilmFormat)}
+                      className="apple-input"
+                    >
+                      <option value="135">135 (35mm)</option>
+                      <option value="120">120 (중형)</option>
+                      <option value="220">220 (중형)</option>
+                      <option value="large_sheet">대형 (시트)</option>
+                      <option value="110">110</option>
+                      <option value="other">기타</option>
+                    </select>
+                  </div>
+                  <div className="field-group">
+                    <label>촬영 감도 (ISO)</label>
+                    <input
+                      type="number"
+                      value={extRollIso}
+                      onChange={(e) => setExtRollIso(e.target.value === '' ? '' : Number(e.target.value))}
+                      placeholder="400"
+                      className="apple-input"
+                    />
+                  </div>
                 </div>
               </div>
 

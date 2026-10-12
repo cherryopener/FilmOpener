@@ -2305,6 +2305,23 @@ html, body {
   animation: modal-pop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+@media (max-width: 600px) {
+  .apple-modal-backdrop {
+    padding: 12px 10px;
+    align-items: center;
+  }
+
+  .apple-modal-card {
+    padding: 20px 15px;
+    border-radius: 20px;
+    max-height: calc(100dvh - 24px);
+  }
+
+  .apple-modal-header h3 {
+    font-size: 1.05rem;
+  }
+}
+
 .apple-modal-card .field-group {
   min-width: 0;
   display: flex;
@@ -2319,6 +2336,87 @@ html, body {
   min-width: 0;
 }
 
+/* Responsive Modal Form Grids */
+.apple-form-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+@media (min-width: 520px) {
+  .apple-form-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.apple-form-row-3 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+@media (min-width: 580px) {
+  .apple-form-row-3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Film Specs (Type, Format, ISO) */
+.apple-form-film-specs {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.apple-form-film-sub {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 12px;
+}
+
+@media (min-width: 560px) {
+  .apple-form-film-specs {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr 0.8fr;
+    gap: 12px;
+  }
+  .apple-form-film-sub {
+    display: contents;
+  }
+}
+
+/* Storage & Frames Row */
+.apple-form-storage-row {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.apple-form-storage-sub {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 12px;
+}
+
+@media (min-width: 560px) {
+  .apple-form-storage-row {
+    display: grid;
+    grid-template-columns: 1.2fr 0.85fr 1.35fr;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  .apple-form-storage-sub {
+    display: contents;
+  }
+}
+
+.preset-pill.active {
+  background: rgba(245, 158, 11, 0.22);
+  border-color: #f59e0b;
+  color: #fbbf24;
+  font-weight: 600;
+}
+
 @keyframes modal-pop {
   0% { transform: scale(0.95); opacity: 0; }
   100% { transform: scale(1); opacity: 1; }
@@ -2329,12 +2427,15 @@ html, body {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 12px;
+  gap: 12px;
 }
 
 .apple-modal-header h3 {
   font-size: 1.15rem;
   font-weight: 700;
   color: #ffffff;
+  margin: 0;
+  line-height: 1.35;
 }
 
 .apple-modal-close-btn {
@@ -2349,6 +2450,7 @@ html, body {
   justify-content: center;
   cursor: pointer;
   transition: all 0.2s;
+  flex-shrink: 0;
 }
 
 .apple-modal-close-btn:hover {

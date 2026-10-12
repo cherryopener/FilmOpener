@@ -212,44 +212,93 @@ export default function Home() {
 
   // Handlers for Films
   const handleSaveFilm = async (film: FilmItem) => {
+    setFilms((prev) => {
+      const idx = prev.findIndex((f) => f.id === film.id);
+      if (idx >= 0) {
+        const next = [...prev];
+        next[idx] = film;
+        return next;
+      }
+      return [film, ...prev];
+    });
     const updated = await saveFilm(film);
     setFilms(updated);
   };
   const handleDeleteFilm = async (id: string) => {
+    setFilms((prev) => prev.filter((f) => f.id !== id));
     const updated = await deleteFilm(id);
     setFilms(updated);
   };
 
   // Handlers for Gear (Cameras & Lenses)
   const handleSaveCamera = async (camera: CameraItem) => {
+    setCameras((prev) => {
+      const idx = prev.findIndex((c) => c.id === camera.id);
+      if (idx >= 0) {
+        const next = [...prev];
+        next[idx] = camera;
+        return next;
+      }
+      return [camera, ...prev];
+    });
     const updated = await saveCamera(camera);
     setCameras(updated);
   };
   const handleDeleteCamera = async (id: string) => {
+    setCameras((prev) => prev.filter((c) => c.id !== id));
     const updated = await deleteCamera(id);
     setCameras(updated);
   };
   const handleSaveLens = async (lens: LensItem) => {
+    setLenses((prev) => {
+      const idx = prev.findIndex((l) => l.id === lens.id);
+      if (idx >= 0) {
+        const next = [...prev];
+        next[idx] = lens;
+        return next;
+      }
+      return [lens, ...prev];
+    });
     const updated = await saveLens(lens);
     setLenses(updated);
   };
   const handleDeleteLens = async (id: string) => {
+    setLenses((prev) => prev.filter((l) => l.id !== id));
     const updated = await deleteLens(id);
     setLenses(updated);
   };
 
   // Handlers for Developers
   const handleSaveDeveloper = async (dev: DeveloperChemical) => {
+    setDevelopers((prev) => {
+      const idx = prev.findIndex((d) => d.id === dev.id);
+      if (idx >= 0) {
+        const next = [...prev];
+        next[idx] = dev;
+        return next;
+      }
+      return [dev, ...prev];
+    });
     const updated = await saveDeveloper(dev);
     setDevelopers(updated);
   };
   const handleDeleteDeveloper = async (id: string) => {
+    setDevelopers((prev) => prev.filter((d) => d.id !== id));
     const updated = await deleteDeveloper(id);
     setDevelopers(updated);
   };
 
   // Handlers for Shooting Rolls
   const handleSaveRoll = async (roll: ShootingRoll, prev?: ShootingRoll) => {
+    setRolls((prevList) => {
+      const idx = prevList.findIndex((r) => r.id === roll.id);
+      if (idx >= 0) {
+        const next = [...prevList];
+        next[idx] = roll;
+        return next;
+      }
+      return [roll, ...prevList];
+    });
     const result = await saveShootingRoll(roll, prev);
     setRolls(result.rolls);
     setDevelopers(result.developers);
@@ -258,6 +307,7 @@ export default function Home() {
     }
   };
   const handleDeleteRoll = async (id: string) => {
+    setRolls((prevList) => prevList.filter((r) => r.id !== id));
     const result = await deleteShootingRoll(id);
     setRolls(result.rolls);
     if (result.films) {
@@ -267,22 +317,42 @@ export default function Home() {
 
   // Handlers for Scans
   const handleSaveScan = async (scan: ScanLog) => {
+    setScans((prev) => {
+      const idx = prev.findIndex((s) => s.id === scan.id);
+      if (idx >= 0) {
+        const next = [...prev];
+        next[idx] = scan;
+        return next;
+      }
+      return [scan, ...prev];
+    });
     const updated = await saveScan(scan);
     setScans(updated);
     const updatedRolls = await getShootingRolls();
     setRolls(updatedRolls);
   };
   const handleDeleteScan = async (id: string) => {
+    setScans((prev) => prev.filter((s) => s.id !== id));
     const updated = await deleteScan(id);
     setScans(updated);
   };
 
   // Handlers for Scanners
   const handleSaveScanner = async (scanner: ScannerItem) => {
+    setScanners((prev) => {
+      const idx = prev.findIndex((s) => s.id === scanner.id);
+      if (idx >= 0) {
+        const next = [...prev];
+        next[idx] = scanner;
+        return next;
+      }
+      return [scanner, ...prev];
+    });
     const updated = await saveScanner(scanner);
     setScanners(updated);
   };
   const handleDeleteScanner = async (id: string) => {
+    setScanners((prev) => prev.filter((s) => s.id !== id));
     const updated = await deleteScanner(id);
     setScanners(updated);
   };

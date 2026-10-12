@@ -53,7 +53,10 @@ export const getFilms = async (): Promise<FilmItem[]> => {
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
           const { data, error } = await supabase.from('films').select('*').order('created_at', { ascending: false });
-          if (!error && data) return data as FilmItem[];
+          if (!error && data) {
+            localStorage.setItem(STORAGE_KEYS.FILMS, JSON.stringify(data));
+            return data as FilmItem[];
+          }
         }
       } catch (err) {
         console.warn('Supabase fetch films failed, falling back to local storage', err);
@@ -72,12 +75,20 @@ export const saveFilm = async (film: FilmItem): Promise<FilmItem[]> => {
   let list: FilmItem[] = raw ? JSON.parse(raw) : [...INITIAL_FILMS];
 
   const index = list.findIndex((f) => f.id === film.id);
+  const now = new Date().toISOString();
+  const filmToSave: FilmItem = {
+    ...film,
+    updated_at: now,
+    created_at: film.created_at || now,
+  };
+
   if (index >= 0) {
-    list[index] = { ...film, updated_at: new Date().toISOString() };
+    list[index] = filmToSave;
   } else {
-    list.unshift({ ...film, created_at: new Date().toISOString(), updated_at: new Date().toISOString() });
+    list.unshift(filmToSave);
   }
 
+  // Optimistic local update
   localStorage.setItem(STORAGE_KEYS.FILMS, JSON.stringify(list));
 
   if (isSupabaseConfigured()) {
@@ -86,7 +97,16 @@ export const saveFilm = async (film: FilmItem): Promise<FilmItem[]> => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
-          await supabase.from('films').upsert({ ...film, user_id: user.id });
+          const { error } = await supabase.from('films').upsert({ ...filmToSave, user_id: user.id });
+          if (error) {
+            console.error('Supabase save film error:', error.message);
+          } else {
+            const { data, error: fetchErr } = await supabase.from('films').select('*').order('created_at', { ascending: false });
+            if (!fetchErr && data && data.length > 0) {
+              list = data as FilmItem[];
+              localStorage.setItem(STORAGE_KEYS.FILMS, JSON.stringify(list));
+            }
+          }
         }
       } catch (e) {
         console.error('Supabase save film error:', e);
@@ -108,7 +128,16 @@ export const deleteFilm = async (id: string): Promise<FilmItem[]> => {
     const supabase = getSupabaseClient();
     if (supabase) {
       try {
-        await supabase.from('films').delete().eq('id', id);
+        const { error } = await supabase.from('films').delete().eq('id', id);
+        if (error) {
+          console.error('Supabase delete film error:', error.message);
+        } else {
+          const { data, error: fetchErr } = await supabase.from('films').select('*').order('created_at', { ascending: false });
+          if (!fetchErr && data) {
+            list = data as FilmItem[];
+            localStorage.setItem(STORAGE_KEYS.FILMS, JSON.stringify(list));
+          }
+        }
       } catch (e) {
         console.error('Supabase delete film error:', e);
       }
@@ -129,7 +158,10 @@ export const getCameras = async (): Promise<CameraItem[]> => {
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
           const { data, error } = await supabase.from('cameras').select('*').order('brand', { ascending: true });
-          if (!error && data) return data as CameraItem[];
+          if (!error && data) {
+            localStorage.setItem(STORAGE_KEYS.CAMERAS, JSON.stringify(data));
+            return data as CameraItem[];
+          }
         }
       } catch (err) {
         console.warn('Supabase fetch cameras failed, falling back to local storage', err);
@@ -151,7 +183,7 @@ export const saveCamera = async (camera: CameraItem): Promise<CameraItem[]> => {
   if (index >= 0) {
     list[index] = camera;
   } else {
-    list.unshift({ ...camera, created_at: new Date().toISOString() });
+    list.unshift({ ...camera, created_at: camera.created_at || new Date().toISOString() });
   }
 
   localStorage.setItem(STORAGE_KEYS.CAMERAS, JSON.stringify(list));
@@ -160,9 +192,23 @@ export const saveCamera = async (camera: CameraItem): Promise<CameraItem[]> => {
     const supabase = getSupabaseClient();
     if (supabase) {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { session } } = await supabase.auth.getSession();
+        let user = session?.user;
+        if (!user) {
+          const { data: userData } = await supabase.auth.getUser();
+          user = userData?.user ?? undefined;
+        }
         if (user) {
-          await supabase.from('cameras').upsert({ ...camera, user_id: user.id });
+          const { error } = await supabase.from('cameras').upsert({ ...camera, user_id: user.id });
+          if (error) {
+            console.error('Supabase save camera error:', error.message);
+          } else {
+            const { data, error: fetchErr } = await supabase.from('cameras').select('*').order('brand', { ascending: true });
+            if (!fetchErr && data && data.length > 0) {
+              list = data as CameraItem[];
+              localStorage.setItem(STORAGE_KEYS.CAMERAS, JSON.stringify(list));
+            }
+          }
         }
       } catch (e) {
         console.error('Supabase save camera error:', e);
@@ -184,7 +230,16 @@ export const deleteCamera = async (id: string): Promise<CameraItem[]> => {
     const supabase = getSupabaseClient();
     if (supabase) {
       try {
-        await supabase.from('cameras').delete().eq('id', id);
+        const { error } = await supabase.from('cameras').delete().eq('id', id);
+        if (error) {
+          console.error('Supabase delete camera error:', error.message);
+        } else {
+          const { data, error: fetchErr } = await supabase.from('cameras').select('*').order('brand', { ascending: true });
+          if (!fetchErr && data) {
+            list = data as CameraItem[];
+            localStorage.setItem(STORAGE_KEYS.CAMERAS, JSON.stringify(list));
+          }
+        }
       } catch (e) {
         console.error('Supabase delete camera error:', e);
       }
@@ -205,7 +260,10 @@ export const getLenses = async (): Promise<LensItem[]> => {
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
           const { data, error } = await supabase.from('lenses').select('*').order('focal_length_min', { ascending: true });
-          if (!error && data) return data as LensItem[];
+          if (!error && data) {
+            localStorage.setItem(STORAGE_KEYS.LENSES, JSON.stringify(data));
+            return data as LensItem[];
+          }
         }
       } catch (err) {
         console.warn('Supabase fetch lenses failed, falling back to local storage', err);
@@ -227,7 +285,7 @@ export const saveLens = async (lens: LensItem): Promise<LensItem[]> => {
   if (index >= 0) {
     list[index] = lens;
   } else {
-    list.unshift({ ...lens, created_at: new Date().toISOString() });
+    list.unshift({ ...lens, created_at: lens.created_at || new Date().toISOString() });
   }
 
   localStorage.setItem(STORAGE_KEYS.LENSES, JSON.stringify(list));
@@ -236,9 +294,23 @@ export const saveLens = async (lens: LensItem): Promise<LensItem[]> => {
     const supabase = getSupabaseClient();
     if (supabase) {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { session } } = await supabase.auth.getSession();
+        let user = session?.user;
+        if (!user) {
+          const { data: userData } = await supabase.auth.getUser();
+          user = userData?.user ?? undefined;
+        }
         if (user) {
-          await supabase.from('lenses').upsert({ ...lens, user_id: user.id });
+          const { error } = await supabase.from('lenses').upsert({ ...lens, user_id: user.id });
+          if (error) {
+            console.error('Supabase save lens error:', error.message);
+          } else {
+            const { data, error: fetchErr } = await supabase.from('lenses').select('*').order('focal_length_min', { ascending: true });
+            if (!fetchErr && data && data.length > 0) {
+              list = data as LensItem[];
+              localStorage.setItem(STORAGE_KEYS.LENSES, JSON.stringify(list));
+            }
+          }
         }
       } catch (e) {
         console.error('Supabase save lens error:', e);
@@ -260,7 +332,16 @@ export const deleteLens = async (id: string): Promise<LensItem[]> => {
     const supabase = getSupabaseClient();
     if (supabase) {
       try {
-        await supabase.from('lenses').delete().eq('id', id);
+        const { error } = await supabase.from('lenses').delete().eq('id', id);
+        if (error) {
+          console.error('Supabase delete lens error:', error.message);
+        } else {
+          const { data, error: fetchErr } = await supabase.from('lenses').select('*').order('focal_length_min', { ascending: true });
+          if (!fetchErr && data) {
+            list = data as LensItem[];
+            localStorage.setItem(STORAGE_KEYS.LENSES, JSON.stringify(list));
+          }
+        }
       } catch (e) {
         console.error('Supabase delete lens error:', e);
       }
@@ -281,7 +362,10 @@ export const getDevelopers = async (): Promise<DeveloperChemical[]> => {
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
           const { data, error } = await supabase.from('developer_chemicals').select('*').order('created_at', { ascending: false });
-          if (!error && data) return data as DeveloperChemical[];
+          if (!error && data) {
+            localStorage.setItem(STORAGE_KEYS.DEVELOPERS, JSON.stringify(data));
+            return data as DeveloperChemical[];
+          }
         }
       } catch (err) {
         console.warn('Supabase fetch developers failed, falling back to local storage', err);
@@ -303,7 +387,7 @@ export const saveDeveloper = async (dev: DeveloperChemical): Promise<DeveloperCh
   if (index >= 0) {
     list[index] = dev;
   } else {
-    list.unshift({ ...dev, created_at: new Date().toISOString() });
+    list.unshift({ ...dev, created_at: dev.created_at || new Date().toISOString() });
   }
 
   localStorage.setItem(STORAGE_KEYS.DEVELOPERS, JSON.stringify(list));
@@ -312,9 +396,23 @@ export const saveDeveloper = async (dev: DeveloperChemical): Promise<DeveloperCh
     const supabase = getSupabaseClient();
     if (supabase) {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { session } } = await supabase.auth.getSession();
+        let user = session?.user;
+        if (!user) {
+          const { data: userData } = await supabase.auth.getUser();
+          user = userData?.user ?? undefined;
+        }
         if (user) {
-          await supabase.from('developer_chemicals').upsert({ ...dev, user_id: user.id });
+          const { error } = await supabase.from('developer_chemicals').upsert({ ...dev, user_id: user.id });
+          if (error) {
+            console.error('Supabase save developer error:', error.message);
+          } else {
+            const { data, error: fetchErr } = await supabase.from('developer_chemicals').select('*').order('created_at', { ascending: false });
+            if (!fetchErr && data && data.length > 0) {
+              list = data as DeveloperChemical[];
+              localStorage.setItem(STORAGE_KEYS.DEVELOPERS, JSON.stringify(list));
+            }
+          }
         }
       } catch (e) {
         console.error('Supabase save developer error:', e);
@@ -336,7 +434,16 @@ export const deleteDeveloper = async (id: string): Promise<DeveloperChemical[]> 
     const supabase = getSupabaseClient();
     if (supabase) {
       try {
-        await supabase.from('developer_chemicals').delete().eq('id', id);
+        const { error } = await supabase.from('developer_chemicals').delete().eq('id', id);
+        if (error) {
+          console.error('Supabase delete developer error:', error.message);
+        } else {
+          const { data, error: fetchErr } = await supabase.from('developer_chemicals').select('*').order('created_at', { ascending: false });
+          if (!fetchErr && data) {
+            list = data as DeveloperChemical[];
+            localStorage.setItem(STORAGE_KEYS.DEVELOPERS, JSON.stringify(list));
+          }
+        }
       } catch (e) {
         console.error('Supabase delete developer error:', e);
       }
@@ -357,7 +464,10 @@ export const getShootingRolls = async (): Promise<ShootingRoll[]> => {
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
           const { data, error } = await supabase.from('shooting_rolls').select('*').order('created_at', { ascending: false });
-          if (!error && data) return data as ShootingRoll[];
+          if (!error && data) {
+            localStorage.setItem(STORAGE_KEYS.SHOOTING_ROLLS, JSON.stringify(data));
+            return data as ShootingRoll[];
+          }
         }
       } catch (err) {
         console.warn('Supabase fetch rolls failed, falling back to local storage', err);
@@ -476,9 +586,23 @@ export const saveShootingRoll = async (
     const supabase = getSupabaseClient();
     if (supabase) {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { session } } = await supabase.auth.getSession();
+        let user = session?.user;
+        if (!user) {
+          const { data: userData } = await supabase.auth.getUser();
+          user = userData?.user ?? undefined;
+        }
         if (user) {
-          await supabase.from('shooting_rolls').upsert({ ...roll, user_id: user.id });
+          const { error } = await supabase.from('shooting_rolls').upsert({ ...roll, user_id: user.id });
+          if (error) {
+            console.error('Supabase save shooting roll error:', error.message);
+          } else {
+            const { data, error: fetchErr } = await supabase.from('shooting_rolls').select('*').order('created_at', { ascending: false });
+            if (!fetchErr && data && data.length > 0) {
+              list = data as ShootingRoll[];
+              localStorage.setItem(STORAGE_KEYS.SHOOTING_ROLLS, JSON.stringify(list));
+            }
+          }
           if (updatedDevForSupabase) {
             await supabase.from('developer_chemicals').upsert({ ...updatedDevForSupabase, user_id: user.id });
           }
@@ -531,9 +655,23 @@ export const deleteShootingRoll = async (
     const supabase = getSupabaseClient();
     if (supabase) {
       try {
-        await supabase.from('shooting_rolls').delete().eq('id', id);
+        const { error } = await supabase.from('shooting_rolls').delete().eq('id', id);
+        if (error) {
+          console.error('Supabase delete shooting roll error:', error.message);
+        } else {
+          const { data, error: fetchErr } = await supabase.from('shooting_rolls').select('*').order('created_at', { ascending: false });
+          if (!fetchErr && data) {
+            list = data as ShootingRoll[];
+            localStorage.setItem(STORAGE_KEYS.SHOOTING_ROLLS, JSON.stringify(list));
+          }
+        }
         if (restoredFilmForSupabase) {
-          const { data: { user } } = await supabase.auth.getUser();
+          const { data: { session } } = await supabase.auth.getSession();
+          let user = session?.user;
+          if (!user) {
+            const { data: userData } = await supabase.auth.getUser();
+            user = userData?.user ?? undefined;
+          }
           if (user) {
             await supabase.from('films').upsert({ ...restoredFilmForSupabase, user_id: user.id });
           }
@@ -558,7 +696,10 @@ export const getScans = async (): Promise<ScanLog[]> => {
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
           const { data, error } = await supabase.from('scan_logs').select('*').order('scan_date', { ascending: false });
-          if (!error && data) return data as ScanLog[];
+          if (!error && data) {
+            localStorage.setItem(STORAGE_KEYS.SCANS, JSON.stringify(data));
+            return data as ScanLog[];
+          }
         }
       } catch (err) {
         console.warn('Supabase fetch scans failed, falling back to local storage', err);
@@ -580,7 +721,7 @@ export const saveScan = async (scan: ScanLog): Promise<ScanLog[]> => {
   if (index >= 0) {
     list[index] = scan;
   } else {
-    list.unshift({ ...scan, created_at: new Date().toISOString() });
+    list.unshift({ ...scan, created_at: scan.created_at || new Date().toISOString() });
   }
 
   localStorage.setItem(STORAGE_KEYS.SCANS, JSON.stringify(list));
@@ -602,9 +743,23 @@ export const saveScan = async (scan: ScanLog): Promise<ScanLog[]> => {
     const supabase = getSupabaseClient();
     if (supabase) {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { session } } = await supabase.auth.getSession();
+        let user = session?.user;
+        if (!user) {
+          const { data: userData } = await supabase.auth.getUser();
+          user = userData?.user ?? undefined;
+        }
         if (user) {
-          await supabase.from('scan_logs').upsert({ ...scan, user_id: user.id });
+          const { error } = await supabase.from('scan_logs').upsert({ ...scan, user_id: user.id });
+          if (error) {
+            console.error('Supabase save scan error:', error.message);
+          } else {
+            const { data, error: fetchErr } = await supabase.from('scan_logs').select('*').order('scan_date', { ascending: false });
+            if (!fetchErr && data && data.length > 0) {
+              list = data as ScanLog[];
+              localStorage.setItem(STORAGE_KEYS.SCANS, JSON.stringify(list));
+            }
+          }
         }
       } catch (e) {
         console.error('Supabase save scan error:', e);
@@ -626,7 +781,16 @@ export const deleteScan = async (id: string): Promise<ScanLog[]> => {
     const supabase = getSupabaseClient();
     if (supabase) {
       try {
-        await supabase.from('scan_logs').delete().eq('id', id);
+        const { error } = await supabase.from('scan_logs').delete().eq('id', id);
+        if (error) {
+          console.error('Supabase delete scan error:', error.message);
+        } else {
+          const { data, error: fetchErr } = await supabase.from('scan_logs').select('*').order('scan_date', { ascending: false });
+          if (!fetchErr && data) {
+            list = data as ScanLog[];
+            localStorage.setItem(STORAGE_KEYS.SCANS, JSON.stringify(list));
+          }
+        }
       } catch (e) {
         console.error('Supabase delete scan error:', e);
       }
@@ -647,7 +811,10 @@ export const getScanners = async (): Promise<ScannerItem[]> => {
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
           const { data, error } = await supabase.from('scanners').select('*').order('created_at', { ascending: false });
-          if (!error && data) return data as ScannerItem[];
+          if (!error && data) {
+            localStorage.setItem(STORAGE_KEYS.SCANNERS, JSON.stringify(data));
+            return data as ScannerItem[];
+          }
         }
       } catch (err) {
         console.warn('Supabase fetch scanners failed, falling back to local storage', err);
@@ -678,9 +845,23 @@ export const saveScanner = async (scanner: ScannerItem): Promise<ScannerItem[]> 
     const supabase = getSupabaseClient();
     if (supabase) {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { session } } = await supabase.auth.getSession();
+        let user = session?.user;
+        if (!user) {
+          const { data: userData } = await supabase.auth.getUser();
+          user = userData?.user ?? undefined;
+        }
         if (user) {
-          await supabase.from('scanners').upsert({ ...scanner, user_id: user.id });
+          const { error } = await supabase.from('scanners').upsert({ ...scanner, user_id: user.id });
+          if (error) {
+            console.error('Supabase save scanner error:', error.message);
+          } else {
+            const { data, error: fetchErr } = await supabase.from('scanners').select('*').order('created_at', { ascending: false });
+            if (!fetchErr && data && data.length > 0) {
+              list = data as ScannerItem[];
+              localStorage.setItem(STORAGE_KEYS.SCANNERS, JSON.stringify(list));
+            }
+          }
         }
       } catch (e) {
         console.error('Supabase save scanner error:', e);
@@ -702,7 +883,16 @@ export const deleteScanner = async (id: string): Promise<ScannerItem[]> => {
     const supabase = getSupabaseClient();
     if (supabase) {
       try {
-        await supabase.from('scanners').delete().eq('id', id);
+        const { error } = await supabase.from('scanners').delete().eq('id', id);
+        if (error) {
+          console.error('Supabase delete scanner error:', error.message);
+        } else {
+          const { data, error: fetchErr } = await supabase.from('scanners').select('*').order('created_at', { ascending: false });
+          if (!fetchErr && data) {
+            list = data as ScannerItem[];
+            localStorage.setItem(STORAGE_KEYS.SCANNERS, JSON.stringify(list));
+          }
+        }
       } catch (e) {
         console.error('Supabase delete scanner error:', e);
       }
@@ -738,32 +928,39 @@ export const syncLocalDataToSupabase = async (): Promise<{ success: boolean; cou
     const scanners: ScannerItem[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.SCANNERS) || '[]');
 
     if (films.length > 0) {
-      await supabase.from('films').upsert(films.map((f) => ({ ...f, user_id: uid })));
+      const { error } = await supabase.from('films').upsert(films.map((f) => ({ ...f, user_id: uid })));
+      if (error) throw new Error(`필름 동기화 실패: ${error.message}`);
       totalSynced += films.length;
     }
     if (cameras.length > 0) {
-      await supabase.from('cameras').upsert(cameras.map((c) => ({ ...c, user_id: uid })));
+      const { error } = await supabase.from('cameras').upsert(cameras.map((c) => ({ ...c, user_id: uid })));
+      if (error) throw new Error(`카메라 동기화 실패: ${error.message}`);
       totalSynced += cameras.length;
     }
     if (lenses.length > 0) {
-      await supabase.from('lenses').upsert(lenses.map((l) => ({ ...l, user_id: uid })));
+      const { error } = await supabase.from('lenses').upsert(lenses.map((l) => ({ ...l, user_id: uid })));
+      if (error) throw new Error(`렌즈 동기화 실패: ${error.message}`);
       totalSynced += lenses.length;
     }
     if (devs.length > 0) {
-      await supabase.from('developer_chemicals').upsert(devs.map((d) => ({ ...d, user_id: uid })));
+      const { error } = await supabase.from('developer_chemicals').upsert(devs.map((d) => ({ ...d, user_id: uid })));
+      if (error) throw new Error(`현상액 동기화 실패: ${error.message}`);
       totalSynced += devs.length;
     }
     if (rolls.length > 0) {
-      await supabase.from('shooting_rolls').upsert(rolls.map((r) => ({ ...r, user_id: uid })));
+      const { error } = await supabase.from('shooting_rolls').upsert(rolls.map((r) => ({ ...r, user_id: uid })));
+      if (error) throw new Error(`촬영 롤 동기화 실패: ${error.message}`);
       totalSynced += rolls.length;
     }
-    if (scans.length > 0) {
-      await supabase.from('scan_logs').upsert(scans.map((s) => ({ ...s, user_id: uid })));
-      totalSynced += scans.length;
-    }
     if (scanners.length > 0) {
-      await supabase.from('scanners').upsert(scanners.map((s) => ({ ...s, user_id: uid })));
+      const { error } = await supabase.from('scanners').upsert(scanners.map((s) => ({ ...s, user_id: uid })));
+      if (error) throw new Error(`스캐너 동기화 실패: ${error.message}`);
       totalSynced += scanners.length;
+    }
+    if (scans.length > 0) {
+      const { error } = await supabase.from('scan_logs').upsert(scans.map((s) => ({ ...s, user_id: uid })));
+      if (error) throw new Error(`스캔 장부 동기화 실패: ${error.message}`);
+      totalSynced += scans.length;
     }
 
     return { success: true, count: totalSynced };
