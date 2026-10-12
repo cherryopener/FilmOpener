@@ -47,6 +47,7 @@
   --radius-md: 12px;
   --radius-lg: 18px;
   --radius-xl: 22px;
+  --radius-2xl: 24px;
   --radius-full: 9999px;
 
   --safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -1270,6 +1271,42 @@ html, body {
   position: relative;
   overflow-x: hidden;
   padding-bottom: 120px;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+/* ==========================================================================
+   KOREAN TYPOGRAPHY - 띄어쓰기(어절) 단위 자연스러운 줄바꿈 보장
+   ========================================================================== */
+.apple-studio-container,
+.apple-studio-container p,
+.apple-studio-container span,
+.apple-studio-container h1,
+.apple-studio-container h2,
+.apple-studio-container h3,
+.apple-studio-container h4,
+.apple-studio-container h5,
+.apple-studio-container h6,
+.apple-studio-container label,
+.apple-studio-container button,
+.apple-studio-container a,
+.apple-studio-container li,
+.apple-studio-container small,
+.apple-studio-container strong,
+.apple-studio-container em {
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+/* 데스크톱 전용 줄바꿈 유틸리티: 모바일(768px 이하)에서는 숨겨져 자연 띄어쓰기 랩핑 */
+.studio-desktop-br {
+  display: inline;
+}
+
+@media (max-width: 768px) {
+  .studio-desktop-br {
+    display: none !important;
+  }
 }
 
 /* TOP FIXED GLASS HUD */
@@ -1690,6 +1727,9 @@ html, body {
   max-width: 680px;
   margin: 0 auto 36px;
   font-weight: 400;
+  word-break: keep-all !important;
+  overflow-wrap: break-word;
+  padding: 0 16px;
 }
 
 .hero-action-row {
@@ -1804,12 +1844,16 @@ html, body {
   letter-spacing: -0.03em;
   color: #ffffff;
   margin-bottom: 14px;
+  word-break: keep-all !important;
+  overflow-wrap: break-word;
 }
 
 .chapter-desc {
   font-size: 1.05rem;
   color: #8e8e93;
   line-height: 1.6;
+  word-break: keep-all !important;
+  overflow-wrap: break-word;
 }
 
 /* ==========================================================================
@@ -2521,6 +2565,8 @@ html, body {
 .tray-sub {
   font-size: 0.85rem;
   color: #a1a1a6;
+  word-break: keep-all !important;
+  overflow-wrap: break-word;
 }
 
 .tray-next-btn {
@@ -4032,6 +4078,16 @@ html, body {
     word-break: keep-all !important;
   }
 
+  /* HERO SUBLINE & TYPOGRAPHY MOBILE */
+  .hero-subline {
+    font-size: 0.96rem !important;
+    line-height: 1.6 !important;
+    padding: 0 12px !important;
+    margin-bottom: 24px !important;
+    word-break: keep-all !important;
+    overflow-wrap: break-word;
+  }
+
   /* CHAPTER HEADERS & CONTROLS MOBILE */
   .chapter-header {
     margin-bottom: 24px;
@@ -4224,6 +4280,157 @@ html, body {
   }
   .dock-item {
     padding: 8px 10px;
+  }
+
+  /* ============================================================
+     MAC FINDER VAULT MOBILE STYLING (세로쓰기 방지 & 둥근 모서리 & 슬림 레이아웃)
+     ============================================================ */
+  .mac-finder-vault-wrapper {
+    margin-top: 28px;
+    padding: 0 4px;
+  }
+
+  .mac-finder-window {
+    border-radius: 20px !important;
+    overflow: hidden !important;
+  }
+
+  .mac-finder-topbar {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 10px 14px !important;
+    gap: 8px !important;
+    border-radius: 20px 20px 0 0 !important;
+  }
+
+  .mac-topbar-left {
+    order: 1 !important;
+    width: auto !important;
+    flex-shrink: 0 !important;
+  }
+
+  .mac-window-controls {
+    width: auto !important;
+    gap: 6px !important;
+  }
+
+  .window-dot {
+    width: 10px !important;
+    height: 10px !important;
+  }
+
+  .mac-finder-stats {
+    order: 2 !important;
+    margin-left: auto !important;
+    gap: 6px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .stats-sort-pill {
+    display: none !important; /* 모바일에서 불필요하게 줄바꿈을 유발하는 설명 숨김 */
+  }
+
+  .stats-pill {
+    font-size: 0.7rem !important;
+    padding: 2px 8px !important;
+    white-space: nowrap !important;
+  }
+
+  .mac-path-crumb {
+    order: 3 !important;
+    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-top: 6px !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
+    font-size: 0.72rem !important;
+    gap: 5px !important;
+    white-space: nowrap !important;
+    word-break: keep-all !important;
+  }
+
+  .mac-path-crumb::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .crumb-segment {
+    white-space: nowrap !important;
+    word-break: keep-all !important;
+    flex-shrink: 0 !important;
+  }
+
+  .crumb-sep {
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+  }
+
+  .mac-finder-subbar {
+    padding: 8px 12px !important;
+    font-size: 0.72rem !important;
+    line-height: 1.45 !important;
+    word-break: keep-all !important;
+  }
+
+  .subbar-hint {
+    font-size: 0.72rem !important;
+    line-height: 1.45 !important;
+    word-break: keep-all !important;
+  }
+
+  .mac-folders-desktop-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    padding: 18px 8px 24px !important;
+    gap: 14px 8px !important;
+    border-radius: 0 0 20px 20px !important;
+  }
+
+  .mac-folder-item {
+    padding: 8px 4px !important;
+  }
+
+  .mac-folder-art-canvas {
+    width: 82px !important;
+    height: 70px !important;
+    margin-bottom: 6px !important;
+  }
+
+  .mac-folder-backplate {
+    height: 60px !important;
+  }
+
+  .mac-folder-front-pocket {
+    height: 52px !important;
+    top: 16px !important;
+  }
+
+  .mac-folder-negative-sleeve {
+    height: 44px !important;
+    top: 8px !important;
+  }
+
+  .mac-folder-text-block {
+    max-width: 125px !important;
+    width: 100% !important;
+  }
+
+  .mac-folder-title-line {
+    font-size: 0.74rem !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    word-break: keep-all !important;
+  }
+
+  .mac-folder-date-line {
+    font-size: 0.64rem !important;
+    white-space: nowrap !important;
+    word-break: keep-all !important;
   }
 }
 
@@ -4821,7 +5028,7 @@ html, body {
 .mac-finder-window {
   background: rgba(22, 23, 29, 0.88);
   border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: var(--radius-2xl);
+  border-radius: var(--radius-2xl, 24px);
   backdrop-filter: blur(28px);
   box-shadow: 0 24px 64px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(255, 255, 255, 0.05);
   overflow: visible;
@@ -4835,7 +5042,15 @@ html, body {
   padding: 12px 18px;
   background: rgba(255, 255, 255, 0.035);
   border-bottom: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
+  border-radius: var(--radius-2xl, 24px) var(--radius-2xl, 24px) 0 0;
+  gap: 12px;
+}
+
+.mac-topbar-left {
+  display: flex;
+  align-items: center;
+  width: 80px;
+  flex-shrink: 0;
 }
 
 .mac-window-controls {
@@ -4843,6 +5058,7 @@ html, body {
   align-items: center;
   gap: 7px;
   width: 80px;
+  flex-shrink: 0;
 }
 
 .window-dot {
@@ -4851,6 +5067,7 @@ html, body {
   border-radius: 50%;
   display: inline-block;
   box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.3);
+  flex-shrink: 0;
 }
 
 .dot-red { background: #ff5f56; border: 1px solid #e0443e; }
@@ -4864,26 +5081,41 @@ html, body {
   font-size: 0.78rem;
   color: #86868b;
   font-weight: 500;
+  white-space: nowrap !important;
+  word-break: keep-all !important;
+  flex-shrink: 0;
 }
 
 .crumb-folder-icon {
   color: #0091ff;
+  flex-shrink: 0;
+}
+
+.crumb-segment {
+  white-space: nowrap !important;
+  word-break: keep-all !important;
+  flex-shrink: 0;
 }
 
 .crumb-segment.active {
   color: #f5f5f7;
   font-weight: 700;
+  white-space: nowrap !important;
+  word-break: keep-all !important;
 }
 
 .crumb-sep {
   color: #555;
   font-size: 0.85rem;
+  white-space: nowrap !important;
+  flex-shrink: 0;
 }
 
 .mac-finder-stats {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-shrink: 0;
 }
 
 .stats-pill, .stats-sort-pill {
@@ -4893,6 +5125,9 @@ html, body {
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius-full);
   color: #a1a1a6;
+  white-space: nowrap !important;
+  word-break: keep-all !important;
+  flex-shrink: 0;
 }
 
 .stats-pill strong {
@@ -5194,6 +5429,8 @@ html, body {
   background: rgba(0, 0, 0, 0.55);
   color: #fff;
   backdrop-filter: blur(4px);
+  white-space: nowrap !important;
+  word-break: keep-all !important;
 }
 
 .link-type-tag.cloud { color: #60a5fa; }
@@ -5207,6 +5444,7 @@ html, body {
   align-items: center;
   gap: 2px;
   max-width: 155px;
+  width: 100%;
 }
 
 .mac-folder-title-line {
@@ -5214,12 +5452,13 @@ html, body {
   font-weight: 700;
   color: #f5f5f7;
   line-height: 1.25;
-  white-space: nowrap;
+  white-space: nowrap !important;
   overflow: hidden;
   text-overflow: ellipsis;
   width: 100%;
   padding: 2px 4px;
   border-radius: 4px;
+  word-break: keep-all !important;
 }
 
 .mac-folder-item:hover .mac-folder-title-line {
@@ -5231,15 +5470,18 @@ html, body {
   font-size: 0.7rem;
   color: #86868b;
   font-weight: 500;
+  white-space: nowrap !important;
+  word-break: keep-all !important;
 }
 
 .mac-folder-film-sub {
   font-size: 0.68rem;
   color: #a1a1a6;
-  white-space: nowrap;
+  white-space: nowrap !important;
   overflow: hidden;
   text-overflow: ellipsis;
   width: 100%;
+  word-break: keep-all !important;
 }
 
 @media (max-width: 768px) {

@@ -1769,7 +1769,7 @@ export default function CinematicScrollStudio({
             )}
           </div>
           <p className="hero-subline hero-reveal-3">
-            필름 선택부터 카메라 결합, 출사 로깅, 정밀 암실 현상과 마스터 디지털 스캔까지.<br />
+            필름 선택부터 카메라 결합, 출사 로깅, 정밀 암실 현상과 마스터 디지털 스캔까지.<br className="studio-desktop-br" />{' '}
             아날로그 필름 사진의 모든 호흡을 하나의 인터랙티브 스토리로 기록합니다.
           </p>
 
@@ -3374,10 +3374,12 @@ export default function CinematicScrollStudio({
           <div className="mac-finder-window">
             {/* macOS Window Top Bar */}
             <div className="mac-finder-topbar">
-              <div className="mac-window-controls">
-                <span className="window-dot dot-red" />
-                <span className="window-dot dot-yellow" />
-                <span className="window-dot dot-green" />
+              <div className="mac-topbar-left">
+                <div className="mac-window-controls">
+                  <span className="window-dot dot-red" />
+                  <span className="window-dot dot-yellow" />
+                  <span className="window-dot dot-green" />
+                </div>
               </div>
 
               <div className="mac-path-crumb">
@@ -4081,8 +4083,8 @@ export default function CinematicScrollStudio({
                     </select>
                   </div>
 
-                  <span style={{ fontSize: '11px', color: '#8e8e93', marginTop: '2px', display: 'block', lineHeight: 1.45 }}>
-                    * 일자 없이 <strong>년도(YYYY)와 월(MM)</strong>만 순서대로 기록됩니다.<br />
+                  <span style={{ fontSize: '11px', color: '#8e8e93', marginTop: '2px', display: 'block', lineHeight: 1.45, wordBreak: 'keep-all', overflowWrap: 'break-word' }}>
+                    * 일자 없이 <strong>년도(YYYY)와 월(MM)</strong>만 순서대로 기록됩니다.<br className="studio-desktop-br" />{' '}
                     날짜를 모르면 위의 [로리/노괴/틀딱]을 누르세요.
                   </span>
                 </div>
@@ -4905,8 +4907,8 @@ export default function CinematicScrollStudio({
               </button>
             </div>
 
-            <p style={{ fontSize: '0.84rem', color: '#a1a1a6', marginBottom: '18px', lineHeight: 1.5 }}>
-              💡 촬영 장비 결합 없이 외부에서 수령하거나 묵혀둔 필름을 현상 대기열에 바로 등록합니다.<br />
+            <p style={{ fontSize: '0.84rem', color: '#a1a1a6', marginBottom: '18px', lineHeight: 1.5, wordBreak: 'keep-all', overflowWrap: 'break-word' }}>
+              💡 촬영 장비 결합 없이 외부에서 수령하거나 묵혀둔 필름을 현상 대기열에 바로 등록합니다.<br className="studio-desktop-br" />{' '}
               필름 종류에 따라 올바른 현상액(C-41, ECN-2, B&W 등)이 자동으로 매칭됩니다.
             </p>
 
