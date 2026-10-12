@@ -3,6 +3,7 @@
 import React from 'react';
 import { FilmItem } from '@/types';
 import { getBrandTheme } from '@/lib/brandConfig';
+import { formatExpiryYYMM } from '@/lib/dateUtils';
 
 interface FilmCanister3DProps {
   film: FilmItem;
@@ -26,8 +27,8 @@ export default function FilmCanister3D({
   const isCinema = film.type === 'cinema' || film.type === 'cinema_ahu';
   const isSlide = film.type === 'color_slide' || film.type === 'bw_slide';
 
-  // Format expiration date to clean dots (e.g. 2026.11.30)
-  const formattedExpiry = film.expiry_date.replace(/-/g, '.');
+  // Format expiration date to clean compact YY.MM (e.g. 26.08, 98.05)
+  const formattedExpiry = formatExpiryYYMM(film.expiry_date);
 
   // Canister dimensions by size
   const scale = size === 'sm' ? 0.75 : size === 'lg' ? 1.2 : 1;
@@ -46,11 +47,12 @@ export default function FilmCanister3D({
   const formatText = film.format === '135' ? '35mm' : film.format === '120' ? '120 중형' : film.format;
 
   // Visual Stack Count: 1, 2, 3, 4, 5 (for 5+ rolls, shows 5 stacked)
-  const stackCount = Math.min(Math.max(film.quantity, 1), 5);
+  const isExhausted = (film.quantity ?? 0) <= 0;
+  const stackCount = isExhausted ? 1 : Math.min(Math.max(film.quantity, 1), 5);
 
   return (
     <div
-      className={`canister-slot-container ${isSelected ? 'selected' : ''}`}
+      className={`canister-slot-container ${isSelected ? 'selected' : ''} ${isExhausted ? 'exhausted' : ''}`}
       onClick={onClick}
       role="button"
       tabIndex={0}
@@ -261,8 +263,8 @@ export default function FilmCanister3D({
       {showShelfPlaque && (
         <div className={`shelf-plaque ${isSelected ? 'active' : ''} ${film.is_expired ? 'expired-plaque' : ''}`}>
           <div className="plaque-top-row">
-            <span className={`plaque-qty ${film.quantity <= 0 ? 'zero' : ''}`}>
-              {film.quantity > 0 ? `${film.quantity}롤 보유` : '품절 (0롤)'}
+            <span className={`plaque-qty ${isExhausted ? 'zero' : ''}`}>
+              {film.quantity > 0 ? `${film.quantity}롤 보유` : '소진됨 (0롤)'}
             </span>
             <span className="plaque-format">{formatText}</span>
           </div>

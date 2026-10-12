@@ -130,3 +130,28 @@ export const COMMON_DILUTIONS = [
   ...RECIPE_DILUTIONS,
   '기타 직접입력',
 ];
+
+export interface FilmBrandPreset {
+  id: string;
+  name: string;
+  label: string;
+  logoUrl?: string;
+}
+
+export const FILM_BRAND_PRESETS: FilmBrandPreset[] = [
+  { id: 'kodak', name: 'Kodak', label: 'Kodak (코닥)', logoUrl: '/logos/kodak_logo.png' },
+  { id: 'fuji', name: 'Fujifilm', label: 'Fujifilm (후지필름)', logoUrl: '/logos/fuji_logo.png' },
+  { id: 'ilford', name: 'Ilford', label: 'Ilford (일포드)', logoUrl: '/logos/ilford_logo.png' },
+  { id: 'agfa', name: 'Agfa', label: 'Agfa (아그파)', logoUrl: '/logos/agfa_logo.png' },
+  { id: 'cinestill', name: 'CineStill', label: 'CineStill (시네스틸)', logoUrl: '/logos/cinestill_logo.png' },
+  { id: 'foma', name: 'Foma', label: 'Foma (포마)', logoUrl: '/logos/foma_logo.png' },
+  { id: 'leica', name: 'Leica', label: 'Leica (라이카)', logoUrl: '/logos/leica_logo.png' },
+  { id: 'lomography', name: 'Lomography', label: 'Lomography (로모그래피)', logoUrl: '/logos/lomography_logo.png' },
+  { id: 'rollei', name: 'Rollei', label: 'Rollei (롤라이)', logoUrl: '/logos/rollei_logo.png' },
+  { id: 'adox', name: 'Adox', label: 'Adox (아독스)', logoUrl: '/logos/adox_logo.png' },
+  { id: 'svema', name: 'Svema', label: 'Svema (스베마)', logoUrl: '/logos/svema_logo.jpg' },
+  { id: 'lucky', name: 'Lucky', label: 'Lucky (럭키)', logoUrl: '/logos/lucky_logo.png' },
+  { id: 'orwo', name: 'ORWO', label: 'ORWO (오르보)', logoUrl: '/logos/orwo_Logo.png' },
+  { id: 'polaroid', name: 'Polaroid', label: 'Polaroid (폴라로이드)', logoUrl: '/logos/polaroid_logo.png' },
+];
+

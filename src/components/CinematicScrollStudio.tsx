@@ -22,7 +22,8 @@ import {
   EquipmentStatus,
   FreshnessStatus,
 } from '@/types';
-import { RECIPE_DILUTIONS, LAB_SCANNERS, LAB_SCAN_RESOLUTIONS } from '@/lib/constants';
+import { RECIPE_DILUTIONS, LAB_SCANNERS, LAB_SCAN_RESOLUTIONS, FILM_BRAND_PRESETS } from '@/lib/constants';
+import { formatExpiryYYMM, sanitizeExpiryDate, parseYearAndMonth } from '@/lib/dateUtils';
 import { PHOTOGRAPHY_QUOTES } from '@/data/photographyQuotes';
 import FilmCanister3D from './FilmCanister3D';
 import {
@@ -455,10 +456,13 @@ export default function CinematicScrollStudio({
   const [isAddFilmOpen, setIsAddFilmOpen] = useState<boolean>(false);
   const [newFilmName, setNewFilmName] = useState<string>('');
   const [newFilmBrand, setNewFilmBrand] = useState<string>('');
+  const [newFilmBrandMode, setNewFilmBrandMode] = useState<string>('');
   const [newFilmType, setNewFilmType] = useState<FilmType>('color_negative');
   const [newFilmFormat, setNewFilmFormat] = useState<FilmFormat>('135');
   const [newFilmIso, setNewFilmIso] = useState<number>(200);
   const [newFilmExpiry, setNewFilmExpiry] = useState<string>('');
+  const [newFilmExpiryYear, setNewFilmExpiryYear] = useState<string>('');
+  const [newFilmExpiryMonth, setNewFilmExpiryMonth] = useState<string>('');
   const [newFilmFreshness, setNewFilmFreshness] = useState<FreshnessStatus>('fresh');
   const [newFilmStorage, setNewFilmStorage] = useState<StorageMethod>('room_temp');
   const [newFilmExpired, setNewFilmExpired] = useState<boolean>(false);
@@ -666,40 +670,48 @@ export default function CinematicScrollStudio({
     const list = [...films];
     const mode = currentSortMode.mode;
 
-    switch (mode) {
-      case 'expiry':
-        return list.sort(
-          (a, b) => new Date(a.expiry_date).getTime() - new Date(b.expiry_date).getTime()
-        );
-      case 'brand':
-        return list.sort(
-          (a, b) => a.brand.localeCompare(b.brand) || a.name.localeCompare(b.name)
-        );
-      case 'type': {
-        const typePriority: Record<FilmType, number> = {
-          color_negative: 1,
-          bw_negative: 2,
-          color_slide: 3,
-          bw_slide: 4,
-          cinema: 5,
-          cinema_ahu: 6,
-          other: 7,
-        };
-        return list.sort(
-          (a, b) =>
+    const compareByMode = (a: FilmItem, b: FilmItem): number => {
+      switch (mode) {
+        case 'expiry':
+          return new Date(a.expiry_date).getTime() - new Date(b.expiry_date).getTime();
+        case 'brand':
+          return a.brand.localeCompare(b.brand) || a.name.localeCompare(b.name);
+        case 'type': {
+          const typePriority: Record<FilmType, number> = {
+            color_negative: 1,
+            bw_negative: 2,
+            color_slide: 3,
+            bw_slide: 4,
+            cinema: 5,
+            cinema_ahu: 6,
+            other: 7,
+          };
+          return (
             (typePriority[a.type] || 99) - (typePriority[b.type] || 99) ||
             a.name.localeCompare(b.name)
-        );
+          );
+        }
+        case 'iso':
+          return a.iso - b.iso || a.name.localeCompare(b.name);
+        case 'quantity':
+          return b.quantity - a.quantity || a.name.localeCompare(b.name);
+        case 'name':
+          return a.name.localeCompare(b.name);
+        default:
+          return 0;
       }
-      case 'iso':
-        return list.sort((a, b) => a.iso - b.iso || a.name.localeCompare(b.name));
-      case 'quantity':
-        return list.sort((a, b) => b.quantity - a.quantity || a.name.localeCompare(b.name));
-      case 'name':
-        return list.sort((a, b) => a.name.localeCompare(b.name));
-      default:
-        return list;
-    }
+    };
+
+    return list.sort((a, b) => {
+      // 0. 소진된 필름 (보유 수량 0 이하)은 어떠한 정렬 기준에도 상관없이 항상 맨 뒤로 배치
+      const aExhausted = (a.quantity ?? 0) <= 0;
+      const bExhausted = (b.quantity ?? 0) <= 0;
+      if (aExhausted !== bExhausted) {
+        return aExhausted ? 1 : -1;
+      }
+
+      return compareByMode(a, b);
+    });
   }, [films, currentSortMode.mode]);
 
   // Handle Cycle Sort Button Click
@@ -1048,9 +1060,9 @@ export default function CinematicScrollStudio({
         ? false
         : newFilmFreshness === 'deep_expired' || newFilmFreshness === 'expired'
         ? true
-        : newFilmExpiry ? newFilmExpiry < todayStr : false;
-
-    let finalExpiry = newFilmExpiry.trim();
+        : false;
+    const ymExpiry = (newFilmExpiryYear && newFilmExpiryMonth ? `${newFilmExpiryYear}-${newFilmExpiryMonth}` : newFilmExpiry).trim();
+    let finalExpiry = sanitizeExpiryDate(ymExpiry);
     if (!finalExpiry) {
       if (newFilmFreshness === 'fresh') finalExpiry = '유통기한 미상 (로리/싱싱)';
       else if (newFilmFreshness === 'deep_expired') finalExpiry = '유통기한 미상 (틀딱/푹썩필)';
@@ -1080,6 +1092,13 @@ export default function CinematicScrollStudio({
     await onSaveFilm(newFilm);
     setSelectedFilmId(newFilm.id);
     setIsAddFilmOpen(false);
+    setNewFilmName('');
+    setNewFilmBrand('');
+    setNewFilmBrandMode('');
+    setNewFilmExpiry('');
+    setNewFilmExpiryYear('');
+    setNewFilmExpiryMonth('');
+    setNewFilmNotes('');
     const freshnessLabel =
       newFilmFreshness === 'fresh'
         ? '🌸 로리 (싱싱)'
@@ -1753,7 +1772,7 @@ export default function CinematicScrollStudio({
               <h3 className="tray-title">{selectedFilm.name}</h3>
               <p className="tray-sub">
                 ISO {selectedFilm.iso} • {selectedFilm.format === '135' ? '35mm' : selectedFilm.format} •{' '}
-                {selectedFilm.frames_per_roll}컷 • 유통기한 {selectedFilm.expiry_date}
+                {selectedFilm.frames_per_roll}컷 • 유통기한 {formatExpiryYYMM(selectedFilm.expiry_date)}
               </p>
             </div>
             <button
@@ -2344,21 +2363,34 @@ export default function CinematicScrollStudio({
         {/* Selected Dev Film Warning & Smart Filter Notice */}
         <div className="chem-filter-banner reveal-on-scroll reveal-delay-2">
           <div className="banner-icon">
-            {isDevFilmBw ? '🖤' : '🌈'}
+            {devType === 'lab' ? '🏢' : isDevFilmBw ? '🖤' : '🌈'}
           </div>
           <div className="banner-text">
-            <strong>
-              {isDevFilmBw
-                ? '흑백 필름 감지: 흑백 전용 현상액만 활성화됨'
-                : '컬러 / 영화용 필름 감지: C-41 / ECN-2 화학 공정 활성화'}
-            </strong>
-            <p>
-              선택된 대상: <strong>{currentDevRoll?.title || selectedFilm?.name}</strong>{' '}
-              ({currentDevFilm?.name || selectedFilm?.name}).{' '}
-              {isDevFilmBw
-                ? '오염 및 유제 손상을 방지하기 위해 컬러 현상액(C-41)은 목록에서 자동으로 제외되었습니다.'
-                : '흑백 현상액은 제외되고 전용 컬러 화학 키트가 표시됩니다.'}
-            </p>
+            {devType === 'lab' ? (
+              <>
+                <strong>현상소 위탁 모드: 전문 사진관 / 현상소 접수</strong>
+                <p>
+                  선택된 대상: <strong>{currentDevRoll?.title || selectedFilm?.name}</strong>{' '}
+                  ({currentDevFilm?.name || selectedFilm?.name}).{' '}
+                  전문 현상소에 맡겨 처리하므로 개인 현상액 약품은 사용되거나 누적되지 않습니다.
+                </p>
+              </>
+            ) : (
+              <>
+                <strong>
+                  {isDevFilmBw
+                    ? '흑백 필름 감지: 흑백 전용 현상액만 활성화됨'
+                    : '컬러 / 영화용 필름 감지: C-41 / ECN-2 화학 공정 활성화'}
+                </strong>
+                <p>
+                  선택된 대상: <strong>{currentDevRoll?.title || selectedFilm?.name}</strong>{' '}
+                  ({currentDevFilm?.name || selectedFilm?.name}).{' '}
+                  {isDevFilmBw
+                    ? '오염 및 유제 손상을 방지하기 위해 컬러 현상액(C-41)은 목록에서 자동으로 제외되었습니다.'
+                    : '흑백 현상액은 제외되고 전용 컬러 화학 키트가 표시됩니다.'}
+                </p>
+              </>
+            )}
           </div>
         </div>
 
@@ -2708,8 +2740,9 @@ export default function CinematicScrollStudio({
           <div className="rig-summary">
             <span className="rig-tag">현상 완료 준비</span>
             <h4>
-              [{currentDevRoll?.title || '선택된 롤'}] 현상 완료 시, 현상액 누적 롤 수가 자동
-              카운트되고 스캔 대기함으로 이동합니다.
+              {devType === 'self'
+                ? `[${currentDevRoll?.title || '선택된 롤'}] 현상 완료 시, 현상액 누적 롤 수가 자동 카운트되고 스캔 대기함으로 이동합니다.`
+                : `[${currentDevRoll?.title || '선택된 롤'}] (${labName || '현상소'}) 위탁 현상 완료 시 스캔 대기함으로 이동합니다.`}
             </h4>
           </div>
           <button
@@ -3578,18 +3611,60 @@ export default function CinematicScrollStudio({
                     required
                   />
                 </div>
-                <div className="field-group" style={{ width: '140px' }}>
+                <div className="field-group" style={{ minWidth: '170px', flex: 1 }}>
                   <label>제조사 브랜드</label>
+                  <select
+                    value={newFilmBrandMode}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setNewFilmBrandMode(val);
+                      if (val !== '__custom__') {
+                        setNewFilmBrand(val);
+                      } else {
+                        setNewFilmBrand('');
+                      }
+                    }}
+                    className="apple-input"
+                    required
+                  >
+                    <option value="" disabled>제조사 선택...</option>
+                    {FILM_BRAND_PRESETS.map((preset) => (
+                      <option key={preset.id} value={preset.name}>
+                        {preset.label}
+                      </option>
+                    ))}
+                    <option value="__custom__">✏️ + 직접 입력 (목록에 없음)</option>
+                  </select>
+                </div>
+              </div>
+
+              {newFilmBrandMode === '__custom__' && (
+                <div className="field-group" style={{ marginTop: '-4px' }}>
+                  <label style={{ fontSize: '0.8rem', color: '#8e8e93' }}>제조사 직접 입력 *</label>
                   <input
                     type="text"
                     value={newFilmBrand}
                     onChange={(e) => setNewFilmBrand(e.target.value)}
-                    placeholder="예: Kodak, Fujifilm"
+                    placeholder="제조사명 직접 입력 (예: ORWO, Lucky, Polaroid)"
                     className="apple-input"
+                    autoFocus
                     required
                   />
                 </div>
-              </div>
+              )}
+
+              {newFilmBrandMode && newFilmBrandMode !== '__custom__' && (() => {
+                const matched = FILM_BRAND_PRESETS.find((p) => p.name === newFilmBrandMode);
+                if (!matched?.logoUrl) return null;
+                return (
+                  <div style={{ marginTop: '-6px', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', color: '#8e8e93' }}>
+                    <div style={{ height: '20px', padding: '2px 6px', background: 'rgba(255,255,255,0.06)', borderRadius: '4px', display: 'flex', alignItems: 'center' }}>
+                      <img src={matched.logoUrl} alt={matched.name} style={{ maxHeight: '14px', maxWidth: '48px', objectFit: 'contain' }} />
+                    </div>
+                    <span>공식 로고 및 브랜드 테마가 자동 적용됩니다</span>
+                  </div>
+                );
+              })()}
 
               <div style={{ display: 'flex', gap: '12px' }}>
                 <div className="field-group flex-1">
@@ -3755,47 +3830,92 @@ export default function CinematicScrollStudio({
                   {newFilmFreshness === 'deep_expired' && '💀 몹시 썩어 상이 거의 안 맺힐 수 있는 푹썩필(틀딱)로 간주합니다. (+2~3스탑 이상 듬뿍 노출 권장)'}
                 </div>
 
-                {/* 정확한 날짜 입력 (선택) */}
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '2px' }}>
-                  <label style={{ margin: 0, fontSize: '0.78rem', color: '#a1a1a6', whiteSpace: 'nowrap' }}>
-                    정확한 날짜(선택):
-                  </label>
-                  <input
-                    type="date"
-                    value={newFilmExpiry.startsWith('유통기한') ? '' : newFilmExpiry}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setNewFilmExpiry(val);
-                      if (val) {
-                        const todayStr = new Date().toISOString().split('T')[0];
-                        if (val < todayStr) {
-                          setNewFilmFreshness('expired');
-                          setNewFilmExpired(true);
-                        } else {
-                          setNewFilmFreshness('fresh');
-                          setNewFilmExpired(false);
-                        }
-                      }
-                    }}
-                    onFocus={(e) => e.target.select()}
-                    className="apple-input"
-                    style={{ flex: 1, padding: '7px 10px', fontSize: '0.82rem' }}
-                  />
-                  {newFilmExpiry && !newFilmExpiry.startsWith('유통기한') && (
-                    <button
-                      type="button"
-                      className="apple-mini-add-btn"
-                      style={{ padding: '6px 10px', height: '34px', fontSize: '0.76rem' }}
-                      onClick={() => {
-                        if (newFilmFreshness === 'fresh') setNewFilmExpiry('유통기한 미상 (로리/싱싱)');
-                        else if (newFilmFreshness === 'deep_expired') setNewFilmExpiry('유통기한 미상 (틀딱/푹썩필)');
-                        else setNewFilmExpiry('유통기한 미상 (노괴/썩필)');
-                      }}
-                      title="입력한 날짜를 지우고 미상 상태 문구로 복원"
-                    >
-                      날짜 지우기
-                    </button>
-                  )}
+                {/* 유통기한 년/월 입력 (일자 제외, YYYY MM 순서, 6자리 연도 방지) */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '2px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <label style={{ margin: 0, fontSize: '0.78rem', color: '#a1a1a6', whiteSpace: 'nowrap' }}>
+                      유통기한 년/월 (선택):
+                    </label>
+                    {(newFilmExpiryYear || newFilmExpiryMonth || (!newFilmExpiry.startsWith('유통기한') && newFilmExpiry)) && (
+                      <button
+                        type="button"
+                        className="apple-mini-add-btn"
+                        style={{ padding: '2px 8px', height: '24px', fontSize: '0.72rem' }}
+                        onClick={() => {
+                          setNewFilmExpiryYear('');
+                          setNewFilmExpiryMonth('');
+                          if (newFilmFreshness === 'fresh') setNewFilmExpiry('유통기한 미상 (로리/싱싱)');
+                          else if (newFilmFreshness === 'deep_expired') setNewFilmExpiry('유통기한 미상 (틀딱/푹썩필)');
+                          else setNewFilmExpiry('유통기한 미상 (노괴/썩필)');
+                        }}
+                      >
+                        날짜 초기화
+                      </button>
+                    )}
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <div style={{ flex: 1 }}>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={4}
+                        placeholder="YYYY 년도 (예: 2026)"
+                        value={newFilmExpiryYear}
+                        onChange={(e) => {
+                          let y = e.target.value.replace(/\D/g, '');
+                          if (y.length > 4) y = y.slice(0, 4); // 6자리 방지!
+                          setNewFilmExpiryYear(y);
+                          if (y && newFilmExpiryMonth) {
+                            const ym = `${y}-${newFilmExpiryMonth}`;
+                            setNewFilmExpiry(ym);
+                            const currentYM = new Date().toISOString().slice(0, 7);
+                            if (ym < currentYM) {
+                              setNewFilmFreshness('expired');
+                              setNewFilmExpired(true);
+                            } else {
+                              setNewFilmFreshness('fresh');
+                              setNewFilmExpired(false);
+                            }
+                          } else if (!y && !newFilmExpiryMonth) {
+                            if (!newFilmExpiry.startsWith('유통기한')) setNewFilmExpiry('');
+                          }
+                        }}
+                        className="apple-input"
+                        style={{ padding: '7px 10px', fontSize: '0.82rem' }}
+                      />
+                    </div>
+                    <div style={{ width: '120px' }}>
+                      <select
+                        value={newFilmExpiryMonth}
+                        onChange={(e) => {
+                          const m = e.target.value;
+                          setNewFilmExpiryMonth(m);
+                          if (newFilmExpiryYear && m) {
+                            const ym = `${newFilmExpiryYear}-${m}`;
+                            setNewFilmExpiry(ym);
+                            const currentYM = new Date().toISOString().slice(0, 7);
+                            if (ym < currentYM) {
+                              setNewFilmFreshness('expired');
+                              setNewFilmExpired(true);
+                            } else {
+                              setNewFilmFreshness('fresh');
+                              setNewFilmExpired(false);
+                            }
+                          } else if (!newFilmExpiryYear && !m) {
+                            if (!newFilmExpiry.startsWith('유통기한')) setNewFilmExpiry('');
+                          }
+                        }}
+                        className="apple-input"
+                        style={{ padding: '7px 10px', fontSize: '0.82rem' }}
+                      >
+                        <option value="">월 선택 (MM)</option>
+                        {Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0')).map((m) => (
+                          <option key={m} value={m}>{m}월</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
                 </div>
               </div>
 

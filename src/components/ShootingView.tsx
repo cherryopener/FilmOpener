@@ -87,10 +87,20 @@ export default function ShootingView({
     return cameras.find((c) => c.id === cameraId);
   }, [cameras, cameraId]);
 
+  // Sorted films for selection: in-stock films first, exhausted films at bottom
+  const sortedFilmsForSelection = useMemo(() => {
+    return [...films].sort((a, b) => {
+      const aExhausted = (a.quantity ?? 0) <= 0;
+      const bExhausted = (b.quantity ?? 0) <= 0;
+      if (aExhausted !== bExhausted) return aExhausted ? 1 : -1;
+      return a.name.localeCompare(b.name, 'ko-KR');
+    });
+  }, [films]);
+
   const openAddModal = () => {
     setEditingRoll(null);
     setTitle('');
-    setFilmId(films[0]?.id || '');
+    setFilmId(sortedFilmsForSelection.find((f) => (f.quantity ?? 0) > 0)?.id || sortedFilmsForSelection[0]?.id || '');
     setCameraId(availableCameras[0]?.id || '');
     setLensId(lenses[0]?.id || '');
     const today = new Date().toISOString().split('T')[0];
@@ -608,9 +618,9 @@ export default function ShootingView({
                       onChange={(e) => setFilmId(e.target.value)}
                       required
                     >
-                      {films.map((f) => (
+                      {sortedFilmsForSelection.map((f) => (
                         <option key={f.id} value={f.id}>
-                          {f.name} ({f.brand}, ISO {f.iso}, 잔여 {f.quantity}롤)
+                          {f.name} ({f.brand}, ISO {f.iso}, {(f.quantity ?? 0) <= 0 ? '❌ 소진됨' : `잔여 ${f.quantity}롤`})
                         </option>
                       ))}
                       {films.length === 0 && <option value="">보유 필름 없음</option>}

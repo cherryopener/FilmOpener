@@ -2,8 +2,9 @@
 
 import React, { useState, useMemo } from 'react';
 import { FilmItem, FilmType, FilmFormat, StorageMethod, FreshnessStatus } from '@/types';
-import { FILM_TYPE_CONFIG, FILM_FORMAT_CONFIG, STORAGE_METHOD_CONFIG } from '@/lib/constants';
+import { FILM_TYPE_CONFIG, FILM_FORMAT_CONFIG, STORAGE_METHOD_CONFIG, FILM_BRAND_PRESETS } from '@/lib/constants';
 import { getBrandTheme } from '@/lib/brandConfig';
+import { formatExpiryYYMM, sanitizeExpiryDate, parseYearAndMonth } from '@/lib/dateUtils';
 import { Plus, Search, Layers, Snowflake, AlertTriangle, Tag, Sparkles, Edit2, Trash2 } from 'lucide-react';
 
 interface FilmVaultViewProps {
@@ -26,10 +27,13 @@ export default function FilmVaultView({ films, onSaveFilm, onDeleteFilm }: FilmV
   // Form State
   const [name, setName] = useState('');
   const [brand, setBrand] = useState('');
+  const [brandSelectMode, setBrandSelectMode] = useState<string>('');
   const [type, setType] = useState<FilmType>('color_negative');
   const [format, setFormat] = useState<FilmFormat>('135');
   const [iso, setIso] = useState<number>(400);
   const [expiryDate, setExpiryDate] = useState('');
+  const [expiryYear, setExpiryYear] = useState('');
+  const [expiryMonth, setExpiryMonth] = useState('');
   const [freshnessStatus, setFreshnessStatus] = useState<FreshnessStatus>('fresh');
   const [storageMethod, setStorageMethod] = useState<StorageMethod>('room_temp');
   const [isBulkRolled, setIsBulkRolled] = useState(false);
@@ -44,10 +48,13 @@ export default function FilmVaultView({ films, onSaveFilm, onDeleteFilm }: FilmV
     setEditingFilm(null);
     setName('');
     setBrand('');
+    setBrandSelectMode('');
     setType('color_negative');
     setFormat('135');
     setIso(400);
     setExpiryDate('');
+    setExpiryYear('');
+    setExpiryMonth('');
     setFreshnessStatus('fresh');
     setStorageMethod('room_temp');
     setIsBulkRolled(false);
@@ -63,11 +70,29 @@ export default function FilmVaultView({ films, onSaveFilm, onDeleteFilm }: FilmV
   const openEditModal = (film: FilmItem) => {
     setEditingFilm(film);
     setName(film.name);
-    setBrand(film.brand);
+
+    const rawBrand = (film.brand || '').trim();
+    const matchedPreset = FILM_BRAND_PRESETS.find(
+      (p) =>
+        p.name.toLowerCase() === rawBrand.toLowerCase() ||
+        p.id === rawBrand.toLowerCase()
+    );
+    if (matchedPreset) {
+      setBrandSelectMode(matchedPreset.name);
+      setBrand(matchedPreset.name);
+    } else {
+      setBrandSelectMode('__custom__');
+      setBrand(rawBrand);
+    }
+
     setType(film.type);
     setFormat(film.format);
     setIso(film.iso);
-    setExpiryDate(film.expiry_date || '');
+    const cleanExpiry = sanitizeExpiryDate(film.expiry_date || '');
+    setExpiryDate(cleanExpiry);
+    const { year: parsedY, month: parsedM } = parseYearAndMonth(cleanExpiry);
+    setExpiryYear(parsedY);
+    setExpiryMonth(parsedM);
     setFreshnessStatus(
       film.freshness_status ||
       (film.expiry_date?.includes('틀딱') ? 'deep_expired' : film.is_expired ? 'expired' : 'fresh')
@@ -98,7 +123,9 @@ export default function FilmVaultView({ films, onSaveFilm, onDeleteFilm }: FilmV
         ? true
         : isExpired || (expiryDate ? expiryDate < todayStr : false);
 
-    let finalExpiry = expiryDate.trim();
+    let finalExpiry = sanitizeExpiryDate(
+      (expiryYear && expiryMonth ? `${expiryYear}-${expiryMonth}` : expiryDate).trim()
+    );
     if (!finalExpiry) {
       if (freshnessStatus === 'fresh') finalExpiry = '유통기한 미상 (로리/싱싱)';
       else if (freshnessStatus === 'deep_expired') finalExpiry = '유통기한 미상 (틀딱/푹썩필)';
@@ -155,6 +182,13 @@ export default function FilmVaultView({ films, onSaveFilm, onDeleteFilm }: FilmV
 
   const sortedFilms = useMemo(() => {
     return [...filteredFilms].sort((a, b) => {
+      // 0. 소진된 필름 (보유 수량 0 이하)은 어떠한 정렬 기준에도 상관없이 항상 맨 뒤로 배치
+      const aExhausted = (a.quantity ?? 0) <= 0;
+      const bExhausted = (b.quantity ?? 0) <= 0;
+      if (aExhausted !== bExhausted) {
+        return aExhausted ? 1 : -1;
+      }
+
       if (sortBy === 'brand') {
         return a.brand.localeCompare(b.brand, 'ko-KR');
       }
@@ -369,12 +403,15 @@ export default function FilmVaultView({ films, onSaveFilm, onDeleteFilm }: FilmV
                   film.expiry_date < new Date().toISOString().split('T')[0]));
             const isFresh = !isDeepExpired && !isRotten;
 
+            const isExhausted = (film.quantity ?? 0) <= 0;
+
             return (
               <div
                 key={film.id}
-                className="item-card"
+                className={`item-card ${isExhausted ? 'exhausted-card' : ''}`}
                 style={{
-                  borderTop: `3px solid ${brandTheme.primaryColor}`,
+                  borderTop: `3px solid ${isExhausted ? 'var(--border-subtle)' : brandTheme.primaryColor}`,
+                  opacity: isExhausted ? 0.65 : 1,
                 }}
               >
                 {/* Brand Top Header with Logo & Brand Colors */}
@@ -436,13 +473,29 @@ export default function FilmVaultView({ films, onSaveFilm, onDeleteFilm }: FilmV
                         fontFamily: 'var(--font-mono)',
                         fontSize: '1.3rem',
                         fontWeight: '700',
-                        color: 'var(--accent-amber-light)',
+                        color: isExhausted ? 'var(--text-dim)' : 'var(--accent-amber-light)',
                         lineHeight: 1,
                       }}
                     >
                       {film.quantity}
                       <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}> 롤</span>
                     </div>
+                    {isExhausted && (
+                      <span
+                        style={{
+                          display: 'inline-block',
+                          marginTop: '4px',
+                          fontSize: '0.68rem',
+                          fontWeight: '700',
+                          padding: '1px 6px',
+                          borderRadius: '4px',
+                          background: 'rgba(239, 68, 68, 0.15)',
+                          color: '#ef4444',
+                        }}
+                      >
+                        소진됨
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -543,8 +596,9 @@ export default function FilmVaultView({ films, onSaveFilm, onDeleteFilm }: FilmV
                             color: isDeepExpired ? '#f87171' : isRotten ? '#fbbf24' : 'var(--text-main)',
                             fontWeight: isDeepExpired || isRotten ? 600 : 500,
                           }}
+                          title={film.expiry_date || '유통기한 미기재'}
                         >
-                          {film.expiry_date || '유통기한 미기재'}
+                          {formatExpiryYYMM(film.expiry_date)}
                         </span>
                       </span>
                     </span>
@@ -650,14 +704,54 @@ export default function FilmVaultView({ films, onSaveFilm, onDeleteFilm }: FilmV
                   </div>
                   <div className="form-group">
                     <label className="form-label">제조사 (회사) *</label>
-                    <input
-                      className="form-input"
-                      type="text"
-                      placeholder="예: Fujifilm, Kodak, Agfa, Ilford, Foma"
-                      value={brand}
-                      onChange={(e) => setBrand(e.target.value)}
+                    <select
+                      className="form-select"
+                      value={brandSelectMode}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setBrandSelectMode(val);
+                        if (val !== '__custom__') {
+                          setBrand(val);
+                        } else {
+                          setBrand('');
+                        }
+                      }}
                       required
-                    />
+                    >
+                      <option value="" disabled>제조사 선택...</option>
+                      {FILM_BRAND_PRESETS.map((preset) => (
+                        <option key={preset.id} value={preset.name}>
+                          {preset.label}
+                        </option>
+                      ))}
+                      <option value="__custom__">✏️ + 직접 입력 (목록에 없음)</option>
+                    </select>
+
+                    {brandSelectMode === '__custom__' && (
+                      <input
+                        className="form-input"
+                        style={{ marginTop: '8px' }}
+                        type="text"
+                        placeholder="제조사명 직접 입력 (예: ORWO, Lucky, Polaroid)"
+                        value={brand}
+                        onChange={(e) => setBrand(e.target.value)}
+                        autoFocus
+                        required
+                      />
+                    )}
+
+                    {brandSelectMode && brandSelectMode !== '__custom__' && (() => {
+                      const matched = FILM_BRAND_PRESETS.find((p) => p.name === brandSelectMode);
+                      if (!matched?.logoUrl) return null;
+                      return (
+                        <div style={{ marginTop: '6px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', color: '#8e8e93' }}>
+                          <div style={{ height: '22px', padding: '2px 6px', background: 'rgba(255,255,255,0.06)', borderRadius: '4px', display: 'flex', alignItems: 'center' }}>
+                            <img src={matched.logoUrl} alt={matched.name} style={{ maxHeight: '16px', maxWidth: '52px', objectFit: 'contain' }} />
+                          </div>
+                          <span>공식 로고 및 브랜드 테마 자동 연동</span>
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
 
@@ -866,16 +960,20 @@ export default function FilmVaultView({ films, onSaveFilm, onDeleteFilm }: FilmV
                 {/* 유통기한 & 보관방법 */}
                 <div className="form-row">
                   <div className="form-group">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <label className="form-label">정확한 유통기한 (선택 사항)</label>
-                      {expiryDate && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                      <label className="form-label" style={{ marginBottom: 0 }}>유통기한 (년/월) *선택사항</label>
+                      {(expiryYear || expiryMonth || expiryDate) && (
                         <button
                           type="button"
-                          onClick={() => setExpiryDate('')}
+                          onClick={() => {
+                            setExpiryDate('');
+                            setExpiryYear('');
+                            setExpiryMonth('');
+                          }}
                           style={{
                             background: 'none',
                             border: 'none',
-                            fontSize: '0.7rem',
+                            fontSize: '0.72rem',
                             color: 'var(--text-muted)',
                             cursor: 'pointer',
                             textDecoration: 'underline',
@@ -886,15 +984,70 @@ export default function FilmVaultView({ films, onSaveFilm, onDeleteFilm }: FilmV
                         </button>
                       )}
                     </div>
-                    <input
-                      className="form-input"
-                      type="text"
-                      placeholder="YYYY-MM-DD 또는 버튼 선택값"
-                      value={expiryDate}
-                      onChange={(e) => setExpiryDate(e.target.value)}
-                    />
+
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <div style={{ flex: 1 }}>
+                        <input
+                          className="form-input"
+                          type="text"
+                          inputMode="numeric"
+                          maxLength={4}
+                          placeholder="YYYY 년도 (예: 2026)"
+                          value={expiryYear}
+                          onChange={(e) => {
+                            let y = e.target.value.replace(/\D/g, '');
+                            if (y.length > 4) y = y.slice(0, 4); // 6자리 방지!
+                            setExpiryYear(y);
+                            if (y && expiryMonth) {
+                              const ym = `${y}-${expiryMonth}`;
+                              setExpiryDate(ym);
+                              const currentYM = new Date().toISOString().slice(0, 7);
+                              if (ym < currentYM) {
+                                if (freshnessStatus === 'fresh') setFreshnessStatus('expired');
+                                setIsExpired(true);
+                              } else {
+                                if (freshnessStatus === 'expired') setFreshnessStatus('fresh');
+                                setIsExpired(false);
+                              }
+                            } else if (!y && !expiryMonth) {
+                              if (!expiryDate.startsWith('유통기한')) setExpiryDate('');
+                            }
+                          }}
+                        />
+                      </div>
+                      <div style={{ width: '120px' }}>
+                        <select
+                          className="form-select"
+                          value={expiryMonth}
+                          onChange={(e) => {
+                            const m = e.target.value;
+                            setExpiryMonth(m);
+                            if (expiryYear && m) {
+                              const ym = `${expiryYear}-${m}`;
+                              setExpiryDate(ym);
+                              const currentYM = new Date().toISOString().slice(0, 7);
+                              if (ym < currentYM) {
+                                if (freshnessStatus === 'fresh') setFreshnessStatus('expired');
+                                setIsExpired(true);
+                              } else {
+                                if (freshnessStatus === 'expired') setFreshnessStatus('fresh');
+                                setIsExpired(false);
+                              }
+                            } else if (!expiryYear && !m) {
+                              if (!expiryDate.startsWith('유통기한')) setExpiryDate('');
+                            }
+                          }}
+                        >
+                          <option value="">월 선택 (MM)</option>
+                          {Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0')).map((m) => (
+                            <option key={m} value={m}>{m}월</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
                     <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>
-                      * 날짜를 모르면 비워두시거나 위의 [로리 / 노괴 / 틀딱] 버튼을 누르시면 됩니다.
+                      * 일자 없이 <strong>년도(YYYY)와 월(MM)</strong>만 순서대로 기록됩니다. 날짜를 모르면 위의 [로리/노괴/틀딱]을 누르세요.
                     </span>
                   </div>
 

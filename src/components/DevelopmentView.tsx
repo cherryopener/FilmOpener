@@ -82,6 +82,7 @@ export default function DevelopmentView({
 
   // Self Development Details
   const [developerId, setDeveloperId] = useState('');
+  const [customDeveloperName, setCustomDeveloperName] = useState('');
   const [devQuantityRolls, setDevQuantityRolls] = useState<number>(1);
   const [devMethod, setDevMethod] = useState<AgitationMethod>('inversion');
   const [dilutionRatio, setDilutionRatio] = useState('Stock');
@@ -97,7 +98,7 @@ export default function DevelopmentView({
   // Quick Post-Save Toast / Notice
   const [lastDevelopedRoll, setLastDevelopedRoll] = useState<ShootingRoll | null>(null);
 
-  // Rolls pending development
+  // Rolls pending development: strictly unloaded rolls (오직 카메라에서 필름을 뺀 롤만)
   const pendingRolls = useMemo(() => {
     return rolls.filter((r) => r.status === 'unloaded');
   }, [rolls]);
@@ -113,8 +114,8 @@ export default function DevelopmentView({
       const target = rolls.find((r) => r.id === initialRollId);
       if (target) {
         openDevModalForRoll(target);
+        onClearInitialRollId?.();
       }
-      onClearInitialRollId?.();
     }
   }, [initialRollId, rolls, onClearInitialRollId]);
 
@@ -127,12 +128,20 @@ export default function DevelopmentView({
     setExternalFormat('135');
     setExternalIso(400);
 
-    // Chemistry fields
     const today = new Date().toISOString().split('T')[0];
     setDevType(roll.dev_type !== 'none' ? roll.dev_type : 'self');
     setDevelopedDate(roll.developed_date || today);
     setLabName(roll.lab_name || '');
-    setDeveloperId(roll.developer_id || developers[0]?.id || '');
+    if (roll.developer_id && developers.some((d) => d.id === roll.developer_id)) {
+      setDeveloperId(roll.developer_id);
+      setCustomDeveloperName('');
+    } else if (roll.developer_name_snapshot) {
+      setDeveloperId('__custom__');
+      setCustomDeveloperName(roll.developer_name_snapshot);
+    } else {
+      setDeveloperId(developers[0]?.id || (developers.length === 0 ? '__custom__' : ''));
+      setCustomDeveloperName('');
+    }
     setDevQuantityRolls(roll.dev_quantity_rolls || 1);
     setDevMethod(roll.dev_method || 'inversion');
 
@@ -177,7 +186,13 @@ export default function DevelopmentView({
     setDevType('self');
     setDevelopedDate(today);
     setLabName('');
-    setDeveloperId(developers[0]?.id || '');
+    if (developers.length > 0) {
+      setDeveloperId(developers[0].id);
+      setCustomDeveloperName('');
+    } else {
+      setDeveloperId('__custom__');
+      setCustomDeveloperName('');
+    }
     setDevQuantityRolls(1);
     setDevMethod('inversion');
     setDilutionRatio('Stock');
@@ -202,10 +217,12 @@ export default function DevelopmentView({
     }
 
     const effectiveDilution = dilutionRatio === '기타 직접입력' ? customDilution.trim() || '커스텀 희석' : dilutionRatio;
-    const selectedDevObj = developers.find((d) => d.id === developerId);
+    const isCustomDev = developerId === '__custom__' || developers.length === 0;
+    const selectedDevObj = !isCustomDev ? developers.find((d) => d.id === developerId) : undefined;
+    const finalDevName = isCustomDev ? customDeveloperName.trim() : (selectedDevObj?.name || '');
 
-    if (devType === 'self' && developers.length > 0 && !developerId) {
-      alert('자가 현상에 사용할 현상액을 선택해주세요.');
+    if (devType === 'self' && !finalDevName && !developerId) {
+      alert('자가 현상에 사용할 현상액을 선택하거나 입력해주세요.');
       return;
     }
 
@@ -213,7 +230,8 @@ export default function DevelopmentView({
     let previousRollState: ShootingRoll | undefined = undefined;
 
     if (rollSelectionMode === 'pending_roll') {
-      const found = rolls.find((r) => r.id === (editingRoll ? editingRoll.id : selectedPendingRollId));
+      const targetRollId = (editingRoll ? editingRoll.id : selectedPendingRollId) || pendingRolls[0]?.id;
+      const found = rolls.find((r) => r.id === targetRollId);
       if (!found) {
         alert('현상할 필름 롤을 선택해주세요.');
         return;
@@ -222,11 +240,12 @@ export default function DevelopmentView({
       targetRoll = {
         ...found,
         status: 'developed',
+        unloaded_date: found.unloaded_date || developedDate,
         dev_type: devType,
         developed_date: developedDate,
         lab_name: devType === 'lab' ? labName.trim() || undefined : undefined,
-        developer_id: devType === 'self' ? developerId || undefined : undefined,
-        developer_name_snapshot: devType === 'self' ? selectedDevObj?.name : undefined,
+        developer_id: devType === 'self' && !isCustomDev ? developerId || undefined : undefined,
+        developer_name_snapshot: devType === 'self' ? (finalDevName || selectedDevObj?.name || '자가 현상액') : undefined,
         dev_method: devType === 'self' ? devMethod : undefined,
         dilution_ratio: devType === 'self' ? effectiveDilution : undefined,
         dev_quantity_rolls: devType === 'self' ? Number(devQuantityRolls) || 1 : 1,
@@ -296,9 +315,9 @@ export default function DevelopmentView({
     return source.filter((r) => {
       const q = search.toLowerCase();
       const matchQ =
-        r.title.toLowerCase().includes(q) ||
-        r.film_name_snapshot.toLowerCase().includes(q) ||
-        r.camera_name_snapshot.toLowerCase().includes(q) ||
+        (r.title || '').toLowerCase().includes(q) ||
+        (r.film_name_snapshot || '').toLowerCase().includes(q) ||
+        (r.camera_name_snapshot || '').toLowerCase().includes(q) ||
         (r.developer_name_snapshot && r.developer_name_snapshot.toLowerCase().includes(q)) ||
         (r.lab_name && r.lab_name.toLowerCase().includes(q));
 
@@ -315,7 +334,7 @@ export default function DevelopmentView({
   }, [rolls, pendingRolls, developedRolls, activeSubTab, search, devTypeFilter]);
 
   return (
-    <div className="view-container">
+    <div className="content-body">
       {/* 4 Apple-style Minimal Stat Cards */}
       <div className="stats-grid">
         <div
@@ -333,7 +352,10 @@ export default function DevelopmentView({
         <div
           className="stat-card"
           style={{ '--stat-accent': '#a855f7', cursor: 'pointer' } as React.CSSProperties}
-          onClick={() => setActiveSubTab('developed')}
+          onClick={() => {
+            setActiveSubTab('all');
+            setDevTypeFilter('self');
+          }}
         >
           <div className="stat-label">
             <Sparkles size={15} /> 자가 현상 누적
@@ -342,7 +364,14 @@ export default function DevelopmentView({
           <div className="stat-desc">다크룸 직접 현상 기록</div>
         </div>
 
-        <div className="stat-card" style={{ '--stat-accent': '#f59e0b' } as React.CSSProperties}>
+        <div
+          className="stat-card"
+          style={{ '--stat-accent': '#f59e0b', cursor: 'pointer' } as React.CSSProperties}
+          onClick={() => {
+            setActiveSubTab('all');
+            setDevTypeFilter('lab');
+          }}
+        >
           <div className="stat-label">
             <Building2 size={15} /> 현상소 위탁 누적
           </div>
@@ -378,7 +407,10 @@ export default function DevelopmentView({
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <CheckCircle size={17} color="#10b981" />
             <div style={{ fontSize: '0.85rem', color: 'var(--text-main)' }}>
-              <strong>‘{lastDevelopedRoll.title}’</strong> 현상이 완료되었습니다! (현상액 누적 롤 수 반영 완료)
+              <strong>‘{lastDevelopedRoll.title}’</strong> 현상이 완료되었습니다!{' '}
+              {lastDevelopedRoll.dev_type === 'self'
+                ? '(현상액 누적 롤 수 반영 완료)'
+                : '(현상소 위탁 완료, 스캔 대기 목록 등록)'}
             </div>
           </div>
           <div style={{ display: 'flex', gap: '8px' }}>
@@ -502,7 +534,7 @@ export default function DevelopmentView({
                   <div className="card-title-group">
                     <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
                       <span className={statusClass}>
-                        ● {isPending ? '현상 대기 (Pending)' : isDeveloped ? '현상 완료 (스캔 대기)' : isScanned ? '스캔 완료 (Archive)' : '촬영 중'}
+                        ● {roll.status === 'unloaded' ? '현상 대기 (촬영 종료)' : roll.status === 'loaded' ? '촬영 중' : isDeveloped ? '현상 완료 (스캔 대기)' : isScanned ? '스캔 완료 (Archive)' : '대기 중'}
                       </span>
                       {roll.is_external_roll && (
                         <span className="notion-tag" style={{ background: 'rgba(245, 158, 11, 0.12)', color: '#d97706' }}>
@@ -573,7 +605,7 @@ export default function DevelopmentView({
                   >
                     <div style={{ color: '#c084fc', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <FlaskConical size={14} />
-                      현상 레시피: <strong>{roll.developer_name_snapshot || '지정 현상액'}</strong> (희석 {roll.dilution_ratio})
+                      현상 레시피: <strong>{roll.developer_name_snapshot || '지정 현상액'}</strong> {roll.dilution_ratio ? `(희석 ${roll.dilution_ratio})` : ''}
                     </div>
                     <div style={{ color: 'var(--text-main)', fontSize: '0.78rem', lineHeight: '1.45' }}>
                       <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
@@ -584,7 +616,7 @@ export default function DevelopmentView({
                           시간: <strong>{roll.dev_time || '-'}</strong>
                         </span>
                         <span>
-                          방식: <strong>{roll.dev_method ? (AGITATION_METHOD_CONFIG[roll.dev_method]?.label || roll.dev_method) : '-'}</strong>
+                          방식: <strong>{roll.dev_method ? (AGITATION_METHOD_CONFIG[roll.dev_method]?.label || roll.dev_method) : '수교반'}</strong>
                         </span>
                         <span>
                           동시현상: <strong>{roll.dev_quantity_rolls || 1}롤</strong>
@@ -687,8 +719,8 @@ export default function DevelopmentView({
               <button className="btn btn-subtle btn-icon" onClick={() => setIsModalOpen(false)}>✕</button>
             </div>
 
-            <form onSubmit={handleSubmit}>
-              <div className="modal-body">
+            <form onSubmit={handleSubmit} className="modal-form" style={{ display: 'flex', flexDirection: 'column', flex: '1 1 auto', minHeight: 0, overflow: 'hidden' }}>
+              <div className="modal-body" style={{ flex: '1 1 auto', minHeight: 0, overflowY: 'auto' }}>
                 {/* 1. 대상 필름 선택 (현상 대기 롤 vs 목록 외 필름) */}
                 {!editingRoll && (
                   <div style={{ border: '1px solid var(--border-normal)', borderRadius: '10px', padding: '14px', background: 'rgba(255,255,255,0.015)' }}>
@@ -719,13 +751,13 @@ export default function DevelopmentView({
                         <label className="form-label">현상할 필름 롤 *</label>
                         <select
                           className="form-select"
-                          value={selectedPendingRollId}
+                          value={selectedPendingRollId || pendingRolls[0]?.id || ''}
                           onChange={(e) => setSelectedPendingRollId(e.target.value)}
                           required
                         >
                           {pendingRolls.map((r) => (
                             <option key={r.id} value={r.id}>
-                              {r.title} - {r.film_name_snapshot} ({r.camera_name_snapshot}, 뺀 날: {r.unloaded_date || '-'})
+                              {r.title} - {r.film_name_snapshot || '필름'} ({r.camera_name_snapshot || '카메라'}, 촬영종료: {r.unloaded_date || '-'})
                             </option>
                           ))}
                         </select>
@@ -848,20 +880,59 @@ export default function DevelopmentView({
 
                     <div className="form-row">
                       <div className="form-group">
-                        <label className="form-label">사용한 현상액 (라이브러리 연동) *</label>
-                        <select
-                          className="form-select"
-                          value={developerId}
-                          onChange={(e) => setDeveloperId(e.target.value)}
-                          required
-                        >
-                          {developers.map((d) => (
-                            <option key={d.id} value={d.id}>
-                              {d.name} ({d.manufacturer}, {d.type}) - 누적 {d.total_rolls_processed}롤 사용됨
-                            </option>
-                          ))}
-                          {developers.length === 0 && <option value="">등록된 현상액이 없습니다 (현상액 관리에서 먼저 등록 권장)</option>}
-                        </select>
+                        <label className="form-label">사용한 현상액 *</label>
+                        {developers.length > 0 ? (
+                          <>
+                            <select
+                              className="form-select"
+                              value={developerId}
+                              onChange={(e) => {
+                                setDeveloperId(e.target.value);
+                                if (e.target.value !== '__custom__') {
+                                  const obj = developers.find((d) => d.id === e.target.value);
+                                  setCustomDeveloperName(obj ? obj.name : '');
+                                } else {
+                                  setCustomDeveloperName('');
+                                }
+                              }}
+                              required
+                            >
+                              {developers.map((d) => (
+                                <option key={d.id} value={d.id}>
+                                  {d.name} ({d.manufacturer}, {d.type}) - 누적 {d.total_rolls_processed}롤 사용됨
+                                </option>
+                              ))}
+                              <option value="__custom__">✏️ + 직접 입력 (목록 외 / 신규 현상액)</option>
+                            </select>
+
+                            {developerId === '__custom__' && (
+                              <input
+                                className="form-input"
+                                style={{ marginTop: '8px' }}
+                                type="text"
+                                placeholder="현상액명 직접 입력 (예: Kodak D-76, Rodinal, Ilford ID-11)"
+                                value={customDeveloperName}
+                                onChange={(e) => setCustomDeveloperName(e.target.value)}
+                                autoFocus
+                                required
+                              />
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            <input
+                              className="form-input"
+                              type="text"
+                              placeholder="현상액명 직접 입력 (예: Kodak D-76, Rodinal, Ilford ID-11)"
+                              value={customDeveloperName}
+                              onChange={(e) => setCustomDeveloperName(e.target.value)}
+                              required
+                            />
+                            <span style={{ fontSize: '0.72rem', color: 'var(--text-dim)', marginTop: '4px', display: 'block' }}>
+                              💡 현상액 관리 탭에서 약품을 미리 등록해두시면 누적 롤 수 추적 및 원액 잔여량이 자동 연동됩니다.
+                            </span>
+                          </>
+                        )}
                       </div>
 
                       <div className="form-group">
@@ -1061,8 +1132,16 @@ export default function DevelopmentView({
                 <div className="notion-callout" style={{ background: 'rgba(59, 130, 246, 0.08)', borderColor: 'rgba(59, 130, 246, 0.25)' }}>
                   <Info size={16} color="var(--accent-blue)" style={{ flexShrink: 0 }} />
                   <div style={{ fontSize: '0.78rem', color: 'var(--text-main)', lineHeight: '1.45' }}>
-                    현상 완료 저장을 누르면 현상액 관리에 누적 롤 수가 즉시 가산되며,
-                    이 롤은 <strong>[필름 스캔 관리]</strong> 탭의 스캔 대기 목록에 자동으로 등록됩니다.
+                    {devType === 'self' ? (
+                      <>
+                        현상 완료 저장을 누르면 현상액 관리에 누적 롤 수가 즉시 가산되며,
+                        이 롤은 <strong>[필름 스캔 관리]</strong> 탭의 스캔 대기 목록에 자동으로 등록됩니다.
+                      </>
+                    ) : (
+                      <>
+                        현상 완료 저장을 누르면 이 롤은 <strong>[필름 스캔 관리]</strong> 탭의 스캔 대기 목록에 자동으로 등록됩니다. (현상소 위탁으로 개인 약품 누적 없음)
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1072,7 +1151,11 @@ export default function DevelopmentView({
                   취소
                 </button>
                 <button type="submit" className="btn btn-primary" style={{ background: 'var(--accent-purple)', borderColor: 'var(--accent-purple)' }}>
-                  {editingRoll ? '현상 레시피 수정 완료' : '현상 완료 저장 (약품 누적 반영)'}
+                  {editingRoll
+                    ? '현상 레시피 수정 완료'
+                    : devType === 'self'
+                      ? '현상 완료 저장 (약품 누적 반영)'
+                      : '현상 완료 저장'}
                 </button>
               </div>
             </form>

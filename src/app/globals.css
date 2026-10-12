@@ -400,7 +400,8 @@ html, body {
 }
 
 /* Content Container with Apple Generous Whitespace */
-.content-body {
+.content-body,
+.view-container {
   padding: 24px 20px;
   max-width: 1440px;
   width: 100%;
@@ -411,7 +412,8 @@ html, body {
 }
 
 @media (min-width: 768px) {
-  .content-body {
+  .content-body,
+  .view-container {
     padding: 32px 36px;
     gap: 28px;
   }
@@ -947,7 +949,7 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 100;
+  z-index: 2000;
   padding: 16px;
   animation: fadeIn 0.18s ease;
   cursor: default;
@@ -959,13 +961,23 @@ html, body {
   border-radius: var(--radius-xl);
   width: 100%;
   max-width: 640px;
-  max-height: 90vh;
+  max-height: min(90vh, calc(100dvh - 32px));
   display: flex;
   flex-direction: column;
   box-shadow: var(--shadow-lg);
   animation: slideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1);
   overflow: hidden;
   position: relative;
+}
+
+/* Modal form flexbox constraint - prevents form from breaking out of dialog bounds */
+.modal-dialog > form,
+.modal-form {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .modal-header {
@@ -975,6 +987,7 @@ html, body {
   align-items: center;
   justify-content: space-between;
   background: var(--bg-card-subtle);
+  flex-shrink: 0;
 }
 
 .modal-header h2 {
@@ -987,9 +1000,33 @@ html, body {
 .modal-body {
   padding: 24px;
   overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1 1 auto;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 18px;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-normal) transparent;
+}
+
+.modal-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.modal-body::-webkit-scrollbar-thumb {
+  background: var(--border-normal);
+  border-radius: 999px;
+}
+
+.modal-body::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
 }
 
 .modal-footer {
@@ -1000,6 +1037,7 @@ html, body {
   align-items: center;
   justify-content: flex-end;
   gap: 10px;
+  flex-shrink: 0;
 }
 
 /* Form Styles */
@@ -1819,6 +1857,16 @@ html, body {
 
 .canister-slot-container.selected {
   transform: translateY(-12px) scale(1.04);
+}
+
+.canister-slot-container.exhausted {
+  opacity: 0.58;
+  filter: grayscale(0.25) saturate(0.85);
+}
+
+.canister-slot-container.exhausted:hover {
+  opacity: 0.95;
+  filter: none;
 }
 
 .canister-wrapper {

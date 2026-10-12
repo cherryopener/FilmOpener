@@ -81,6 +81,60 @@ export const BRAND_CONFIGS: Record<string, BrandTheme> = {
     borderColor: 'rgba(196, 30, 58, 0.45)',
     logoUrl: '/logos/rollei_logo.png',
   },
+  adox: {
+    name: 'Adox',
+    primaryColor: '#005596',   // Adox Classic Royal Blue
+    secondaryColor: '#E11D48', // Ruby Accent
+    textColor: '#ffffff',
+    accentBg: 'rgba(0, 85, 150, 0.16)',
+    borderColor: 'rgba(0, 85, 150, 0.45)',
+    logoUrl: '/logos/adox_logo.png',
+  },
+  leica: {
+    name: 'Leica',
+    primaryColor: '#E30613',   // Leica Iconic Red Dot
+    secondaryColor: '#1A1A1A', // Minimalist Black
+    textColor: '#ffffff',
+    accentBg: 'rgba(227, 6, 19, 0.14)',
+    borderColor: 'rgba(227, 6, 19, 0.45)',
+    logoUrl: '/logos/leica_logo.png',
+  },
+  svema: {
+    name: 'Svema',
+    primaryColor: '#2B5797',   // Svema Vintage Blue
+    secondaryColor: '#FF6F00', // Amber Accent
+    textColor: '#ffffff',
+    accentBg: 'rgba(43, 87, 151, 0.16)',
+    borderColor: 'rgba(43, 87, 151, 0.45)',
+    logoUrl: '/logos/svema_logo.jpg',
+  },
+  lucky: {
+    name: 'Lucky',
+    primaryColor: '#D71920',   // Lucky Vivid Red
+    secondaryColor: '#FFD100', // Lucky Gold
+    textColor: '#ffffff',
+    accentBg: 'rgba(215, 25, 32, 0.16)',
+    borderColor: 'rgba(215, 25, 32, 0.45)',
+    logoUrl: '/logos/lucky_logo.png',
+  },
+  orwo: {
+    name: 'ORWO',
+    primaryColor: '#004F9F',   // ORWO Classic Cobalt Blue
+    secondaryColor: '#FFB81C', // Amber Accent
+    textColor: '#ffffff',
+    accentBg: 'rgba(0, 79, 159, 0.16)',
+    borderColor: 'rgba(0, 79, 159, 0.45)',
+    logoUrl: '/logos/orwo_Logo.png',
+  },
+  polaroid: {
+    name: 'Polaroid',
+    primaryColor: '#0084D6',   // Polaroid Spectrum Blue
+    secondaryColor: '#E4002B', // Spectrum Red
+    textColor: '#ffffff',
+    accentBg: 'rgba(0, 132, 214, 0.14)',
+    borderColor: 'rgba(0, 132, 214, 0.45)',
+    logoUrl: '/logos/polaroid_logo.png',
+  },
   default: {
     name: 'Film',
     primaryColor: '#64748B',
@@ -107,7 +161,7 @@ export const getBrandTheme = (brandName?: string, filmName?: string): BrandTheme
   if (target.includes('ilford') || target.includes('일포드') || target.includes('hp5') || target.includes('fp4') || target.includes('delta') || target.includes('harman')) {
     return BRAND_CONFIGS.ilford;
   }
-  if (target.includes('cinestill') || target.includes('씨네스틸')) {
+  if (target.includes('cinestill') || target.includes('씨네스틸') || target.includes('시네스틸')) {
     return BRAND_CONFIGS.cinestill;
   }
   if (target.includes('lomo') || target.includes('로모')) {
@@ -118,6 +172,24 @@ export const getBrandTheme = (brandName?: string, filmName?: string): BrandTheme
   }
   if (target.includes('rollei') || target.includes('롤라이')) {
     return BRAND_CONFIGS.rollei;
+  }
+  if (target.includes('adox') || target.includes('아독스')) {
+    return BRAND_CONFIGS.adox;
+  }
+  if (target.includes('leica') || target.includes('라이카')) {
+    return BRAND_CONFIGS.leica;
+  }
+  if (target.includes('svema') || target.includes('스베마')) {
+    return BRAND_CONFIGS.svema;
+  }
+  if (target.includes('lucky') || target.includes('럭키')) {
+    return BRAND_CONFIGS.lucky;
+  }
+  if (target.includes('orwo') || target.includes('오르보')) {
+    return BRAND_CONFIGS.orwo;
+  }
+  if (target.includes('polaroid') || target.includes('폴라로이드')) {
+    return BRAND_CONFIGS.polaroid;
   }
 
   return BRAND_CONFIGS.default;
