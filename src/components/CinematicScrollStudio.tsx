@@ -23,7 +23,7 @@ import {
   FreshnessStatus,
 } from '@/types';
 import { RECIPE_DILUTIONS, LAB_SCANNERS, LAB_SCAN_RESOLUTIONS, FILM_BRAND_PRESETS } from '@/lib/constants';
-import { formatExpiryYYMM, sanitizeExpiryDate, parseYearAndMonth } from '@/lib/dateUtils';
+import { formatExpiryYYMM, sanitizeExpiryDate, parseYearAndMonth, compareFilmExpiry } from '@/lib/dateUtils';
 import { PHOTOGRAPHY_QUOTES } from '@/data/photographyQuotes';
 import FilmCanister3D from './FilmCanister3D';
 import {
@@ -158,7 +158,7 @@ export const MAC_FOLDER_COLORS: Record<
 export type FilmSortMode = 'expiry' | 'brand' | 'type' | 'iso' | 'quantity' | 'name';
 
 export const FILM_SORT_MODES: { mode: FilmSortMode; label: string; icon: string; desc: string }[] = [
-  { mode: 'expiry', label: '유통기한 임박순', icon: '⏳', desc: '만료/임박 썩필 우선 정렬' },
+  { mode: 'expiry', label: '유통기한 임박순', icon: '⏳', desc: '로리 ➔ 노괴 ➔ 틀딱 순 유통기한 정렬' },
   { mode: 'brand', label: '브랜드 제조사순', icon: '🏷️', desc: 'Kodak, Fuji, Ilford 알파벳순' },
   { mode: 'type', label: '필름 종류별 분류순', icon: '🎞️', desc: '컬러 ➔ 흑백 ➔ 슬라 ➔ 영화용' },
   { mode: 'iso', label: 'ISO 감도순', icon: '⚡', desc: 'ISO 50 ~ ISO 3200' },
@@ -737,7 +737,7 @@ export default function CinematicScrollStudio({
     const compareByMode = (a: FilmItem, b: FilmItem): number => {
       switch (mode) {
         case 'expiry':
-          return new Date(a.expiry_date).getTime() - new Date(b.expiry_date).getTime();
+          return compareFilmExpiry(a, b);
         case 'brand':
           return a.brand.localeCompare(b.brand) || a.name.localeCompare(b.name);
         case 'type': {

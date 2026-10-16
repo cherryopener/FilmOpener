@@ -54,7 +54,7 @@ export default function DashboardOverview({
           FilmOpener Studio
         </h2>
         <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', maxWidth: '680px', lineHeight: '1.55' }}>
-          보유 필름 및 껍데기 바뀐 필름 관리부터, 정상 작동 카메라 선별, 다중 출사일 날씨 기록, 로터리/수교반 세부 자가현상 약품 누적, 그리고 스캔 폴더 아카이브까지 모든 아날로그 여정을 한곳에서 관리합니다.
+          보유 필름 관리, 카메라와 렌즈 선별, 다중 출사일 날씨 기록, 로터리/수교반 세부 자가현상 약품 누적, 그리고 스캔 폴더 아카이브까지 모든 아날로그 여정을 한곳에서 관리합니다.
         </p>
 
         {/* Quick action buttons */}
