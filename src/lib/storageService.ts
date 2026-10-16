@@ -159,7 +159,11 @@ export const getCameras = async (): Promise<CameraItem[]> => {
         if (session) {
           const { data, error } = await supabase.from('cameras').select('*').order('brand', { ascending: true });
           if (!error && data) {
-            localStorage.setItem(STORAGE_KEYS.CAMERAS, JSON.stringify(data));
+            try {
+              localStorage.setItem(STORAGE_KEYS.CAMERAS, JSON.stringify(data));
+            } catch (e) {
+              console.warn('Failed to cache cameras to localStorage:', e);
+            }
             return data as CameraItem[];
           }
         }
@@ -186,7 +190,11 @@ export const saveCamera = async (camera: CameraItem): Promise<CameraItem[]> => {
     list.unshift({ ...camera, created_at: camera.created_at || new Date().toISOString() });
   }
 
-  localStorage.setItem(STORAGE_KEYS.CAMERAS, JSON.stringify(list));
+  try {
+    localStorage.setItem(STORAGE_KEYS.CAMERAS, JSON.stringify(list));
+  } catch (err) {
+    console.warn('LocalStorage save camera failed (quota exceeded?):', err);
+  }
 
   if (isSupabaseConfigured()) {
     const supabase = getSupabaseClient();
@@ -202,11 +210,18 @@ export const saveCamera = async (camera: CameraItem): Promise<CameraItem[]> => {
           const { error } = await supabase.from('cameras').upsert({ ...camera, user_id: user.id });
           if (error) {
             console.error('Supabase save camera error:', error.message);
+            if (error.message.includes('image_url') || error.code === 'PGRST204') {
+              alert('⚠️ Supabase의 cameras 테이블에 image_url 컬럼이 누락되어 있습니다.\nSupabase 대시보드 [SQL Editor]에서 아래 쿼리를 1회 실행해주세요:\n\nalter table public.cameras add column if not exists image_url text;');
+            }
           } else {
             const { data, error: fetchErr } = await supabase.from('cameras').select('*').order('brand', { ascending: true });
             if (!fetchErr && data && data.length > 0) {
               list = data as CameraItem[];
-              localStorage.setItem(STORAGE_KEYS.CAMERAS, JSON.stringify(list));
+              try {
+                localStorage.setItem(STORAGE_KEYS.CAMERAS, JSON.stringify(list));
+              } catch (e) {
+                console.warn('Failed to update localStorage with Supabase cameras:', e);
+              }
             }
           }
         }
@@ -224,7 +239,11 @@ export const deleteCamera = async (id: string): Promise<CameraItem[]> => {
   const raw = localStorage.getItem(STORAGE_KEYS.CAMERAS);
   let list: CameraItem[] = raw ? JSON.parse(raw) : [];
   list = list.filter((c) => c.id !== id);
-  localStorage.setItem(STORAGE_KEYS.CAMERAS, JSON.stringify(list));
+  try {
+    localStorage.setItem(STORAGE_KEYS.CAMERAS, JSON.stringify(list));
+  } catch (err) {
+    console.warn('LocalStorage delete camera failed:', err);
+  }
 
   if (isSupabaseConfigured()) {
     const supabase = getSupabaseClient();
@@ -237,7 +256,11 @@ export const deleteCamera = async (id: string): Promise<CameraItem[]> => {
           const { data, error: fetchErr } = await supabase.from('cameras').select('*').order('brand', { ascending: true });
           if (!fetchErr && data) {
             list = data as CameraItem[];
-            localStorage.setItem(STORAGE_KEYS.CAMERAS, JSON.stringify(list));
+            try {
+              localStorage.setItem(STORAGE_KEYS.CAMERAS, JSON.stringify(list));
+            } catch (e) {
+              console.warn('Failed to update localStorage with Supabase cameras:', e);
+            }
           }
         }
       } catch (e) {
@@ -261,7 +284,11 @@ export const getLenses = async (): Promise<LensItem[]> => {
         if (session) {
           const { data, error } = await supabase.from('lenses').select('*').order('focal_length_min', { ascending: true });
           if (!error && data) {
-            localStorage.setItem(STORAGE_KEYS.LENSES, JSON.stringify(data));
+            try {
+              localStorage.setItem(STORAGE_KEYS.LENSES, JSON.stringify(data));
+            } catch (e) {
+              console.warn('Failed to cache lenses to localStorage:', e);
+            }
             return data as LensItem[];
           }
         }
@@ -288,7 +315,11 @@ export const saveLens = async (lens: LensItem): Promise<LensItem[]> => {
     list.unshift({ ...lens, created_at: lens.created_at || new Date().toISOString() });
   }
 
-  localStorage.setItem(STORAGE_KEYS.LENSES, JSON.stringify(list));
+  try {
+    localStorage.setItem(STORAGE_KEYS.LENSES, JSON.stringify(list));
+  } catch (err) {
+    console.warn('LocalStorage save lens failed (quota exceeded?):', err);
+  }
 
   if (isSupabaseConfigured()) {
     const supabase = getSupabaseClient();
@@ -304,11 +335,18 @@ export const saveLens = async (lens: LensItem): Promise<LensItem[]> => {
           const { error } = await supabase.from('lenses').upsert({ ...lens, user_id: user.id });
           if (error) {
             console.error('Supabase save lens error:', error.message);
+            if (error.message.includes('image_url') || error.code === 'PGRST204') {
+              alert('⚠️ Supabase의 lenses 테이블에 image_url 컬럼이 누락되어 있습니다.\nSupabase 대시보드 [SQL Editor]에서 아래 쿼리를 1회 실행해주세요:\n\nalter table public.lenses add column if not exists image_url text;');
+            }
           } else {
             const { data, error: fetchErr } = await supabase.from('lenses').select('*').order('focal_length_min', { ascending: true });
             if (!fetchErr && data && data.length > 0) {
               list = data as LensItem[];
-              localStorage.setItem(STORAGE_KEYS.LENSES, JSON.stringify(list));
+              try {
+                localStorage.setItem(STORAGE_KEYS.LENSES, JSON.stringify(list));
+              } catch (e) {
+                console.warn('Failed to update localStorage with Supabase lenses:', e);
+              }
             }
           }
         }

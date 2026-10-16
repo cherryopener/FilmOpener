@@ -24,6 +24,7 @@ import {
 } from '@/types';
 import { RECIPE_DILUTIONS, LAB_SCANNERS, LAB_SCAN_RESOLUTIONS, FILM_BRAND_PRESETS } from '@/lib/constants';
 import { formatExpiryYYMM, sanitizeExpiryDate, parseYearAndMonth, compareFilmExpiry } from '@/lib/dateUtils';
+import { compressImageFile } from '@/lib/imageUtils';
 import { PHOTOGRAPHY_QUOTES } from '@/data/photographyQuotes';
 import FilmCanister3D from './FilmCanister3D';
 import {
@@ -1280,21 +1281,21 @@ export default function CinematicScrollStudio({
     ]);
   };
 
-  // Camera Photo Upload (FileReader -> Base64)
-  const handleCameraPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Camera Photo Upload (with auto client-side resize & compression)
+  const handleCameraPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      alert('카메라 사진 파일 크기는 5MB 이하로 업로드해주세요.');
+    if (file.size > 15 * 1024 * 1024) {
+      alert('카메라 사진 파일 크기는 15MB 이하로 업로드해주세요.');
       return;
     }
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === 'string') {
-        setNewCamImage(reader.result);
-      }
-    };
-    reader.readAsDataURL(file);
+    try {
+      const compressed = await compressImageFile(file, { maxDimension: 1000, quality: 0.8 });
+      setNewCamImage(compressed);
+    } catch (err: any) {
+      console.error('Camera photo compression error:', err);
+      alert(err?.message || '사진을 처리하는 도중 오류가 발생했습니다.');
+    }
   };
 
   // Save New Camera
@@ -1344,21 +1345,21 @@ export default function CinematicScrollStudio({
     setIsAddLensOpen(true);
   };
 
-  // Lens Photo Upload (FileReader -> Base64)
-  const handleLensPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Lens Photo Upload (with auto client-side resize & compression)
+  const handleLensPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      alert('렌즈 사진 파일 크기는 5MB 이하로 업로드해주세요.');
+    if (file.size > 15 * 1024 * 1024) {
+      alert('렌즈 사진 파일 크기는 15MB 이하로 업로드해주세요.');
       return;
     }
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === 'string') {
-        setNewLensImage(reader.result);
-      }
-    };
-    reader.readAsDataURL(file);
+    try {
+      const compressed = await compressImageFile(file, { maxDimension: 1000, quality: 0.8 });
+      setNewLensImage(compressed);
+    } catch (err: any) {
+      console.error('Lens photo compression error:', err);
+      alert(err?.message || '사진을 처리하는 도중 오류가 발생했습니다.');
+    }
   };
 
   // Save New Lens
@@ -4296,7 +4297,7 @@ export default function CinematicScrollStudio({
                       클릭하여 카메라 사진 파일 선택
                     </span>
                     <span style={{ fontSize: '0.74rem', color: '#86868b', marginTop: '4px' }}>
-                      JPG, PNG, WEBP 등 지원 (최대 5MB)
+                      JPG, PNG, WEBP 등 지원 (자동 고화질 압축 최적화)
                     </span>
                     <input
                       type="file"
@@ -4540,7 +4541,7 @@ export default function CinematicScrollStudio({
                       클릭하여 렌즈 사진 파일 선택
                     </span>
                     <span style={{ fontSize: '0.74rem', color: '#86868b', marginTop: '4px' }}>
-                      JPG, PNG, WEBP 등 지원 (최대 5MB)
+                      JPG, PNG, WEBP 등 지원 (자동 고화질 압축 최적화)
                     </span>
                     <input
                       type="file"

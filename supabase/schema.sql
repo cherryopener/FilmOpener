@@ -69,11 +69,15 @@ create table if not exists public.lenses (
   focal_length_max numeric not null,
   max_aperture numeric not null,
   mount text,
+  image_url text,
   status text not null default 'active',
   serial_number text,
   notes text,
   created_at timestamptz default now()
 );
+
+-- 기존 테이블이 있을 경우 누락된 컬럼 추가 (Safe Migration)
+alter table public.lenses add column if not exists image_url text;
 
 -- 4. 현상액 라이브러리 (developer_chemicals)
 create table if not exists public.developer_chemicals (

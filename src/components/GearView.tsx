@@ -3,6 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { CameraItem, LensItem, CameraFormat, EquipmentStatus, LensCategory } from '@/types';
 import { CAMERA_FORMAT_CONFIG, EQUIPMENT_STATUS_CONFIG } from '@/lib/constants';
+import { compressImageFile } from '@/lib/imageUtils';
 import { Camera, Aperture, Plus, Search, AlertCircle, Wrench, CheckCircle2, ShoppingBag, Bookmark, Edit2, Trash2, Upload } from 'lucide-react';
 
 interface GearViewProps {
@@ -78,37 +79,37 @@ export default function GearView({
   const [lensSerial, setLensSerial] = useState('');
   const [lensNotes, setLensNotes] = useState('');
 
-  // Photo Upload Handlers
-  const handleCameraPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Photo Upload Handlers (with auto client-side resize & compression)
+  const handleCameraPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      alert('카메라 사진 파일 크기는 5MB 이하로 업로드해주세요.');
+    if (file.size > 15 * 1024 * 1024) {
+      alert('카메라 사진 파일 크기는 15MB 이하로 업로드해주세요.');
       return;
     }
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === 'string') {
-        setCamImage(reader.result);
-      }
-    };
-    reader.readAsDataURL(file);
+    try {
+      const compressed = await compressImageFile(file, { maxDimension: 1000, quality: 0.8 });
+      setCamImage(compressed);
+    } catch (err: any) {
+      console.error('Camera photo compression error:', err);
+      alert(err?.message || '사진을 처리하는 도중 오류가 발생했습니다.');
+    }
   };
 
-  const handleLensPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLensPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      alert('렌즈 사진 파일 크기는 5MB 이하로 업로드해주세요.');
+    if (file.size > 15 * 1024 * 1024) {
+      alert('렌즈 사진 파일 크기는 15MB 이하로 업로드해주세요.');
       return;
     }
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === 'string') {
-        setLensImage(reader.result);
-      }
-    };
-    reader.readAsDataURL(file);
+    try {
+      const compressed = await compressImageFile(file, { maxDimension: 1000, quality: 0.8 });
+      setLensImage(compressed);
+    } catch (err: any) {
+      console.error('Lens photo compression error:', err);
+      alert(err?.message || '사진을 처리하는 도중 오류가 발생했습니다.');
+    }
   };
 
   // Camera Modal Handlers
@@ -791,7 +792,7 @@ export default function GearView({
                     >
                       <Camera size={24} color="var(--accent-amber)" style={{ marginBottom: '6px' }} />
                       <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>클릭하여 카메라 사진 파일 선택</span>
-                      <span style={{ fontSize: '0.74rem', color: 'var(--text-dim)', marginTop: '2px' }}>JPG, PNG, WEBP 등 지원 (최대 5MB)</span>
+                      <span style={{ fontSize: '0.74rem', color: 'var(--text-dim)', marginTop: '2px' }}>JPG, PNG, WEBP 등 지원 (자동 고화질 압축 최적화)</span>
                       <input type="file" accept="image/*" onChange={handleCameraPhotoUpload} style={{ display: 'none' }} />
                     </label>
                   )}
@@ -1007,7 +1008,7 @@ export default function GearView({
                     >
                       <Aperture size={24} color="var(--accent-emerald)" style={{ marginBottom: '6px' }} />
                       <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>클릭하여 렌즈 사진 파일 선택</span>
-                      <span style={{ fontSize: '0.74rem', color: 'var(--text-dim)', marginTop: '2px' }}>JPG, PNG, WEBP 등 지원 (최대 5MB)</span>
+                      <span style={{ fontSize: '0.74rem', color: 'var(--text-dim)', marginTop: '2px' }}>JPG, PNG, WEBP 등 지원 (자동 고화질 압축 최적화)</span>
                       <input type="file" accept="image/*" onChange={handleLensPhotoUpload} style={{ display: 'none' }} />
                     </label>
                   )}
