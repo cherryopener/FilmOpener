@@ -158,7 +158,7 @@ export const MAC_FOLDER_COLORS: Record<
 export type FilmSortMode = 'expiry' | 'brand' | 'type' | 'iso' | 'quantity' | 'name';
 
 export const FILM_SORT_MODES: { mode: FilmSortMode; label: string; icon: string; desc: string }[] = [
-  { mode: 'expiry', label: '유통기한 임박순', icon: '⏳', desc: '로리 ➔ 노괴 ➔ 틀딱 순 유통기한 정렬' },
+  { mode: 'expiry', label: '유통기한 임박순', icon: '⏳', desc: '틀딱 ➔ 노괴 ➔ 로리 순 유통기한 정렬' },
   { mode: 'brand', label: '브랜드 제조사순', icon: '🏷️', desc: 'Kodak, Fuji, Ilford 알파벳순' },
   { mode: 'type', label: '필름 종류별 분류순', icon: '🎞️', desc: '컬러 ➔ 흑백 ➔ 슬라 ➔ 영화용' },
   { mode: 'iso', label: 'ISO 감도순', icon: '⚡', desc: 'ISO 50 ~ ISO 3200' },

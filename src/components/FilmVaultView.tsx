@@ -4,7 +4,7 @@ import React, { useState, useMemo } from 'react';
 import { FilmItem, FilmType, FilmFormat, StorageMethod, FreshnessStatus } from '@/types';
 import { FILM_TYPE_CONFIG, FILM_FORMAT_CONFIG, STORAGE_METHOD_CONFIG, FILM_BRAND_PRESETS } from '@/lib/constants';
 import { getBrandTheme } from '@/lib/brandConfig';
-import { formatExpiryYYMM, sanitizeExpiryDate, parseYearAndMonth, getFilmFreshness, compareFilmExpiry } from '@/lib/dateUtils';
+import { formatExpiryYYMM, sanitizeExpiryDate, parseYearAndMonth, getFilmFreshness, compareFilmExpiry, compareFilmFreshness } from '@/lib/dateUtils';
 import { Plus, Search, Layers, Snowflake, AlertTriangle, Tag, Sparkles, Edit2, Trash2 } from 'lucide-react';
 
 interface FilmVaultViewProps {
@@ -233,20 +233,16 @@ export default function FilmVaultView({ films, onSaveFilm, onDeleteFilm }: FilmV
         return aExhausted ? 1 : -1;
       }
 
-      // 유통기한 임박순 및 신선도순:
-      // 로리(fresh) -> 노괴(expired) -> 틀딱(deep_expired)으로 먼저 정렬 후 유통기한순 정렬
-      // (미상인 것은 유통기한을 알고 있는 것보다 더 싱싱한 것으로 간주하여 임박순 뒤에 배치)
-      if (sortBy === 'expiry_soon' || sortBy === 'freshness') {
+      // 1. 유통기한 임박순 (틀딱 -> 노괴 -> 로리, 가장 오래된 필름 우선 소진, 로리 미상이 맨 뒤)
+      if (sortBy === 'expiry_soon') {
         return compareFilmExpiry(a, b);
       }
+      // 2. 신선도순 (로리 -> 노괴 -> 틀딱) 및 신선도 역순 (틀딱 -> 노괴 -> 로리)
+      if (sortBy === 'freshness') {
+        return compareFilmFreshness(a, b, false);
+      }
       if (sortBy === 'freshness_desc') {
-        const order: Record<FreshnessStatus, number> = { fresh: 1, expired: 2, deep_expired: 3 };
-        const scoreA = order[getFilmFreshness(a)] || 2;
-        const scoreB = order[getFilmFreshness(b)] || 2;
-        if (scoreB !== scoreA) {
-          return scoreB - scoreA;
-        }
-        return compareFilmExpiry(a, b);
+        return compareFilmFreshness(a, b, true);
       }
       if (sortBy === 'brand') {
         return a.brand.localeCompare(b.brand, 'ko-KR');
@@ -393,7 +389,7 @@ export default function FilmVaultView({ films, onSaveFilm, onDeleteFilm }: FilmV
             onChange={(e) => setSortBy(e.target.value as any)}
             title="정렬 기준"
           >
-            <option value="expiry_soon">⏱️ 유통기한 임박순 (로리 → 노괴 → 틀딱)</option>
+            <option value="expiry_soon">⏱️ 유통기한 임박순 (틀딱 → 노괴 → 로리)</option>
             <option value="freshness">🌸 신선도순 (로리 → 노괴 → 틀딱)</option>
             <option value="freshness_desc">💀 신선도 역순 (틀딱 → 노괴 → 로리)</option>
             <option value="brand">🏢 회사(제조사)별</option>

@@ -103,14 +103,15 @@ export function getFilmFreshness(f: FilmItem): FreshnessStatus {
 /**
  * Compares two films for "유통기한 임박순" (impending expiry order).
  *
- * Rules:
- * 1. 로리(fresh) -> 노괴(expired) -> 틀딱(deep_expired) 순으로 1차 정렬.
- *    (미상인 필름도 로리, 노괴, 틀딱 중 무엇인지 먼저 판별하여 해당 그룹에 배치)
- * 2. 동일 그룹 내에서는 유통기한 임박순(오름차순)으로 정렬.
+ * Rules (사용자 명세):
+ * 1. 유통기한 임박순이므로 가장 오래된 필름부터 소진하기 위해 틀딱(1) -> 노괴(2) -> 로리(3) 순으로 정렬.
+ *    (미상인 필름도 로리/노괴/틀딱 중 무엇인지 먼저 판별하여 해당 그룹에 배치)
+ * 2. 동일 그룹 내에서는 유통기한이 오래된(임박한) 빠른 날짜 순으로 정렬.
  *    이때 유통기한이 미상인 것은 유통기한을 알고 있는 것보다 더 싱싱한 것으로 간주하므로,
- *    유통기한을 알고 있는 필름들(임박순) 뒤에 배치됨.
+ *    해당 그룹 내에서 유통기한을 알고 있는 필름들 뒤에 배치됨.
+ *    (결과적으로 전체 목록의 가장 마지막에는 '로리 미상' 필름이 오게 됨)
  * 3. 동일 순위 시 필름 이름 가나다순.
- * 4. 소진된 필름(수량 <= 0)은 맨 뒤로 배치.
+ * 4. 소진된 필름(수량 <= 0)은 항상 맨 뒤로 배치.
  */
 export function compareFilmExpiry(a: FilmItem, b: FilmItem): number {
   // 0. 소진된 필름 (보유 수량 0 이하)은 항상 맨 뒤로 배치
@@ -120,12 +121,11 @@ export function compareFilmExpiry(a: FilmItem, b: FilmItem): number {
     return aExhausted ? 1 : -1;
   }
 
-  // 1. 로리 / 노괴 / 틀딱 순서로 먼저 정렬
-  // 로리: 1 (싱싱함), 노괴: 2 (썩필), 틀딱: 3 (푹썩필)
+  // 1. 임박순: 틀딱(1 - 가장 오래됨) -> 노괴(2) -> 로리(3 - 싱싱함)
   const freshnessOrder: Record<FreshnessStatus, number> = {
-    fresh: 1,
-    expired: 2,
-    deep_expired: 3,
+    deep_expired: 1, // 틀딱 (푹썩필)
+    expired: 2,      // 노괴 (썩필)
+    fresh: 3,        // 로리 (싱싱함)
   };
 
   const freshA = getFilmFreshness(a);
@@ -143,8 +143,8 @@ export function compareFilmExpiry(a: FilmItem, b: FilmItem): number {
   const aUnknown = isUnknownExpiry(a.expiry_date);
   const bUnknown = isUnknownExpiry(b.expiry_date);
 
-  // 미상인 것은 유통기한을 알고 있는 것보다 더 싱싱함 (즉 유통기한 여유가 더 많음)
-  // 유통기한 임박순(오름차순) 정렬에서는 더 싱싱한 것(미상)이 유통기한을 알고 있는 것 뒤에 위치함
+  // 미상인 것은 유통기한을 알고 있는 것보다 더 싱싱함 (유통기한 여유가 더 많음)
+  // 따라서 해당 카테고리 내에서 유통기한을 알고 있는 것들 뒤에 배치됨
   if (aUnknown && !bUnknown) {
     return 1;
   }
@@ -152,7 +152,7 @@ export function compareFilmExpiry(a: FilmItem, b: FilmItem): number {
     return -1;
   }
 
-  // 둘 다 유통기한을 알고 있는 경우: 날짜 오름차순 (임박한 빠른 날짜 우선)
+  // 둘 다 유통기한을 알고 있는 경우: 오래된 날짜 우선 (가장 빠른 연월일 순)
   if (!aUnknown && !bUnknown) {
     const normA = normalizeExpiryForComparison(a.expiry_date);
     const normB = normalizeExpiryForComparison(b.expiry_date);
@@ -167,6 +167,51 @@ export function compareFilmExpiry(a: FilmItem, b: FilmItem): number {
   if (nameComp !== 0) {
     return nameComp;
   }
+
+  return (a.brand || '').localeCompare(b.brand || '', 'ko-KR');
+}
+
+/**
+ * Compares two films for "신선도순" (로리 -> 노괴 -> 틀딱) 및 역순.
+ */
+export function compareFilmFreshness(a: FilmItem, b: FilmItem, desc: boolean = false): number {
+  const aExhausted = (a.quantity ?? 0) <= 0;
+  const bExhausted = (b.quantity ?? 0) <= 0;
+  if (aExhausted !== bExhausted) {
+    return aExhausted ? 1 : -1;
+  }
+
+  const freshnessOrder: Record<FreshnessStatus, number> = {
+    fresh: 1,
+    expired: 2,
+    deep_expired: 3,
+  };
+
+  const freshA = getFilmFreshness(a);
+  const freshB = getFilmFreshness(b);
+
+  const rankA = freshnessOrder[freshA] || 2;
+  const rankB = freshnessOrder[freshB] || 2;
+
+  if (rankA !== rankB) {
+    return desc ? rankB - rankA : rankA - rankB;
+  }
+
+  const aUnknown = isUnknownExpiry(a.expiry_date);
+  const bUnknown = isUnknownExpiry(b.expiry_date);
+
+  if (aUnknown && !bUnknown) return 1;
+  if (!aUnknown && bUnknown) return -1;
+
+  if (!aUnknown && !bUnknown) {
+    const normA = normalizeExpiryForComparison(a.expiry_date);
+    const normB = normalizeExpiryForComparison(b.expiry_date);
+    const dateComp = normA.localeCompare(normB);
+    if (dateComp !== 0) return desc ? -dateComp : dateComp;
+  }
+
+  const nameComp = (a.name || '').localeCompare(b.name || '', 'ko-KR');
+  if (nameComp !== 0) return nameComp;
 
   return (a.brand || '').localeCompare(b.brand || '', 'ko-KR');
 }
