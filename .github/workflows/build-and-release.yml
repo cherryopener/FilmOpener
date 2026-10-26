@@ -40,13 +40,13 @@ jobs:
 
       - name: Build Windows installer (.exe)
         if: matrix.platform == 'win'
-        run: npx electron-builder --win --x64 -c.publish=never
+        run: npx electron-builder --win --x64 --publish never
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build macOS app (.dmg & .zip)
         if: matrix.platform == 'mac'
-        run: npx electron-builder --mac -c.publish=never
+        run: npx electron-builder --mac --publish never
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
