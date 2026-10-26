@@ -1,17 +1,67 @@
 {
   "name": "film-opener",
   "version": "0.1.0",
-  "private": true,
+  "author": "cherryopener",
+  "description": "FilmOpener - Film Photography Log & Vault Desktop Application",
+  "main": "electron/main.js",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "build:next": "next build",
+    "electron:dev": "concurrently -k \"next dev\" \"wait-on tcp:3000 && electron .\"",
+    "electron:start": "electron .",
+    "dist": "npm run build:next && electron-builder",
+    "dist:win": "npm run build:next && electron-builder --win",
+    "dist:mac": "npm run build:next && electron-builder --mac"
+  },
+  "build": {
+    "appId": "com.cherryopener.filmopener",
+    "productName": "FilmOpener",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "out/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "category": "public.app-category.photography",
+      "hardenedRuntime": false
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "msi",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.109.0",
     "lucide-react": "^1.52.0",
-    "next": "16.4.0",
+    "next": "^16.4.3",
     "react": "19.3.0",
     "react-dom": "19.3.0"
   },
@@ -19,8 +69,12 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "concurrently": "^10.0.6",
+    "electron": "^45.0.0",
+    "electron-builder": "^26.18.0",
     "eslint": "^9",
-    "eslint-config-next": "16.4.0",
-    "typescript": "^5"
+    "eslint-config-next": "^16.4.3",
+    "typescript": "^5",
+    "wait-on": "^9.5.1"
   }
 }
