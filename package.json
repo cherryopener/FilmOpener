@@ -28,6 +28,7 @@
       "package.json"
     ],
     "mac": {
+      "icon": "assets/icon.png",
       "target": [
         "dmg",
         "zip"

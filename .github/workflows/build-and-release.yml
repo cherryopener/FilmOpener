@@ -29,7 +29,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 26
           cache: 'npm'
 
       - name: Install dependencies
@@ -38,15 +38,15 @@ jobs:
       - name: Build Next.js static site
         run: npm run build:next
 
-      - name: Build Windows installer (.exe & .msi)
+      - name: Build Windows installer (.exe)
         if: matrix.platform == 'win'
-        run: npx electron-builder --win --x64
+        run: npx electron-builder --win --x64 -c.publish=never
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build macOS app (.dmg & .zip)
         if: matrix.platform == 'mac'
-        run: npx electron-builder --mac
+        run: npx electron-builder --mac -c.publish=never
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
